@@ -1,7 +1,6 @@
 import datetime
 import traceback
 import os
-import logging as pythonlogging
 
 from spine_core_aws_common.log.spinelogging import get_log_base_config
 from spine_core_aws_common.log.details import get_log_details, return_level
@@ -10,6 +9,10 @@ from spine_core_aws_common.log.formatting import add_default_keys, evaluate_log_
     substitute_preamble_for_monitor
 from spine_core_aws_common.log.thirdpartylogging import SEVERITY_INPUT_MAP, LoggingAdapter
 from spine_core_aws_common.log.masking import mask_url
+
+# pylint: disable=wrong-import-order
+import logging as pythonlogging
+# pylint: enable=wrong-import-order
 
 
 class Logger(object):
@@ -30,6 +33,7 @@ class Logger(object):
         self.severityThreshold = severityThreshold
         self.severityThresholdValue = return_level(severityThreshold)[0]
         self.dateFormat = '%d/%m/%Y %H:%M:%S'
+        self.eventRowDict = {}
 
         self._logBaseCache = {}
 
@@ -57,6 +61,8 @@ class Logger(object):
         """
         if logRowDict is None:
             logRowDict = {}
+
+        logRowDict = {**logRowDict, **self.eventRowDict}
 
         if processName is None:
             processName = self.processName
