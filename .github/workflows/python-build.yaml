@@ -1,0 +1,28 @@
+name: code quality
+on pull_request:
+  branches: 
+    - develop
+  push:
+    - develop
+    - feature/*
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      PYTHON: 3.8
+    steps:
+      - uses: actions/checkout@v1
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2.2.2
+        with :
+          python-version: 3.8
+      - name: Install dependencies
+        run: make dev
+      - name: formatting and Linting
+        run: make lint
+      - name: Test with pytest
+        run: make test
+
+
+
