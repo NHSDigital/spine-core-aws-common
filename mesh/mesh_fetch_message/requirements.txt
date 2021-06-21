@@ -1,0 +1,3 @@
+requests
+testresources
+mesh_client==1.1.0
