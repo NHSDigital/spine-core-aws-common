@@ -1,0 +1,4 @@
+six
+boto3
+aws-lambda-powertools
+build
