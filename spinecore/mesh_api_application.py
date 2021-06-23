@@ -3,6 +3,7 @@ AWS Lambda function for checking MESH mailbox via API
 """
 from abc import abstractmethod
 import json
+import ntpath
 import boto3
 import tempfile
 from botocore.client import Config
@@ -37,7 +38,7 @@ class MeshApiApplication(LambdaApplication):
 
     def _getMeshConfigFromParamStore(self, mailbox):
         """
-        Get config from SSM Parameter Store. Need to extract and pass the 
+        Get config from SSM Parameter Store. Need to extract and pass the
         mailbox name based on your application
         """
         self.ssmClient = boto3.client('ssm')
@@ -126,13 +127,16 @@ class MeshPollApplication(MeshApiApplication):
         Start getting messages from MESH mailbox
         """
         # TODO think about eventbridge
-
+        # TODO standardise events
+        # TODO think about better way of doing the environment name (read tag?)
         # Get mailbox name from event and get config from SSM parameter store
         mailbox = self.event.get('mailbox')
         if mailbox == "[ENV]":
             mailbox = self.systemConfig['ENV']
         self.logObject.writeLog('MESHPOLL001', None, {'mailbox': mailbox})
         self._getMeshConfigFromParamStore(mailbox)
+        # TODO check SQS queue to see if there are messages waiting to fetch
+        # before polling MESH to prevent duplication of messages in queue
         messageList = self._getPendingMessagesList(
             mailbox,
             self.systemConfig['MAILBOX_PASSWORD'])
@@ -142,7 +146,7 @@ class MeshPollApplication(MeshApiApplication):
 
     def _getPendingMessagesList(self, mailbox, password):
         """
-        Get list of messages waiting in MESH mailbox 
+        Get list of messages waiting in MESH mailbox
         """
         with tempfile.TemporaryDirectory() as tempDirName:
             self.logObject.writeLog('MESHPOLL002', None, None)
@@ -180,10 +184,12 @@ class MeshPollApplication(MeshApiApplication):
         messageBatches = self._batchList(
             messageList, self.systemConfig['BATCH_SIZE'])
 
+        # TODO standardise events
         for batch in messageBatches:
             entries = []
             for messageId in batch:
-                self.logObject.writeLog('MESHPOLL007', None, {'messageId': messageId})
+                self.logObject.writeLog('MESHPOLL007', None, {
+                                        'messageId': messageId})
                 internalID = self._createNewInternalID()  # New internalID for each message
                 messageToSend = {
                     'internalID': internalID,
@@ -202,7 +208,8 @@ class MeshPollApplication(MeshApiApplication):
             )
 
             if response.get('Failed', []):
-                self.logObject.writeLog('MESHPOLL008', None, {"response": response})
+                self.logObject.writeLog('MESHPOLL008', None, {
+                                        "response": response})
                 raise Exception('Unable to send batch to SQS')
 
 
@@ -213,49 +220,88 @@ class MeshFetchMessageApplication(MeshApiApplication):
         """
         sqsMessage = self.event
         mailbox = sqsMessage['mailbox']
+        if mailbox == "[ENV]":
+            mailbox = self.systemConfig['ENV']
         messageId = sqsMessage['messageId']
         self.internalID = sqsMessage['internalID']
         self.logObject.setInternalID(self.internalID)
-        self.logObject.writeLog('MESHFETCH001', None, {'mailbox': mailbox, 'messageId': messageId})
+        self.logObject.writeLog(
+            'MESHFETCH001', None, {'mailbox': mailbox, 'messageId': messageId})
         self._getMeshConfigFromParamStore(mailbox)
-        self._fetch_message(messageId)
+        self._fetchMessage(mailbox, messageId)
+        return {'statusCode': 200}
 
-    def _fetch_message(self, messageId):
+    def _fetchMessage(self, mailbox, messageId):
         """
-        log({'log_reference': LogReference.FETCHMESH0001})
+        Get message from MESH mailbox
+        """
+        with tempfile.TemporaryDirectory() as tempDirName:
+            meshClient = self._getMeshClient(
+                mailbox,
+                self.systemConfig['MAILBOX_PASSWORD'],
+                tempDirName)
 
-        cloudwatch_event_rule = sqs_message['cloudwatch_event_rule']
-        message_id = sqs_message['message_id']
+            fileName, srcMailbox, fileContents = self._getMessageContents(
+                meshClient, messageId)
 
-        log({'log_reference': LogReference.FETCHMESH0003, 'cloudwatch_event_rule': cloudwatch_event_rule})
-        mesh_mailbox_creds = json.loads(get_secret_by_key('mesh_mailbox_credentials',
-                                        extract_mailbox_secret_key(cloudwatch_event_rule)))
+            # self.logObject.writeLog(
+            #    'MESHFETCH009', None, {'mailbox': mailbox, 'messageId': messageId})
 
-        mailbox_id = mesh_mailbox_creds['mailbox_id']
-        if mailbox_id == "[ENV]":
-            mailbox_id = ENVIRONMENT_NAME
-
-        with tempfile.TemporaryDirectory() as temp_dir_name:
-            with get_mesh_client(mailbox_id, mesh_mailbox_creds['password'], temp_dir_name) as mesh_client:
-                file_name, from_mailbox_id,  file_contents = get_message_contents_by_message_id(message_id, mesh_client)
-                log({'log_reference': LogReference.FETCHMESH0004, 'mailbox_id': mailbox_id,
-                    'from_mailbox_id': from_mailbox_id, 'message_id': message_id, 'message_length': len(file_contents)})
-
-                if not is_valid_from_mailbox(cloudwatch_event_rule, from_mailbox_id):
-                    log({'log_reference': LogReference.FETCHMESH0009})
-                    mesh_client.close()
-                    raise InvalidMailboxIdException(from_mailbox_id)
-
-                target_bucket = get_s3_bucket_name_from_cloudwatch_event_rule(cloudwatch_event_rule)
-                upload_file_to_s3(target_bucket, file_contents, file_name)
-
-                log({'log_reference': LogReference.FETCHMESH0007})
-                mesh_client.acknowledge_message(message_id)
-                log({'log_reference': LogReference.FETCHMESH0008})
+            """
+            TODO mailbox validation, to add
+            if not is_valid_from_mailbox(cloudwatch_event_rule, from_mailbox_id):
+                log({'log_reference': LogReference.FETCHMESH0009})
                 mesh_client.close()
-        """
-        pass
+                raise InvalidMailboxIdException(from_mailbox_id)
+            """
+            # TODO find correct bucket name and folder from config
+            # log({'log_reference': LogReference.FETCHMESH0007})
+            targetBucket="meshtest-supplementary-data"
+            folder="inbound/"
+            self._saveFileToS3(targetBucket, fileContents, folder, fileName)
 
+            # log({'log_reference': LogReference.FETCHMESH0008})
+            meshClient.acknowledge_message(messageId)
+            meshClient.close()
+
+    def _getMessageContents(self, meshClient, messageId):
+        """
+        Get message contents from MESH
+        """
+        # TODO Safe chunking - see bottom of file
+        # log({'log_reference': LogReference.MESHCLIENT0023})
+        self.logObject.writeLog(
+            'MESHFETCH002', None, None)
+        message = meshClient.retrieve_message(messageId)
+        # log({'log_reference': LogReference.MESHCLIENT0024})
+        fileName = message.mex_header('filename')
+        srcMailbox = message.mex_header('from')
+        localId = message.mex_header('localID')
+        if not localId:
+            localId = "NotProvided"
+        fileContents = message.read()
+
+        self.logObject.writeLog(
+            'MESHFETCH003', None,
+            {'fileName': fileName,
+             'srcMailbox': srcMailbox,
+             'localId': localId,
+             'messageSize': len(fileContents)})
+        message.close()
+        return fileName, srcMailbox, fileContents
+
+    def _saveFileToS3(self, targetBucket, fileContents, folder, fileName):
+        # log({'log_reference': LogReference.FETCHMESH0005, 'target_bucket': target_bucket, 'file_name': file_name})
+        s3Client = boto3.client('s3')
+        meta_data = {
+            'internal_id': self.internalID
+        }
+        targetKey = f'{folder}{fileName}'
+        self.logObject.writeLog(
+            'MESHFETCH004', None, {'bucket': targetBucket, 'key': targetKey})
+        s3Client.put_object(Bucket=targetBucket, Key=targetKey,
+                            Metadata=meta_data, Body=fileContents)
+        # log({'log_reference': LogReference.FETCHMESH0006})
 
 class MetadataNotFoundException(Exception):
     """
@@ -312,12 +358,15 @@ class MeshSendMessageApplication(MeshApiApplication):
         """
         encodedFileContents = self._getFileContents(bucket, key)
         with tempfile.TemporaryDirectory() as tempDirName:
+            fileName = ntpath.basename(key)
             self.logObject.writeLog('MESHSEND004', None, None)
             meshClient = self._getMeshClient(
                 srcMailbox, srcMailboxPassword, tempDirName)
-            self.logObject.writeLog('MESHSEND005', None, None)
+            self.logObject.writeLog('MESHSEND005', None, {
+                                    'filename': fileName})
             messageId = meshClient.send_message(
-                destMailbox, encodedFileContents, workflow_id=workflowId)
+                destMailbox, encodedFileContents, workflow_id=workflowId,
+                filename=fileName, local_id=self.internalID)
             self.logObject.writeLog('MESHSEND006', None, {
                                     'messageId': messageId})
         meshClient.close()
@@ -340,17 +389,14 @@ class MeshSendMessageApplication(MeshApiApplication):
         fileContents = fileObject.get('Body').read().decode('utf-8')
         return fileContents.encode('utf-8')
 
+# TODO to get around issues with lambda 15 mins max timeouts, each chunk is
+# downloaded by a separate lambda, chunks put on the Eventbridge
+# look at Step Functions and/or EventBridge
 
-'''
-def get_message_contents_by_message_id(message_id, mesh_client):
-    log({'log_reference': LogReference.MESHCLIENT0023})
-    message = mesh_client.retrieve_message(message_id)
-    log({'log_reference': LogReference.MESHCLIENT0024})
-    file_name = message.mex_header('filename')
-    from_mailbox_id = message.mex_header('from')
-    file_contents = message.read()
-    log({'log_reference': LogReference.MESHCLIENT0025, 'file_name': file_name, 'from_mailbox_id': from_mailbox_id})
-    message.close()
-    return file_name, from_mailbox_id,  file_contents
+class MeshFetchMessageChunkApplication(MeshApiApplication):
+    # use Multipart upload
+    pass
 
-'''
+class MeshSendMessageChunkApplication(MeshApiApplication):
+    # use range and partNumber
+    pass
