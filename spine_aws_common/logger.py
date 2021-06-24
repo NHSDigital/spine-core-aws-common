@@ -39,12 +39,17 @@ class Logger:
 
     def __init__(
         self,
+        additional_log_config=None,
         log_base=os.path.join(os.path.dirname(__file__), "cloudlogbase.cfg"),
         process_name="ANON",
         severity_threshold="INFO",
         internal_id=None,
     ):
         self._log_base_dict = get_log_base_config(log_base=log_base)
+        if additional_log_config:
+            self._log_base_dict.update(
+                get_log_base_config(log_base=additional_log_config)
+            )
 
         self.process_name = process_name
         self.internal_id = internal_id
@@ -121,7 +126,6 @@ class Logger:
 
         if log_details.audit_log_required:
             self._write_to_cloudwatch(
-                time_now,
                 log_preamble,
                 log_details.log_text,
                 log_row_dict_masked,
@@ -129,7 +133,6 @@ class Logger:
             )
             if self._WRITEPLACEHOLDER:
                 self._write_to_cloudwatch(
-                    time_now,
                     log_preamble,
                     create_placehold_log(log_row_dict_masked),
                     log_row_dict_masked,
@@ -137,7 +140,6 @@ class Logger:
                 )
         else:
             self._write_to_cloudwatch(
-                time_now,
                 log_preamble,
                 log_details.log_text,
                 log_row_dict_masked,
@@ -148,7 +150,6 @@ class Logger:
             # Swap to Log_Level=MONITOR - will help prevent SALTing requirement
             # As Splunk may get matching CRC check for Audit and Monitor Log
             self._write_to_cloudwatch(
-                time_now,
                 substitute_preamble_for_monitor(log_preamble),
                 log_details.log_text,
                 log_row_dict_masked,
@@ -172,7 +173,6 @@ class Logger:
             # Write stub crashdump to spinevfmoperations, so that non-SC cleared staff
             # can see a crash occurred
             self._write_to_cloudwatch(
-                time_now,
                 stub_log_preamble,
                 stub_log_details.log_text,
                 {"originalLogReference": log_reference},

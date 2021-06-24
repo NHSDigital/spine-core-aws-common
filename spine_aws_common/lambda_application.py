@@ -17,7 +17,7 @@ class LambdaApplication:
     Base class for Lambda applications
     """
 
-    def __init__(self, load_ssm_params=False):
+    def __init__(self, additional_log_config=None, load_ssm_params=False):
         self.internal_id = None
         self.context = None
         self.event = None
@@ -25,7 +25,7 @@ class LambdaApplication:
 
         self.system_config = self._load_system_config(load_ssm_params=load_ssm_params)
 
-        self.log_object = self.get_logger()
+        self.log_object = self.get_logger(additional_log_config=additional_log_config)
         configure_logging_adapter(self.log_object)
 
         self._log_coldstart()
@@ -61,13 +61,15 @@ class LambdaApplication:
 
         return self.response
 
-    def get_logger(self):
+    def get_logger(self, additional_log_config=None):
         """
         Gets the default application logger. This may be overridden
         if a custom logger is required.
         """
 
-        logger = Logger(process_name=self.process_name)
+        logger = Logger(
+            process_name=self.process_name, additional_log_config=additional_log_config
+        )
         return logger
 
     def process_event(self, event):
