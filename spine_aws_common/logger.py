@@ -37,6 +37,7 @@ class Logger:
 
     _WRITEPLACEHOLDER = True  # Should a placeholder be written into operational logs
 
+    # pylint: disable=too-many-arguments
     def __init__(
         self,
         additional_log_config=None,
@@ -60,9 +61,11 @@ class Logger:
         self._log_base_cache = {}
 
     def set_internal_id(self, internal_id):
+        """Set internal ID"""
         self.internal_id = internal_id
 
     def set_process_name(self, process_name):
+        """Set process name"""
         self.process_name = process_name
 
     def write_log(
@@ -215,8 +218,8 @@ class Logger:
             log_preamble = log_preamble + " internalID=" + self.internal_id
         return log_preamble + " logReference=" + str(log_reference)
 
+    @staticmethod
     def _write_to_cloudwatch(
-        self,
         log_preamble,
         log_text,
         substitution_dict,
@@ -226,21 +229,7 @@ class Logger:
         """
         Writes the log out to the standard out for Cloudwatch logging
         """
-
-        if log_type == LoggingConstants.LFR_OPERATIONS:
-            log_index = "spinevfmoperations"
-        elif log_type == LoggingConstants.LFR_AUDIT:
-            log_index = "spinevfmaudit"
-        elif log_type == LoggingConstants.LFR_CRASHDUMP:
-            log_index = "spinevfmcrashdump"
-        elif log_type == LoggingConstants.LFR_NMS:
-            log_index = "spinevfmmonitor"
-        else:
-            log_index = "spinevfmlog"
-
-        log_line = create_log_line(
-            log_preamble + " Log_Index=" + log_index, log_text, substitution_dict
-        )
+        log_line = create_log_line(log_preamble, log_text, substitution_dict)
 
         if error_list is not None:
             log_line = log_line + " - " + str(error_list[0:])

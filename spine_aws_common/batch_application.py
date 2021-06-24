@@ -26,7 +26,7 @@ class BatchApplication(LambdaApplication):
         Start the application
         """
         for record in self.records:
-            self.internal_id = self._get_internal_id_from_record(record)
+            self.log_object.set_internal_id(self._get_internal_id_from_record(record))
             self.process_record(record)
 
     def _get_internal_id_from_record(self, record):
