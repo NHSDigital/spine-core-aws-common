@@ -24,12 +24,12 @@ class LoggingAdapter(logging.Handler):
     Adapter to allow libraries that use python logging to output to our logger
     """
 
-    CRITICAL = "LAMBDAUTI9998"
-    ERROR = "LAMBDAUTI9997"
-    WARN = "LAMBDAUTI9996"
-    INFO = "LAMBDAUTI9995"
-    DEBUG = "LAMBDAUTI9994"
-    TRACE = "LAMBDAUTI9993"
+    CRITICAL = "UTI9998"
+    ERROR = "UTI9997"
+    WARN = "UTI9996"
+    INFO = "UTI9995"
+    DEBUG = "UTI9994"
+    TRACE = "UTI9993"
 
     _EXCLUSIVE_USE_CHANNEL_FINDER = "in exclusive use"
     _EXCLUSIVE_USE_CHANNEL_OUTPUT = "Connection blocked due to exclusive use"
