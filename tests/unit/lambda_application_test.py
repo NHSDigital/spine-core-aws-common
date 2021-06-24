@@ -1,5 +1,4 @@
 from unittest import mock, TestCase
-import os
 from spine_aws_common import LambdaApplication
 
 
@@ -27,10 +26,21 @@ class TestLambdaApplication(TestCase):
             "source": "aws.events",
             "account": "123456789",
             "time": "2016-09-25T04:55:26Z",
-            "region": "us-east-1",
-            "resources": ["arn:aws:events:us-east-1:123456789:rule/test-service-rule"],
+            "region": "eu-west-2",
+            "resources": ["arn:aws:events:eu-west-2:123456789:rule/test-service-rule"],
             "detail": {},
         }
         response = LambdaApplication().main(event=event, context=None)
         response_mock = {"message": "Lambda application stopped"}
         self.assertEqual(response_mock, response)
+
+    def test_lambda_additional_logging(self):
+        app = LambdaApplication(
+            additional_log_config="/home/spineii-user/spine-core-aws-common/tests/unit/add_config.cfg"
+        )
+        app.log_object.write_log(
+            "ADDTEST001",
+            None,
+            None,
+        )
+        self.assertLogs("ADDTEST001", level="INFO")

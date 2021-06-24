@@ -43,7 +43,6 @@ def write_log(
     Create an audit version of the log_row_dict containing sensitive data, and
     determine if an Audit entry is required.
     """
-    print("write_log called")
     if log_row_dict is None:
         log_row_dict = {}
 
