@@ -4,7 +4,7 @@ Created 18th June 2019
 from urllib.parse import urlsplit, parse_qs
 
 
-class LogLineProcessor():
+class LogLineProcessor:
     """
     Class for applying log processing on a line by line basis.
     Cleansing of PID data is applied here. Specific keys can
@@ -27,28 +27,31 @@ class LogLineProcessor():
         insensitive.
         """
         # Force all keys to lower - they are compared against key.lower()
-        return set(x.lower() for x in [
-            'nhsNumber',
-            'successorNhsNumber',
-            'motherNhsNumber',
-            'babyNhsNumber',
-            # The following lines are output in Demographics Trace Logging
-            'queryLine',
-            'givenName',
-            'familyName',
-            # The following lines are output in CPIS Logging.
-            'authIdentityNo',
-            'laCode',
-            'laName',
-            'cpoType'
-        ])
+        return set(
+            x.lower()
+            for x in [
+                "nhsNumber",
+                "successorNhsNumber",
+                "motherNhsNumber",
+                "babyNhsNumber",
+                # The following lines are output in Demographics Trace Logging
+                "queryLine",
+                "givenName",
+                "familyName",
+                # The following lines are output in CPIS Logging.
+                "authIdentityNo",
+                "laCode",
+                "laName",
+                "cpoType",
+            ]
+        )
 
     def setprocessor_keys(self):
         """
         List of keys which are subject to additional processing
         """
-        self._add_processor('url', self.url_key_handler)
-        self._add_processor('requestUrl', self.url_key_handler)
+        self._add_processor("url", self.url_key_handler)
+        self._add_processor("requestUrl", self.url_key_handler)
 
     def _add_processor(self, key, handler):
         """
@@ -106,10 +109,7 @@ def check_for_param_dictionary(param_dict):
     """
     if isinstance(param_dict, dict):
         for param_key in param_dict:
-            audit = LogLineProcessor().process(
-                param_key,
-                param_dict[param_key]
-            )
+            audit = LogLineProcessor().process(param_key, param_dict[param_key])
             if audit:
                 return True
 

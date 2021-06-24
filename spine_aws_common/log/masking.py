@@ -14,15 +14,16 @@ GP_PROVIDER_PATTERN = re.compile(r"(.*)'GPPROVIDER_\S+'(.*)", re.DOTALL)
 # Ensure nhsNumbers in fhir messages in Tornado messages are redacted, this
 # might also contain new lines
 # fhir.nhs.uk/Id/nhs-number|
-NHS_NUMBER_PATTERN = re.compile(
-    r"(.*fhir.nhs.uk.*)nhs-number\%7C\d+(.*)", re.DOTALL)
+NHS_NUMBER_PATTERN = re.compile(r"(.*fhir.nhs.uk.*)nhs-number\%7C\d+(.*)", re.DOTALL)
 
 # flake8: noqa: E501
 # pylint:disable=line-too-long
-URL_PID_PATTERN = "([?&])(nhs[nN]umber|identifier|forename|surname|othername|title|suffix|dateOfBirth|" + \
-    "timeOfBirth|address_doornumbername_Holder_Field|address_street_Holder_Field|address_town_Holder_Field|" + \
-    "address_locality_Holder_Field|address_county_Holder_Field|address_postcode_Holder_Field|" + \
-    "address_pafKey_Holder_Field)=[^& ]+"
+URL_PID_PATTERN = (
+    "([?&])(nhs[nN]umber|identifier|forename|surname|othername|title|suffix|dateOfBirth|"
+    + "timeOfBirth|address_doornumbername_Holder_Field|address_street_Holder_Field|address_town_Holder_Field|"
+    + "address_locality_Holder_Field|address_county_Holder_Field|address_postcode_Holder_Field|"
+    + "address_pafKey_Holder_Field)=[^& ]+"
+)
 # pylint:enable=line-too-long
 URL_PID_REPL = r"\1\2=___MASKED___"
 URL_PID_RE_COMPILED = re.compile(URL_PID_PATTERN)
@@ -98,7 +99,7 @@ def mask_url(log_row_dict):
         """
         Mask only the relevant key values
         """
-        if key in ['url', 'requestUrl']:
+        if key in ["url", "requestUrl"]:
             return mask_pid(val)
         return val
 
