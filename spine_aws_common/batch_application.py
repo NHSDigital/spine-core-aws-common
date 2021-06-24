@@ -3,7 +3,7 @@ Base batch Lambda application
 """
 from abc import abstractmethod
 
-from spine_aws_common import LambdaApplication
+from spine_aws_common.lambda_application import LambdaApplication
 
 
 class BatchApplication(LambdaApplication):
