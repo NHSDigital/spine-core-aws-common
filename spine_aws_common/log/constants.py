@@ -28,7 +28,7 @@ class LoggingConstants:
     CRITICAL = 1
     AUDIT = 0
 
-    LR_CRASHDUMP = "LAMBDAUTI9992"
+    LR_CRASHDUMP = "UTI9992"
     LOG_SUFFIX = ".log"
 
     IDENTIFIERS = ["internalID", "sessionid"]
