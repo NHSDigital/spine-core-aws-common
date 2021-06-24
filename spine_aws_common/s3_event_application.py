@@ -2,7 +2,7 @@
 Base S3 Event Lambda application
 """
 from aws_lambda_powertools.utilities.data_classes import S3Event
-from spine_aws_common import BatchApplication
+from spine_aws_common.batch_application import BatchApplication
 
 
 class S3EventApplication(BatchApplication):

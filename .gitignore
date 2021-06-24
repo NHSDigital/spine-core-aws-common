@@ -3,3 +3,6 @@ dist/
 *.egg-info
 venv/
 __pycache__
+.tox
+.coverage
+htmlcov/

@@ -6,7 +6,7 @@ from aws_lambda_powertools.event_handler.api_gateway import (
     ApiGatewayResolver,
     ProxyEventType,
 )
-from spine_aws_common import LambdaApplication
+from spine_aws_common.lambda_application import LambdaApplication
 
 
 class ALBApplication(LambdaApplication):

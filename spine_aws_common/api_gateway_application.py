@@ -3,7 +3,7 @@ Base API Gateway Lambda application
 """
 from aws_lambda_powertools.utilities.data_classes import APIGatewayProxyEvent
 from aws_lambda_powertools.event_handler.api_gateway import ApiGatewayResolver
-from spine_aws_common import LambdaApplication
+from spine_aws_common.lambda_application import LambdaApplication
 
 
 class APIGatewayApplication(LambdaApplication):

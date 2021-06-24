@@ -111,6 +111,7 @@ class SpineLogFormatter(logging.Formatter):
     """
 
     def format_time(self, record, datefmt=None):
+        """Format time"""
         converted_time = self.converter(record.created)
         time_str = time.strftime(datefmt, converted_time)
         return "{}.{:0>3d}".format(time_str, int(record.msecs))

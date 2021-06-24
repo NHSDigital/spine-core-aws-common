@@ -33,11 +33,12 @@ class TestLambdaApplication(TestCase):
         response = LambdaApplication().main(event=event, context=None)
         response_mock = {"message": "Lambda application stopped"}
         self.assertEqual(response_mock, response)
+        self.assertLogs("LAMBDA0001", level="INFO")
+        self.assertLogs("LAMBDA0002", level="INFO")
+        self.assertLogs("LAMBDA0003", level="INFO")
 
     def test_lambda_additional_logging(self):
-        app = LambdaApplication(
-            additional_log_config="/home/spineii-user/spine-core-aws-common/tests/unit/add_config.cfg"
-        )
+        app = LambdaApplication(additional_log_config=f"{__file__}/add_config.cfg")
         app.log_object.write_log(
             "ADDTEST001",
             None,
