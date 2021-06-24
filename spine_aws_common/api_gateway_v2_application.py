@@ -1,3 +1,6 @@
+"""
+Base API Gateway v2 Lambda application
+"""
 from aws_lambda_powertools.utilities.data_classes import APIGatewayProxyEventV2
 from aws_lambda_powertools.event_handler.api_gateway import (
     ApiGatewayResolver,
@@ -11,6 +14,10 @@ class APIGatewayV2Application(LambdaApplication):
     Base class for API Gateway V2 Lambda applications
     """
 
+    def __init__(self):
+        super().__init__(self)
+        self.app = None
+
     def process_event(self, event):
         return APIGatewayProxyEventV2(event)
 
@@ -18,7 +25,7 @@ class APIGatewayV2Application(LambdaApplication):
         """
         Get internalID from the event
         """
-        return self.event.headers.get("x-internal-id", self._createNewInternalID())
+        return self.event.headers.get("x-internal-id", self._create_new_internal_id())
 
     def initialise(self):
         """

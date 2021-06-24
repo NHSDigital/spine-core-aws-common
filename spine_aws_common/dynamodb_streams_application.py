@@ -1,3 +1,6 @@
+"""
+Base DynamoDB streams Lambda application
+"""
 from aws_lambda_powertools.utilities.data_classes import DynamoDBStreamEvent
 from spine_aws_common import BatchApplication
 
@@ -14,4 +17,4 @@ class DynamoDBStreamsApplication(BatchApplication):
         """
         Always create new internalID for DynamoDB Streams event
         """
-        return self._createNewInternalID()
+        return self._create_new_internal_id()

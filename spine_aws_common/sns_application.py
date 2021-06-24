@@ -1,3 +1,6 @@
+"""
+Base SNS Lambda application
+"""
 from aws_lambda_powertools.utilities.data_classes import SNSEvent
 from spine_aws_common import BatchApplication
 
@@ -16,4 +19,4 @@ class SNSApplication(BatchApplication):
         """
         if "internal_id" in record.sns.message_attributes:
             return record.sns.message_attributes["internal_id"].value
-        return self._createNewInternalID()
+        return self._create_new_internal_id()

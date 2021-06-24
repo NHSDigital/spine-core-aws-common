@@ -4,3 +4,7 @@ aws-lambda-powertools
 build
 pep8-naming
 black
+flake8
+pylint
+pytest
+coverage

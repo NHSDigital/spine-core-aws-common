@@ -1,3 +1,6 @@
+"""
+Base SQS Lambda application
+"""
 from aws_lambda_powertools.utilities.data_classes import SQSEvent
 from spine_aws_common import BatchApplication
 
@@ -16,4 +19,4 @@ class SQSApplication(BatchApplication):
         """
         if "internal_id" in record.message_attributes:
             return record.message_attributes["internal_id"]["stringValue"]
-        return self._createNewInternalID()
+        return self._create_new_internal_id()

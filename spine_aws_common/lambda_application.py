@@ -6,8 +6,8 @@ import sys
 from datetime import datetime, timezone
 import uuid
 from abc import abstractmethod
-from spine_aws_common.logger import Logger, configureLoggingAdapter
 from aws_lambda_powertools.utilities import parameters
+from spine_aws_common.logger import Logger, configure_logging_adapter
 
 DELIMITER = "_"
 
@@ -26,7 +26,7 @@ class LambdaApplication:
         self.system_config = self._load_system_config(load_ssm_params=load_ssm_params)
 
         self.log_object = self.get_logger()
-        configureLoggingAdapter(self.log_object)
+        configure_logging_adapter(self.log_object)
 
         self._log_coldstart()
 
@@ -49,13 +49,13 @@ class LambdaApplication:
             if self.log_object is None:
                 print(e)
             else:
-                self.log_object.writeLog("LAMBDAINIT001", None, {"message": e})
+                self.log_object.write_log("LAMBDAINIT001", None, {"message": e})
         except Exception as e:  # pylint:disable=broad-except
             if self.log_object is None:
                 print(e)
                 exit(1)
             else:
-                self.log_object.writeLog(
+                self.log_object.write_log(
                     "LAMBDA9999", sys.exc_info(), {"error": str(e)}
                 )
 
@@ -67,7 +67,7 @@ class LambdaApplication:
         if a custom logger is required.
         """
 
-        logger = Logger(processName=self.process_name)
+        logger = Logger(process_name=self.process_name)
         return logger
 
     def process_event(self, event):
@@ -93,7 +93,7 @@ class LambdaApplication:
         """
         Get internalID from the event
         """
-        return self.event.get("internal_id", self._createNewInternalID())
+        return self.event.get("internal_id", self._create_new_internal_id())
 
     def _create_new_internal_id(self):
         """
@@ -117,19 +117,19 @@ class LambdaApplication:
                 return config
             return env
         except Exception as e:
-            raise InitialisationError(e)
+            raise InitialisationError(e) from e
 
     def _log_coldstart(self):
         log_params = {
-            "aws_region": self.systemConfig.get("AWS_REGION"),
-            "aws_execution_env": self.systemConfig.get("AWS_EXECUTION_ENV"),
+            "aws_region": self.system_config.get("AWS_REGION"),
+            "aws_execution_env": self.system_config.get("AWS_EXECUTION_ENV"),
             "function_name": self.process_name,
-            "function_memory_size": self.systemConfig.get(
+            "function_memory_size": self.system_config.get(
                 "AWS_LAMBDA_FUNCTION_MEMORY_SIZE"
             ),
-            "function_version": self.systemConfig.get("AWS_LAMBDA_FUNCTION_VERSION"),
+            "function_version": self.system_config.get("AWS_LAMBDA_FUNCTION_VERSION"),
         }
-        self.log_object.writeLog("LAMBDA0001", None, log_params)
+        self.log_object.write_log("LAMBDA0001", None, log_params)
 
 
 def overrides(base_class):

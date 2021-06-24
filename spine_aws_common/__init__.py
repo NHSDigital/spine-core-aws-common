@@ -1,3 +1,6 @@
+"""
+Module for common application functionality for Lambda functions
+"""
 from spine_aws_common.lambda_application import LambdaApplication
 from spine_aws_common.batch_application import BatchApplication
 from spine_aws_common.api_gateway_application import APIGatewayApplication
@@ -11,3 +14,19 @@ from spine_aws_common.s3_object_event_application import S3ObjectEventApplicatio
 from spine_aws_common.ses_application import SESApplication
 from spine_aws_common.sns_application import SNSApplication
 from spine_aws_common.sqs_application import SQSApplication
+
+__all__ = [
+    "LambdaApplication",
+    "BatchApplication",
+    "APIGatewayApplication",
+    "APIGatewayV2Application",
+    "ALBApplication",
+    "DynamoDBStreamsApplication",
+    "EventbridgeApplication",
+    "KinesisStreamApplication",
+    "S3EventApplication",
+    "S3ObjectEventApplication",
+    "SESApplication",
+    "SNSApplication",
+    "SQSApplication",
+]

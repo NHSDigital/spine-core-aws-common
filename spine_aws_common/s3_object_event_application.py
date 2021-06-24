@@ -1,3 +1,6 @@
+"""
+Base S3 Object Event Lambda application
+"""
 from aws_lambda_powertools.utilities.data_classes.s3_object_event import (
     S3ObjectLambdaEvent,
 )
@@ -16,4 +19,4 @@ class S3ObjectEventApplication(LambdaApplication):
         """
         Get internalID from the event
         """
-        return self._createNewInternalID()
+        return self._create_new_internal_id()
