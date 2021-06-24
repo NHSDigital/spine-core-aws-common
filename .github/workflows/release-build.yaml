@@ -27,7 +27,6 @@ jobs:
       - name: Build release
         run: |
           sed -i "s/VERSION/$(git describe --tags | sed 's/v//')/" setup.cfg
-          cat setup.cfg
           make build
 
       - uses: "marvinpinto/action-automatic-releases@latest"
