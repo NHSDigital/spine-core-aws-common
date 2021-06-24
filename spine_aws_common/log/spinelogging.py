@@ -52,7 +52,7 @@ def get_log_base_config(log_base):
             try:
                 text = log_base_config.get(log_ref, LoggingConstants.SECTION_TEXT)
             except configparser.NoOptionError:
-                text = log_base_config.get("LAMBDAUTI9999", "Log Text")
+                text = log_base_config.get("UTI9999", "Log Text")
 
             log_base_dict[log_ref] = [level, text]
 

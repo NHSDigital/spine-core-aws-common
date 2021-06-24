@@ -67,7 +67,7 @@ class Logger:
 
     def write_log(
         self,
-        log_reference="LAMBDAUTI9999",
+        log_reference="UTI9999",
         error_list=None,
         log_row_dict=None,
         severity_threshold_override=None,

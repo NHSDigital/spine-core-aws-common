@@ -106,7 +106,7 @@ def _get_log_details(log_reference, log_base_dict, log_base_cache, pythonlogging
             log_level, log_text = log_info
         else:
             log_level, log_text = log_base_dict.get(
-                "LAMBDAUTI9999", ["INFO", "Missing default log"]
+                "UTI9999", ["INFO", "Missing default log"]
             )
             print("Missing log reference - fail build")
 
@@ -137,14 +137,14 @@ def get_log_details(log_reference, log_base_dict, log_base_cache, pythonlogging=
         )
     except configparser.NoSectionError:
         log_row_dict = {}
-        log_row_dict["logReference"] = log_reference
-        log_reference = "LAMBDAUTI9999"
+        log_row_dict["log_reference"] = log_reference
+        log_reference = "UTI9999"
         try:
             log_details = _get_log_details(
                 log_reference, log_base_dict, log_base_cache, pythonlogging
             )
         except configparser.NoSectionError:
-            print("Log base does not contain mandatory LAMBDAUTI9999 entry")
+            print("Log base does not contain mandatory UTI9999 entry")
             return None
 
     return log_details

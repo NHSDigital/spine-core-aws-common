@@ -16,7 +16,7 @@ from spine_aws_common.log.writer import write_to_file
 
 
 def write_log(
-    log_reference="LAMBDAUTI9999",
+    log_reference="UTI9999",
     error_list=None,
     log_row_dict=None,
     severity_threshold_override=None,
