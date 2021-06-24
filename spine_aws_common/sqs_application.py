@@ -10,10 +10,10 @@ class SQSApplication(BatchApplication):
     def process_event(self, event):
         return SQSEvent(event)
 
-    def _getInternalIDfromRecord(self, record):
+    def _get_internal_id_from_record(self, record):
         """
         Get (or create new) internalID from record
         """
-        if 'internal_id' in record.message_attributes:
-            return record.message_attributes['internal_id']['stringValue']
+        if "internal_id" in record.message_attributes:
+            return record.message_attributes["internal_id"]["stringValue"]
         return self._createNewInternalID()

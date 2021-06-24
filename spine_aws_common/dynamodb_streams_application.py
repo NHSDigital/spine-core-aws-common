@@ -10,7 +10,7 @@ class DynamoDBStreamsApplication(BatchApplication):
     def process_event(self, event):
         return DynamoDBStreamEvent(event)
 
-    def _getInternalIDfromRecord(self, record):
+    def _get_internal_id_from_record(self, record):
         """
         Always create new internalID for DynamoDB Streams event
         """

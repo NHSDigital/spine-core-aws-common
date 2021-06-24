@@ -10,7 +10,7 @@ class S3EventApplication(BatchApplication):
     def process_event(self, event):
         return S3Event(event)
 
-    def _getInternalIDfromRecord(self, record):
+    def _get_internal_id_from_record(self, record):
         """
         Always create new internalID for S3 Events
         """

@@ -2,3 +2,5 @@ six
 boto3
 aws-lambda-powertools
 build
+pep8-naming
+black

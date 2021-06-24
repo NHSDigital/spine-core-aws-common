@@ -1,5 +1,8 @@
 from aws_lambda_powertools.utilities.data_classes import ALBEvent
-from aws_lambda_powertools.event_handler.api_gateway import ApiGatewayResolver, ProxyEventType
+from aws_lambda_powertools.event_handler.api_gateway import (
+    ApiGatewayResolver,
+    ProxyEventType,
+)
 from spine_aws_common import LambdaApplication
 
 
@@ -11,11 +14,11 @@ class ALBApplication(LambdaApplication):
     def process_event(self, event):
         return ALBEvent(event)
 
-    def _getInternalID(self):
+    def _get_internal_id(self):
         """
         Get internalID from the event
         """
-        return self.event.headers.get('x-internal-id', self._createNewInternalID())
+        return self.event.headers.get("x-internal-id", self._createNewInternalID())
 
     def initialise(self):
         """

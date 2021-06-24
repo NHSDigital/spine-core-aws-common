@@ -10,10 +10,10 @@ class SNSApplication(BatchApplication):
     def process_event(self, event):
         return SNSEvent(event)
 
-    def _getInternalIDfromRecord(self, record):
+    def _get_internal_id_from_record(self, record):
         """
         Get (or create new) internalID from record
         """
-        if 'internal_id' in record.sns.message_attributes:
-            return record.sns.message_attributes['internal_id'].value
+        if "internal_id" in record.sns.message_attributes:
+            return record.sns.message_attributes["internal_id"].value
         return self._createNewInternalID()

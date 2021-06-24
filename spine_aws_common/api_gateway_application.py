@@ -11,11 +11,11 @@ class APIGatewayApplication(LambdaApplication):
     def process_event(self, event):
         return APIGatewayProxyEvent(event)
 
-    def _getInternalID(self):
+    def _get_internal_id(self):
         """
         Get internalID from the event
         """
-        return self.event.headers.get('x-internal-id', self._createNewInternalID())
+        return self.event.headers.get("x-internal-id", self._createNewInternalID())
 
     def initialise(self):
         """

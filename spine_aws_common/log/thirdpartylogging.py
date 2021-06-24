@@ -8,14 +8,14 @@ from spine_aws_common.log.masking import mask_pid
 
 
 SEVERITY_INPUT_MAP = {
-    'CRITICAL': logging.CRITICAL,
-    'ERROR': logging.ERROR,
-    'WARN': logging.WARN,
-    'INFO': logging.INFO,
+    "CRITICAL": logging.CRITICAL,
+    "ERROR": logging.ERROR,
+    "WARN": logging.WARN,
+    "INFO": logging.INFO,
     # Allow us to enable python debug independently
-    'DEBUG': logging.INFO,
+    "DEBUG": logging.INFO,
     # Allow us to enable python debug independently
-    'TRACE': logging.DEBUG
+    "TRACE": logging.DEBUG,
 }
 
 
@@ -23,22 +23,19 @@ class LoggingAdapter(logging.Handler):
     """
     Adapter to allow libraries that use python logging to output to our logger
     """
-    CRITICAL = 'LAMBDAUTI9998'
-    ERROR = 'LAMBDAUTI9997'
-    WARN = 'LAMBDAUTI9996'
-    INFO = 'LAMBDAUTI9995'
-    DEBUG = 'LAMBDAUTI9994'
-    TRACE = 'LAMBDAUTI9993'
 
-    _EXCLUSIVE_USE_CHANNEL_FINDER = \
-        'in exclusive use'
-    _EXCLUSIVE_USE_CHANNEL_OUTPUT = \
-        'Connection blocked due to exclusive use'
+    CRITICAL = "LAMBDAUTI9998"
+    ERROR = "LAMBDAUTI9997"
+    WARN = "LAMBDAUTI9996"
+    INFO = "LAMBDAUTI9995"
+    DEBUG = "LAMBDAUTI9994"
+    TRACE = "LAMBDAUTI9993"
 
-    _EXCLUSIVE_USE_CALLBACK_FINDER = \
-        'bound method BlockingChannel._on_channel_closed'
-    _EXCLUSIVE_USE_CALLBACK_OUTPUT = \
-        'Callback terminated due to exclusive use'
+    _EXCLUSIVE_USE_CHANNEL_FINDER = "in exclusive use"
+    _EXCLUSIVE_USE_CHANNEL_OUTPUT = "Connection blocked due to exclusive use"
+
+    _EXCLUSIVE_USE_CALLBACK_FINDER = "bound method BlockingChannel._on_channel_closed"
+    _EXCLUSIVE_USE_CALLBACK_OUTPUT = "Callback terminated due to exclusive use"
 
     # Convert tuples to improve message or adjust criticality
     # E.g.
@@ -48,33 +45,54 @@ class LoggingAdapter(logging.Handler):
     # Use to replace log message when substring found
     _MESSAGE_MAP = {
         _EXCLUSIVE_USE_CHANNEL_FINDER: _EXCLUSIVE_USE_CHANNEL_OUTPUT,
-        _EXCLUSIVE_USE_CALLBACK_FINDER: _EXCLUSIVE_USE_CALLBACK_OUTPUT
+        _EXCLUSIVE_USE_CALLBACK_FINDER: _EXCLUSIVE_USE_CALLBACK_OUTPUT,
     }
 
     # Use for mapping logs with a specific message
     _LOGGER_DETAIL_MAP = {
-        ('pika.connection', logging.CRITICAL,
-         'CRITICAL', 'Attempted to send frame when closed'):
-        ('pika.connection', logging.ERROR,
-         'ERROR', 'Attempted to send frame when closed'),
-        ('pika.channel', logging.WARNING,
-         'WARNING', _EXCLUSIVE_USE_CHANNEL_OUTPUT):
-        ('pika.channel', logging.INFO,
-         'INFO', _EXCLUSIVE_USE_CHANNEL_OUTPUT),
-        ('pika.callback', logging.ERROR,
-         'ERROR', _EXCLUSIVE_USE_CALLBACK_OUTPUT):
-        ('pika.callback', logging.INFO,
-         'INFO', _EXCLUSIVE_USE_CALLBACK_OUTPUT),
-        ('pika.adapters.base_connection', logging.CRITICAL,
-         'CRITICAL', 'Tried to handle an error where no error existed'):
-        ('pika.adapters.base_connection', logging.WARN,
-         'WARN', 'Tried to handle an error where no error existed'),
+        (
+            "pika.connection",
+            logging.CRITICAL,
+            "CRITICAL",
+            "Attempted to send frame when closed",
+        ): (
+            "pika.connection",
+            logging.ERROR,
+            "ERROR",
+            "Attempted to send frame when closed",
+        ),
+        ("pika.channel", logging.WARNING, "WARNING", _EXCLUSIVE_USE_CHANNEL_OUTPUT): (
+            "pika.channel",
+            logging.INFO,
+            "INFO",
+            _EXCLUSIVE_USE_CHANNEL_OUTPUT,
+        ),
+        ("pika.callback", logging.ERROR, "ERROR", _EXCLUSIVE_USE_CALLBACK_OUTPUT): (
+            "pika.callback",
+            logging.INFO,
+            "INFO",
+            _EXCLUSIVE_USE_CALLBACK_OUTPUT,
+        ),
+        (
+            "pika.adapters.base_connection",
+            logging.CRITICAL,
+            "CRITICAL",
+            "Tried to handle an error where no error existed",
+        ): (
+            "pika.adapters.base_connection",
+            logging.WARN,
+            "WARN",
+            "Tried to handle an error where no error existed",
+        ),
     }
 
     # Use for mapping of all logs of a given name
     _LOGGER_SUMMARY_MAP = {
-        ('tornado.access', logging.INFO, 'INFO'):
-        ('tornado.access', logging.DEBUG, 'DEBUG')
+        ("tornado.access", logging.INFO, "INFO"): (
+            "tornado.access",
+            logging.DEBUG,
+            "DEBUG",
+        )
     }
 
     def __init__(self, log_object=None):
@@ -82,21 +100,14 @@ class LoggingAdapter(logging.Handler):
         self.log_object = log_object
 
     def emit(self, record):
-        """ Override emit to output to our log file """
+        """Override emit to output to our log file"""
         name, level, levelname, message = self._switch_log(
-            record.name,
-            record.levelno,
-            record.levelname,
-            record.getMessage()
+            record.name, record.levelno, record.levelname, record.getMessage()
         )
 
         masked_message = mask_pid(message)
         log_reference = self._get_log_reference(level)
-        log_dict = {
-            'logger': name,
-            'message': masked_message,
-            'level': levelname
-        }
+        log_dict = {"logger": name, "message": masked_message, "level": levelname}
 
         # Note that we don't log sys.exc_info() here since there is no
         # guarantee that a third party library is logging in response to an
@@ -115,8 +126,7 @@ class LoggingAdapter(logging.Handler):
         If the log is in the dictionary, return the dictionary output instead
         """
         name, level, levelname = LoggingAdapter._LOGGER_SUMMARY_MAP.get(
-            (name, level, levelname),
-            (name, level, levelname)
+            (name, level, levelname), (name, level, levelname)
         )
 
         for finder in self._MESSAGE_MAP:
@@ -124,8 +134,7 @@ class LoggingAdapter(logging.Handler):
                 message = self._MESSAGE_MAP[finder]
 
         return LoggingAdapter._LOGGER_DETAIL_MAP.get(
-            (name, level, levelname, message),
-            (name, level, levelname, message)
+            (name, level, levelname, message), (name, level, levelname, message)
         )
 
     def _get_log_reference(self, level):
@@ -140,7 +149,7 @@ class LoggingAdapter(logging.Handler):
             logging.WARN: self.WARN,
             logging.INFO: self.INFO,
             # Allow us to enable python debug independently
-            logging.DEBUG: self.TRACE
+            logging.DEBUG: self.TRACE,
         }
 
         return output_map[level]
@@ -151,11 +160,11 @@ def configure_third_party_logging_adapter(severity_threshold):
     Configure an adapter to allow libraries that use standard Python logging to
     output to our log files.
     """
-    rootLogger = logging.getLogger()
-    if rootLogger.handlers:
-        for handler in rootLogger.handlers:
-            rootLogger.removeHandler(handler)
-    rootLogger.setLevel(SEVERITY_INPUT_MAP[severity_threshold])
+    root_logger = logging.getLogger()
+    if root_logger.handlers:
+        for handler in root_logger.handlers:
+            root_logger.removeHandler(handler)
+    root_logger.setLevel(SEVERITY_INPUT_MAP[severity_threshold])
 
     adapter = LoggingAdapter()
-    rootLogger.addHandler(adapter)
+    root_logger.addHandler(adapter)
