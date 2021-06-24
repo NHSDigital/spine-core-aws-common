@@ -40,7 +40,7 @@ def get_log_base_config(log_base):
     # log base config files have been provided
     log_base_dict = _LOG_BASE_CACHE.get(str(log_base))
     if not log_base_dict:
-        log_base_config = configparser.Rawconfigparser()
+        log_base_config = configparser.RawConfigParser()
         log_base_config.read(log_base)
         log_base_dict = {}
         for log_ref in log_base_config.sections():

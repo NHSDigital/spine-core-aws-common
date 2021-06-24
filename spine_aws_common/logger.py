@@ -120,7 +120,7 @@ class Logger:
         log_row_dict_masked = mask_url(log_row_dict)
 
         if log_details.audit_log_required:
-            self._writeToCloudWatch(
+            self._write_to_cloudwatch(
                 time_now,
                 log_preamble,
                 log_details.log_text,
@@ -161,11 +161,11 @@ class Logger:
             stub_log_reference = LoggingConstants.LR_CRASHDUMP
             stub_log_details = get_log_details(
                 stub_log_reference,
-                self._logBaseDict,
-                self._logBaseCache,
+                self._log_base_dict,
+                self._log_base_cache,
                 pythonlogging=False,
             )
-            stub_log_preamble = self._createLogPreamble(
+            stub_log_preamble = self._create_log_preamble(
                 time_now, stub_log_details.log_level, process_name, stub_log_reference
             )
 
@@ -181,7 +181,6 @@ class Logger:
 
             # Write actual crashdump to spinevfmcrashdump
             self._write_to_cloudwatch(
-                time_now,
                 log_preamble,
                 log_details.log_text,
                 log_row_dict,
@@ -207,18 +206,17 @@ class Logger:
         """
         Creates the string to form the initial part of any log message
         """
-        log_timestamp_string = time_now.strftime(self.dateFormat) + "."
+        log_timestamp_string = time_now.strftime(self.date_format) + "."
         log_timestamp_string += str(int(time_now.microsecond / 1000)).rjust(3, "0")
 
         log_preamble = log_timestamp_string + " Log_Level=" + log_level
         log_preamble = log_preamble + " Process=" + str(process_name)
-        if self.internalID:
-            log_preamble = log_preamble + " internalID=" + self.internalID
+        if self.internal_id:
+            log_preamble = log_preamble + " internalID=" + self.internal_id
         return log_preamble + " logReference=" + str(log_reference)
 
     def _write_to_cloudwatch(
         self,
-        time_now,
         log_preamble,
         log_text,
         substitution_dict,
@@ -264,7 +262,7 @@ def configure_logging_adapter(log_object):
     """
     root_logger = pythonlogging.getLogger()
     root_logger.handlers = []
-    root_logger.setLevel(SEVERITY_INPUT_MAP[log_object.severityThreshold])
+    root_logger.setLevel(SEVERITY_INPUT_MAP[log_object.severity_threshold])
 
     adapter = LoggingAdapter(log_object)
     root_logger.addHandler(adapter)
