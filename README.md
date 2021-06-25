@@ -46,7 +46,7 @@ class MyApp(LambdaApplication):
 
 # create instance of class in global space
 # this ensures initial setup of logging/config is only done on cold start
-app = MyApp()
+app = MyApp(additional_log_config='/path/to/mylogconfig.cfg')
 
 def lambda_handler(event, context):
     return app.main(event, context)
@@ -79,7 +79,7 @@ class MyApp(APIGatewayApplication):
 
 # create instance of class in global space
 # this ensures initial setup of logging/config is only done on cold start
-app = MyApp()
+app = MyApp(additional_log_config='/path/to/mylogconfig.cfg')
 
 def lambda_handler(event, context):
     return app.main(event, context)
