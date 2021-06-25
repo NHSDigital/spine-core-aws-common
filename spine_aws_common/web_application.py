@@ -1,5 +1,5 @@
 """
-Base batch Lambda application
+Base Web Lambda application
 """
 from typing import List, Callable, Optional, Dict
 import re
@@ -16,7 +16,7 @@ from spine_aws_common.lambda_application import LambdaApplication
 
 class WebApplication(LambdaApplication):
     """
-    Base class for Batch Lambda applications
+    Base class for Web Lambda applications
     """
 
     def __init__(self):
