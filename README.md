@@ -30,7 +30,7 @@ TBC
 
 Quick example
 
-```
+```python
 from spine_aws_common import LambdaApplication
 
 class MyApp(LambdaApplication):
@@ -54,7 +54,7 @@ def lambda_handler(event, context):
 
 API Gateway example
 
-```
+```python
 from spine_aws_common import APIGatewayApplication
 from aws_lambda_powertools.event_handler.api_gateway import Response
 
