@@ -114,7 +114,7 @@ class LoggingAdapter(logging.Handler):
         # exception. This has lead to misleading stack traces being output
         # that were nothing to do with the logged message.
         if self.log_object:
-            self.log_object.writeLog(log_reference, None, log_dict)
+            self.log_object.write_log(log_reference, None, log_dict)
         else:
             # Needs to be improved.
             if "logReference=" in message:
