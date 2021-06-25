@@ -9,19 +9,19 @@ Simply add the pre-built package to your python environment.
 ### PIP
 
 ```
-pip install https://github.com/NHSDigital/spine-core-aws-common/releases/download/v0.0.1/spine_aws_common-0.0.1-py3-none-any.whl
+pip install https://github.com/NHSDigital/spine-core-aws-common/releases/download/v0.0.2/spine_aws_common-0.0.2-py3-none-any.whl
 ```
 
 ### requirements.txt
 
 ```
-https://github.com/NHSDigital/spine-core-aws-common/releases/download/v0.0.1/spine_aws_common-0.0.1-py3-none-any.whl
+https://github.com/NHSDigital/spine-core-aws-common/releases/download/v0.0.2/spine_aws_common-0.0.2-py3-none-any.whl
 ```
 
 ### Poetry
 
 ```
-poetry add https://github.com/NHSDigital/spine-core-aws-common/releases/download/v0.0.1/spine_aws_common-0.0.1-py3-none-any.whl
+poetry add https://github.com/NHSDigital/spine-core-aws-common/releases/download/v0.0.2/spine_aws_common-0.0.2-py3-none-any.whl
 ```
 
 ## Usage
@@ -30,7 +30,7 @@ TBC
 
 Quick example
 
-```
+```python
 from spine_aws_common import LambdaApplication
 
 class MyApp(LambdaApplication):
@@ -54,7 +54,7 @@ def lambda_handler(event, context):
 
 API Gateway example
 
-```
+```python
 from spine_aws_common import APIGatewayApplication
 from aws_lambda_powertools.event_handler.api_gateway import Response
 
