@@ -23,10 +23,10 @@ class WebApplication(LambdaApplication):
         super().__init__()
         self._routes: List[Route] = []
 
+    def initialise(self):
+        self._routes: List[Route] = []
+
     def start(self):
-        """
-        Start the application
-        """
         self.response = self._resolve().build(self.event)
 
     # pylint: disable=too-many-arguments

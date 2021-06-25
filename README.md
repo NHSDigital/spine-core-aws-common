@@ -56,6 +56,7 @@ API Gateway example
 
 ```
 from spine_aws_common import APIGatewayApplication
+from aws_lambda_powertools.event_handler.api_gateway import Response
 
 class MyApp(APIGatewayApplication):
     def get_hello(self):
@@ -72,6 +73,7 @@ class MyApp(APIGatewayApplication):
         )
 
     def initialise(self):
+        super().initialise()
         self.add_route(self.get_hello, "/hello")
         self.add_route(self.get_id, "/id/<_id>")
 

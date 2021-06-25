@@ -20,6 +20,7 @@ class MyApp(APIGatewayApplication):
         )
 
     def initialise(self):
+        super().initialise()
         self.add_route(self.get_hello, "/hello")
         self.add_route(self.get_id, "/id/<_id>")
 
