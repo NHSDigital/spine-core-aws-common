@@ -1,6 +1,7 @@
 """
 Base Web Lambda application
 """
+from abc import abstractmethod
 from typing import List, Callable, Optional, Dict
 import re
 import json
@@ -24,15 +25,12 @@ class WebApplication(LambdaApplication):
             additional_log_config=additional_log_config, load_ssm_params=load_ssm_params
         )
         self._routes: List[Route] = []
-
-    def initialise(self):
-        self._routes: List[Route] = []
+        self.configure_routes()
 
     def start(self):
         self.response = self._resolve().build(self.event)
 
-    # pylint: disable=too-many-arguments
-    def add_route(
+    def _add_route(
         self,
         func: Callable,
         rule: str,
@@ -40,7 +38,7 @@ class WebApplication(LambdaApplication):
         cors: bool = None,
         compress: bool = False,
         cache_control: str = None,
-    ):
+    ):  # pylint: disable=too-many-arguments
         """
         Add a route
         """
@@ -84,3 +82,7 @@ class WebApplication(LambdaApplication):
             content_type="application/json",
             body=json.dumps({"message": "Not found"}),
         )
+
+    @abstractmethod
+    def configure_routes(self):
+        """Override to configure API routes"""

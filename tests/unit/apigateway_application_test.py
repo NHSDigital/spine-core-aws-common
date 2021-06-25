@@ -19,10 +19,9 @@ class MyApp(APIGatewayApplication):
             body=json.dumps(response_dict),
         )
 
-    def initialise(self):
-        super().initialise()
-        self.add_route(self.get_hello, "/hello")
-        self.add_route(self.get_id, "/id/<_id>")
+    def configure_routes(self):
+        self._add_route(self.get_hello, "/hello")
+        self._add_route(self.get_id, "/id/<_id>")
 
 
 class TestAPIGatewayApplication(TestCase):
