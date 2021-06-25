@@ -2,10 +2,10 @@
 Base ALB Lambda application
 """
 from aws_lambda_powertools.utilities.data_classes import ALBEvent
-from spine_aws_common.lambda_application import LambdaApplication
+from spine_aws_common.web_application import WebApplication
 
 
-class ALBApplication(LambdaApplication):
+class ALBApplication(WebApplication):
     """
     Base class for ALB Lambda applications
     """
