@@ -51,3 +51,34 @@ app = MyApp()
 def lambda_handler(event, context):
     return app.main(event, context)
 ```
+
+API Gateway example
+
+```
+from spine_aws_common import APIGatewayApplication
+
+class MyApp(APIGatewayApplication):
+    def get_hello(self):
+        return Response(
+            status_code=200, content_type="application/json", body='{"hello":"world"}'
+        )
+
+    def get_id(self, _id):
+        response_dict = {"id": _id}
+        return Response(
+            status_code=200,
+            content_type="application/json",
+            body=json.dumps(response_dict),
+        )
+
+    def initialise(self):
+        self.add_route(self.get_hello, "/hello")
+        self.add_route(self.get_id, "/id/<_id>")
+
+# create instance of class in global space
+# this ensures initial setup of logging/config is only done on cold start
+app = MyApp()
+
+def lambda_handler(event, context):
+    return app.main(event, context)
+```
