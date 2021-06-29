@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 import uuid
 from abc import abstractmethod
 from aws_lambda_powertools.utilities import parameters
+from aws_lambda_powertools.utilities.typing.lambda_context import LambdaContext
 from spine_aws_common.logger import Logger, configure_logging_adapter
 from spine_aws_common.utilities import StopWatch
 
@@ -146,16 +147,24 @@ class LambdaApplication:
 
     def _log_start(self):
         log_params = {
-            "aws_request_id": self.context.get("aws_request_id"),
+            "aws_request_id": self._get_aws_request_id(),
         }
         self.log_object.write_log("LAMBDA0002", None, log_params)
 
     def _log_end(self):
         log_params = {
             "duration": self.sync_timer.stop_the_clock(),
-            "aws_request_id": self.context.get("aws_request_id"),
+            "aws_request_id": self._get_aws_request_id(),
         }
         self.log_object.write_log("LAMBDA0003", None, log_params)
+
+    def _get_aws_request_id(self):
+        """Get the request id"""
+        if isinstance(self.context, LambdaContext):
+            return self.context.aws_request_id
+        if isinstance(self.context, dict):
+            return self.context.get("aws_request_id", "unknown")
+        return "unknown"
 
 
 def overrides(base_class):

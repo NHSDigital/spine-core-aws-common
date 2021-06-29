@@ -6,4 +6,4 @@ build: setup-venv
 	. venv/bin/activate && python -m build
 
 test: setup-venv
-	. venv/bin/activate && tox
+	. venv/bin/activate && tox --recreate
