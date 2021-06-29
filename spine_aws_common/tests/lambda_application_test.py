@@ -102,6 +102,15 @@ class TestLambdaApplication(TestCase):
             self.log_helper.was_value_logged("LAMBDA0002", "aws_request_id", "test")
         )
 
+    def test_logging_using_context_object_no_id(self):
+        """Testing that the logging can get the request id"""
+        self.app.context = LambdaContext()
+        self.app._log_start()
+
+        self.assertTrue(
+            self.log_helper.was_value_logged("LAMBDA0002", "aws_request_id", "unknown")
+        )
+
     def test_logging_using_context_unknown(self):
         """Testing that the logging can get the request id"""
         self.app.context = None

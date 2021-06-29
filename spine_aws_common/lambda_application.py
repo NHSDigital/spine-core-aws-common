@@ -160,7 +160,9 @@ class LambdaApplication:
 
     def _get_aws_request_id(self):
         """Get the request id"""
-        if isinstance(self.context, LambdaContext):
+        if isinstance(self.context, LambdaContext) and getattr(
+            self.context, "aws_request_id", None
+        ):
             return self.context.aws_request_id
         if isinstance(self.context, dict):
             return self.context.get("aws_request_id", "unknown")
