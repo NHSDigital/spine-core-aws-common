@@ -26,10 +26,6 @@ class LogHelper:
 
     def was_logged(self, log_reference):
         """Was a particular log reference logged"""
-        with open("/tmp/test.log", "w") as _file:
-            for line in self._get_log_lines():
-                _file.write(f"{line}\n")
-
         if any(
             f"logReference={log_reference}" in line for line in self._get_log_lines()
         ):
