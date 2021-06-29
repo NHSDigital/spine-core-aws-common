@@ -1,17 +1,28 @@
-from unittest import mock, TestCase
-import json
+"""
+API Gateway Testing
+"""
 from os.path import dirname
-from spine_aws_common import APIGatewayApplication
+import json
+
+from unittest import mock, TestCase
 from aws_lambda_powertools.event_handler.api_gateway import Response
+
+from spine_aws_common import APIGatewayApplication
 
 
 class MyApp(APIGatewayApplication):
-    def get_hello(self):
+    """Test App"""
+
+    @staticmethod
+    def get_hello():
+        """Get hello"""
         return Response(
             status_code=200, content_type="application/json", body='{"hello":"world"}'
         )
 
-    def get_id(self, _id):
+    @staticmethod
+    def get_id(_id):
+        """Get id"""
         response_dict = {"id": _id}
         return Response(
             status_code=200,
@@ -20,6 +31,7 @@ class MyApp(APIGatewayApplication):
         )
 
     def configure_routes(self):
+        """Configure routes"""
         self._add_route(self.get_hello, "/hello")
         self._add_route(self.get_id, "/id/<_id>")
 
@@ -30,6 +42,7 @@ class TestAPIGatewayApplication(TestCase):
     def setUp(self):
         pass
 
+    # pylint:disable=duplicate-code
     @mock.patch.dict(
         "os.environ",
         values={
@@ -41,8 +54,9 @@ class TestAPIGatewayApplication(TestCase):
         },
     )
     def test_lambda(self):
-        with open(f"{dirname(__file__)}/testdata/apigateway_hello.json") as f:
-            event = json.load(f)
+        """Testing lambda"""
+        with open(f"{dirname(__file__)}/testdata/apigateway_hello.json") as _file:
+            event = json.load(_file)
 
         response = MyApp().main(event, {})
         expected_response = {
@@ -54,8 +68,9 @@ class TestAPIGatewayApplication(TestCase):
         self.assertEqual(response, expected_response)
 
     def test_id(self):
-        with open(f"{dirname(__file__)}/testdata/apigateway_id.json") as f:
-            event = json.load(f)
+        """Testing get id"""
+        with open(f"{dirname(__file__)}/testdata/apigateway_id.json") as _file:
+            event = json.load(_file)
 
         response = MyApp().main(event, {})
         expected_response = {

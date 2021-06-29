@@ -4,6 +4,7 @@ aws-lambda-powertools
 build
 pep8-naming
 black
+isort
 flake8
 pylint
 pytest
