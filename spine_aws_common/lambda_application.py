@@ -5,9 +5,11 @@ import os
 import sys
 from datetime import datetime, timezone
 import uuid
+import json
 from abc import abstractmethod
 from aws_lambda_powertools.utilities import parameters
 from aws_lambda_powertools.utilities.typing.lambda_context import LambdaContext
+from boto3 import client
 from spine_aws_common.logger import Logger, configure_logging_adapter
 from spine_aws_common.utilities import StopWatch
 
@@ -80,6 +82,17 @@ class LambdaApplication:
             additional_log_config=additional_log_config,
         )
         return logger
+
+    def invoke_lambda(self, payload: dict, **kwargs):
+        """
+        Invokes a Lambda function, passing in the internal ID to allow end-to-end log
+        tracking
+        """
+        lambda_client = client("lambda")
+        internal_id = self._get_internal_id()
+        payload.update({"internal_id": internal_id})
+        response = lambda_client.invoke(Payload=json.dumps(payload), **kwargs)
+        return response
 
     @staticmethod
     def process_event(event):

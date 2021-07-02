@@ -8,9 +8,20 @@ from aws_lambda_powertools.utilities.typing.lambda_context import LambdaContext
 from spine_aws_common.tests.utils.log_helper import LogHelper
 from spine_aws_common import LambdaApplication
 
+from moto import mock_lambda, mock_iam
+import boto3
+
+import io
+import zipfile
+import json
+
+from botocore.exceptions import ClientError
+
 
 class TestLambdaApplication(TestCase):
     """Testing Lambda application"""
+
+    maxDiff = None
 
     def setUp(self):
         self.log_helper = LogHelper()
@@ -119,3 +130,64 @@ class TestLambdaApplication(TestCase):
         self.assertTrue(
             self.log_helper.was_value_logged("LAMBDA0002", "aws_request_id", "unknown")
         )
+
+    @mock_lambda
+    def test_lambda_invoke(self):
+        self._mock_some_lambda(
+            "lambda_test",
+        )
+        event = {
+            "version": "0",
+            "id": "d77bcbc4-0b2b-4d45-9694-b1df99175cfb",
+            "detail-type": "Scheduled Event",
+            "source": "aws.events",
+            "account": "123456789",
+            "time": "2016-09-25T04:55:26Z",
+            "region": "eu-west-2",
+            "resources": ["arn:aws:events:eu-west-2:123456789:rule/test-service-rule"],
+            "detail": {},
+            "internal_id": "1234_TEST",
+        }
+        self.app.main(event, {})
+        response = self.app.invoke_lambda(payload={}, FunctionName="lambda_test")
+        response_payload = json.loads(response["Payload"].read().decode("UTF-8"))
+        self.assertEqual(response_payload["internal_id"], "1234_TEST")
+
+    def _get_test_zip_file(self):
+        pfunc = """
+def lambda_handler(event, context):
+    return event
+                """
+        zip_output = io.BytesIO()
+        zip_file = zipfile.ZipFile(zip_output, "w", zipfile.ZIP_DEFLATED)
+        zip_file.writestr("lambda_function.py", pfunc)
+        zip_file.close()
+        zip_output.seek(0)
+        return zip_output.read()
+
+    def _mock_some_lambda(self, lambda_name):
+        return boto3.client("lambda").create_function(
+            FunctionName=lambda_name,
+            Runtime="python3.8",
+            Role=self._get_role_name(),
+            Handler="lambda_function.lambda_handler",
+            Code={
+                "ZipFile": self._get_test_zip_file(),
+            },
+            Description="test lambda function",
+            Timeout=3,
+            MemorySize=128,
+            Publish=True,
+        )
+
+    def _get_role_name(self):
+        with mock_iam():
+            iam = boto3.client("iam", region_name="eu-west-2")
+            try:
+                return iam.get_role(RoleName="my-role")["Role"]["Arn"]
+            except ClientError:
+                return iam.create_role(
+                    RoleName="my-role",
+                    AssumeRolePolicyDocument="some policy",
+                    Path="/my-path/",
+                )["Role"]["Arn"]

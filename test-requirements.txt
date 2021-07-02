@@ -10,3 +10,5 @@ pylint
 pytest
 coverage
 tox
+moto
+docker
