@@ -133,9 +133,9 @@ class TestLambdaApplication(TestCase):
 
     @mock_lambda
     def test_lambda_invoke(self):
-        self._mock_some_lambda(
-            "lambda_test",
-        )
+        """Test that when an Lambda function is invoked from the application,
+        the same internal_id is passed through to the invokated function"""
+        self._mock_lambda_function(lambda_name="lambda_test")
         event = {
             "version": "0",
             "id": "d77bcbc4-0b2b-4d45-9694-b1df99175cfb",
@@ -165,7 +165,7 @@ def lambda_handler(event, context):
         zip_output.seek(0)
         return zip_output.read()
 
-    def _mock_some_lambda(self, lambda_name):
+    def _mock_lambda_function(self, lambda_name):
         return boto3.client("lambda").create_function(
             FunctionName=lambda_name,
             Runtime="python3.8",
