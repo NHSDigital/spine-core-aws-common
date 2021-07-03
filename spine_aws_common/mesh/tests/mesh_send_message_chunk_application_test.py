@@ -1,11 +1,10 @@
 """ Testing MeshPollMailbox application """
 from unittest import mock, TestCase
 import boto3
-from moto import mock_s3, mock_ssm, mock_stepfunctions
+from moto import mock_s3, mock_ssm
 from spine_aws_common.mesh.tests.mesh_test_common import MeshTestCommon
 from spine_aws_common.tests.utils.log_helper import LogHelper
 from spine_aws_common.mesh import MeshSendMessageChunkApplication
-from spine_aws_common.mesh.mesh_common import SingletonCheckFailure
 
 
 class TestMeshSendMessageChunkApplication(TestCase):
@@ -62,43 +61,12 @@ class TestMeshSendMessageChunkApplication(TestCase):
         s3_client = boto3.client("s3")
         ssm_client = boto3.client("ssm")
         self.setup_mock_aws_environment(s3_client, ssm_client)
-        mock_input = {
-            "statusCode": 200,
-            "headers": {"Content-Type": "application/json"},
-            "body": {
-                "internal_id": MeshTestCommon.KNOWN_INTERNAL_ID,
-                "src_mailbox": "X12XY123",
-                "dest_mailbox": "A12AB123",
-                "workflow_id": "TESTWORKFLOW",
-                "bucket": f"{self.environment}-supplementary-data",
-                "key": "outbound/testfile.json",
-                "chunk": False,
-                "chunk_number": 1,
-                "total_chunks": 1,
-                "chunk_size": 50,
-                "complete": False,
-                "message_id": None,
-            },
-        }
+        mock_input = self._sample_input_event()
+        mock_response = self._sample_input_event()
+        mock_response["body"].update(
+            {"complete": True, "message_id": "FAKE_MESH_MESSAGE_ID"}
+        )
 
-        mock_response = {
-            "statusCode": 200,
-            "headers": {"Content-Type": "application/json"},
-            "body": {
-                "internal_id": MeshTestCommon.KNOWN_INTERNAL_ID,
-                "src_mailbox": "X12XY123",
-                "dest_mailbox": "A12AB123",
-                "workflow_id": "TESTWORKFLOW",
-                "bucket": f"{self.environment}-supplementary-data",
-                "key": "outbound/testfile.json",
-                "chunk": False,
-                "chunk_number": 1,
-                "total_chunks": 1,
-                "chunk_size": 50,
-                "complete": True,
-                "message_id": "FAKE_MESH_MESSAGE_ID",
-            },
-        }
         try:
             response = self.app.main(event=mock_input, context=MeshTestCommon.CONTEXT)
         except Exception as e:  # pylint: disable=broad-except
@@ -136,58 +104,24 @@ class TestMeshSendMessageChunkApplication(TestCase):
             self.log_helper.was_value_logged("MESHSEND0004", "Log_Level", "INFO")
         )
 
-
-def sample_trigger_event():
-    """Return Example S3 eventbridge event"""
-    return_value = {
-        "version": "0",
-        "id": "daea9bec-2d16-e943-2079-4d19b6e2ec1d",
-        "detail-type": "AWS API Call via CloudTrail",
-        "source": "aws.s3",
-        "account": "123456789012",
-        "time": "2021-06-29T14:10:55Z",
-        "region": "eu-west-2",
-        "resources": [],
-        "detail": {
-            "eventVersion": "1.08",
-            "eventTime": "2021-06-29T14:10:55Z",
-            "eventSource": "s3.amazonaws.com",
-            "eventName": "PutObject",
-            "awsRegion": "eu-west-2",
-            "requestParameters": {
-                "X-Amz-Date": "20210629T141055Z",
-                "bucketName": "meshtest-supplementary-data",
-                "X-Amz-Algorithm": "AWS4-HMAC-SHA256",
-                "x-amz-acl": "private",
-                "X-Amz-SignedHeaders": "content-md5;content-type;host;x-amz-acl;x-amz-storage-class",  # noqa pylint: disable=line-too-long
-                "Host": "meshtest-supplementary-data.s3.eu-west-2.amazonaws.com",
-                "X-Amz-Expires": "300",
+    def _sample_input_event(self):
+        """Return Example input event"""
+        return_value = {
+            "statusCode": 200,
+            "headers": {"Content-Type": "application/json"},
+            "body": {
+                "internal_id": MeshTestCommon.KNOWN_INTERNAL_ID,
+                "src_mailbox": "X12XY123",
+                "dest_mailbox": "A12AB123",
+                "workflow_id": "TESTWORKFLOW",
+                "bucket": f"{self.environment}-supplementary-data",
                 "key": "outbound/testfile.json",
-                "x-amz-storage-class": "STANDARD",
+                "chunk": False,
+                "chunk_number": 1,
+                "total_chunks": 1,
+                "chunk_size": 50,
+                "complete": False,
+                "message_id": None,
             },
-            "responseElements": {
-                "x-amz-server-side-encryption": "aws:kms",
-                "x-amz-server-side-encryption-aws-kms-key-id": "arn:aws:kms:eu-west-2:092420156801:key/4f295c4c-17fd-4c9d-84e9-266b01de0a5a",  # noqa pylint: disable=line-too-long
-            },
-            "requestID": "1234567890123456",
-            "eventID": "75e91cfc-f2db-4e09-8f80-a206ab4cd15e",
-            "readOnly": False,
-            "resources": [
-                {
-                    "type": "AWS::S3::Object",
-                    "ARN": "arn:aws:s3:::meshtest-supplementary-data/outbound/testfile.json",  # noqa pylint: disable=line-too-long
-                },
-                {
-                    "accountId": "123456789012",
-                    "type": "AWS::S3::Bucket",
-                    "ARN": "arn:aws:s3:::meshtest-supplementary-data",
-                },
-            ],
-            "eventType": "AwsApiCall",
-            "managementEvent": False,
-            "recipientAccountId": "123456789012",
-            "eventCategory": "Data",
-        },
-    }
-    # pylint: enable=line-too-long
-    return return_value
+        }
+        return return_value

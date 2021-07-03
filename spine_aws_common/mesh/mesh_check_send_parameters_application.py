@@ -61,6 +61,8 @@ class MeshCheckSendParametersApplication(LambdaApplication):
 
         file_size = self._get_file_size(bucket, key)
         (do_chunking, chunks) = calculate_chunks(file_size, self.chunk_size)
+        # TODO compression calculations and recaculate chunks and chunk_size
+
         self.log_object.write_log(
             "MESHSEND0004",
             None,
@@ -137,8 +139,11 @@ class MeshCheckSendParametersApplication(LambdaApplication):
             if step_function.get("name", "") == self.my_step_function_name:
                 my_step_function_arn = step_function.get("stateMachineArn", None)
 
+        # TODO add this check to tests
         if not my_step_function_arn:
-            raise SingletonCheckFailure("Could not retrieve step function arn")
+            raise SingletonCheckFailure(
+                f"No executing step function arn for '{self.my_step_function_name}"
+            )
 
         response = sfn_client.list_executions(
             stateMachineArn=my_step_function_arn,
