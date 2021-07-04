@@ -19,7 +19,7 @@ class MeshPollMailboxApplication(LambdaApplication):
 
     def initialise(self):
         # initialise
-        self.mailbox = self.event['mailbox']
+        self.mailbox = self.event["mailbox"]
 
     def start(self):
         # do actual work
@@ -27,15 +27,11 @@ class MeshPollMailboxApplication(LambdaApplication):
         # to set response for the lambda
         self.response = {
             "statusCode": 200,
-            "headers": {
-                "Content-Type": "application/json"
-            },
+            "headers": {"Content-Type": "application/json"},
             "body": {
                 "messageCount": 1,
-                "messageList": [
-                    {"messageId": "12345", "mailbox": self.mailbox}
-                ]
-            }
+                "messageList": [{"messageId": "12345", "mailbox": self.mailbox}],
+            },
         }
         print(json.dumps(self.response))
 

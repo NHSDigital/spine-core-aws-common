@@ -1,11 +1,14 @@
 """Common methods and classes used for testing mesh client"""
 
+FILE_CONTENT = "123456789012345678901234567890123"
+
 
 class MeshTestingCommon:
     """Mock helpers"""
 
     CONTEXT = {"aws_request_id": "TESTREQUEST"}
     KNOWN_INTERNAL_ID = "20210701225219765177_TESTER"
+    FILE_CONTENT = FILE_CONTENT
 
     def get_known_internal_id(self):  # pylint: disable=no-self-use
         """Get a known internal Id for testing and mocking purposes"""
@@ -49,7 +52,7 @@ class MeshTestingCommon:
             Bucket=f"{environment}-supplementary-data",
             CreateBucketConfiguration=location,
         )
-        file_content = "123456789012345678901234567890123"
+        file_content = FILE_CONTENT
         s3_client.put_object(
             Bucket=f"{environment}-supplementary-data",
             Key="outbound/testfile.json",
@@ -79,7 +82,7 @@ class MeshTestingCommon:
         # Setup secrets
         ssm_client.put_parameter(
             Name=f"/{environment}/mesh/MESH_URL",
-            Value="https://192.168.100.128",
+            Value="https://192.168.100.129",
         )
         ssm_client.put_parameter(
             Name=f"/{environment}/mesh/MESH_SHARED_KEY",

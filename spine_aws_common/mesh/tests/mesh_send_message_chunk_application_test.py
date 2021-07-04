@@ -1,4 +1,4 @@
-""" Testing MeshPollMailbox application """
+""" Testing MeshSendMessageChunk Application """
 from unittest import mock, TestCase
 import boto3
 from moto import mock_s3, mock_ssm
@@ -8,7 +8,7 @@ from spine_aws_common.mesh import MeshSendMessageChunkApplication
 
 
 class TestMeshSendMessageChunkApplication(TestCase):
-    """Testing MeshPollMailbox application"""
+    """Testing MeshSendMessageChunk application"""
 
     def __init__(self, methodName):
         super().__init__(methodName=methodName)
@@ -43,7 +43,7 @@ class TestMeshSendMessageChunkApplication(TestCase):
     @mock_ssm
     @mock_s3
     def test_mesh_send_file_chunk_app_no_chunks_happy_path(self):
-        """Test the lambda as a whole, happy path"""
+        """Test the lambda with small file, no chunking, happy path"""
 
         s3_client = boto3.client("s3")
         ssm_client = boto3.client("ssm")
@@ -53,9 +53,7 @@ class TestMeshSendMessageChunkApplication(TestCase):
         )
         mock_input = self._sample_input_event()
         mock_response = self._sample_input_event()
-        mock_response["body"].update(
-            {"complete": True, "message_id": "FAKE_MESH_MESSAGE_ID"}
-        )
+        mock_response["body"].update({"complete": True})
 
         try:
             response = self.app.main(
@@ -65,6 +63,10 @@ class TestMeshSendMessageChunkApplication(TestCase):
             # need to fail happy pass on any exception
             self.fail(f"Invocation crashed with Exception {str(e)}")
 
+        self.assertEqual(self.app.body, MeshTestingCommon.FILE_CONTENT.encode("utf8"))
+
+        message_id = response["body"].pop("message_id")
+        print(f"Removed message_id={message_id}")
         self.assertDictEqual(mock_response, response)
         self.assertTrue(
             self.log_helper.was_value_logged("LAMBDA0001", "Log_Level", "INFO")
@@ -100,8 +102,8 @@ class TestMeshSendMessageChunkApplication(TestCase):
             "headers": {"Content-Type": "application/json"},
             "body": {
                 "internal_id": MeshTestingCommon.KNOWN_INTERNAL_ID,
-                "src_mailbox": "X12XY123",
-                "dest_mailbox": "A12AB123",
+                "src_mailbox": "MESH-TEST2",
+                "dest_mailbox": "MESH-TEST1",
                 "workflow_id": "TESTWORKFLOW",
                 "bucket": f"{self.environment}-supplementary-data",
                 "key": "outbound/testfile.json",
@@ -110,7 +112,6 @@ class TestMeshSendMessageChunkApplication(TestCase):
                 "total_chunks": 1,
                 "chunk_size": 50,
                 "complete": False,
-                "message_id": "",
             },
         }
         return return_value
