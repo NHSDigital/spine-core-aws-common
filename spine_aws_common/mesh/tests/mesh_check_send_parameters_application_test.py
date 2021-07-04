@@ -2,7 +2,7 @@
 from unittest import mock, TestCase
 import boto3
 from moto import mock_s3, mock_ssm, mock_stepfunctions
-from spine_aws_common.mesh.tests.mesh_test_common import MeshTestCommon
+from spine_aws_common.mesh.tests.mesh_testing_common import MeshTestingCommon
 from spine_aws_common.tests.utils.log_helper import LogHelper
 from spine_aws_common.mesh import MeshCheckSendParametersApplication
 from spine_aws_common.mesh.mesh_common import SingletonCheckFailure
@@ -44,30 +44,17 @@ class TestMeshCheckSendParametersApplication(TestCase):
             Bucket=f"{self.environment}-supplementary-data",
             CreateBucketConfiguration=location,
         )
-        ssm_client = boto3.client("ssm")
-        ssm_client.put_parameter(
-            Name=f"/{self.environment}/mesh/mapping/"
-            + f"{self.environment}-supplementary-data/src_mailbox",
-            Value="X12XY123",
-        )
-        ssm_client.put_parameter(
-            Name=f"/{self.environment}/mesh/mapping/"
-            + f"{self.environment}-supplementary-data/dest_mailbox",
-            Value="A12AB123",
-        )
-        ssm_client.put_parameter(
-            Name=f"/{self.environment}/mesh/mapping/"
-            + f"{self.environment}-supplementary-data/workflow_id",
-            Value="TESTWORKFLOW",
-        )
         file_content = "123456789012345678901234567890123"
         s3_client.put_object(
             Bucket=f"{self.environment}-supplementary-data",
             Key="outbound/testfile.json",
             Body=file_content,
         )
+        MeshTestingCommon.setup_mock_aws_ssm_parameter_store(
+            self.environment, ssm_client
+        )
 
-    def tearDown(self) -> None:
+    def tearDown(self):
         self.log_helper.clean_up()
 
     @mock_stepfunctions
@@ -76,7 +63,7 @@ class TestMeshCheckSendParametersApplication(TestCase):
     @mock.patch.object(
         MeshCheckSendParametersApplication,
         "_get_internal_id",
-        MeshTestCommon.get_known_internal_id,
+        MeshTestingCommon.get_known_internal_id,
     )
     def test_mesh_check_send_parameters_happy_path(self):
         """Test the lambda as a whole, happy path"""
@@ -85,7 +72,7 @@ class TestMeshCheckSendParametersApplication(TestCase):
         ssm_client = boto3.client("ssm")
         self.setup_mock_aws_environment(s3_client, ssm_client)
         sfn_client = boto3.client("stepfunctions")
-        response = MeshTestCommon.setup_step_function(
+        response = MeshTestingCommon.setup_step_function(
             sfn_client,
             self.environment,
             f"{self.environment}-mesh-send-message",
@@ -95,9 +82,9 @@ class TestMeshCheckSendParametersApplication(TestCase):
             "statusCode": 200,
             "headers": {"Content-Type": "application/json"},
             "body": {
-                "internal_id": MeshTestCommon.KNOWN_INTERNAL_ID,
-                "src_mailbox": "X12XY123",
-                "dest_mailbox": "A12AB123",
+                "internal_id": MeshTestingCommon.KNOWN_INTERNAL_ID,
+                "src_mailbox": "MESH-TEST2",
+                "dest_mailbox": "MESH-TEST1",
                 "workflow_id": "TESTWORKFLOW",
                 "bucket": f"{self.environment}-supplementary-data",
                 "key": "outbound/testfile.json",
@@ -111,7 +98,7 @@ class TestMeshCheckSendParametersApplication(TestCase):
         }
         try:
             response = self.app.main(
-                event=sample_trigger_event(), context=MeshTestCommon.CONTEXT
+                event=sample_trigger_event(), context=MeshTestingCommon.CONTEXT
             )
         except Exception as e:  # pylint: disable=broad-except
             # need to fail happy pass on any exception
@@ -134,7 +121,7 @@ class TestMeshCheckSendParametersApplication(TestCase):
     @mock.patch.object(
         MeshCheckSendParametersApplication,
         "_get_internal_id",
-        MeshTestCommon.get_known_internal_id,
+        MeshTestingCommon.get_known_internal_id,
     )
     def test_running_as_singleton(self):
         """
@@ -147,7 +134,7 @@ class TestMeshCheckSendParametersApplication(TestCase):
 
         print("------------------------- TEST 1 -------------------------------")
         # define step function
-        response = MeshTestCommon.setup_step_function(
+        response = MeshTestingCommon.setup_step_function(
             sfn_client,
             self.environment,
             f"{self.environment}-mesh-send-message",
@@ -158,7 +145,7 @@ class TestMeshCheckSendParametersApplication(TestCase):
         # 'start' fake state machine
         response = sfn_client.start_execution(
             stateMachineArn=step_func_arn,
-            input='{"mailbox": "X12XY123"}',
+            input='{"mailbox": "MESH-TEST2"}',
         )
         step_func_exec_arn = response.get("executionArn", None)
         self.assertIsNotNone(step_func_exec_arn)
@@ -166,7 +153,7 @@ class TestMeshCheckSendParametersApplication(TestCase):
         # do running check - should pass (1 step function running, just mine)
         try:
             response = self.app.main(
-                event=sample_trigger_event(), context=MeshTestCommon.CONTEXT
+                event=sample_trigger_event(), context=MeshTestingCommon.CONTEXT
             )
         except SingletonCheckFailure as e:
             self.fail(e.msg)
@@ -183,7 +170,7 @@ class TestMeshCheckSendParametersApplication(TestCase):
         self.log_helper.set_stdout_capture()
 
         # create another step function with a different name
-        response = MeshTestCommon.setup_step_function(
+        response = MeshTestingCommon.setup_step_function(
             sfn_client,
             self.environment,
             f"{self.environment}-mesh-get-messages",
@@ -194,7 +181,7 @@ class TestMeshCheckSendParametersApplication(TestCase):
         # 'start' state machine 2 with my mailbox
         response = sfn_client.start_execution(
             stateMachineArn=step_func2_arn,
-            input='{"mailbox": "X12XX123"}',
+            input='{"mailbox": "MESH-TEST2"}',
         )
         step_func_exec_arn = response.get("executionArn", None)
         self.assertIsNotNone(step_func_exec_arn)
@@ -202,7 +189,7 @@ class TestMeshCheckSendParametersApplication(TestCase):
         # do running check - should pass (1 step function of my name with my mailbox)
         try:
             response = self.app.main(
-                event=sample_trigger_event(), context=MeshTestCommon.CONTEXT
+                event=sample_trigger_event(), context=MeshTestingCommon.CONTEXT
             )
         except SingletonCheckFailure as e:
             self.fail(e.msg)
@@ -221,7 +208,7 @@ class TestMeshCheckSendParametersApplication(TestCase):
         # 'start' state machine with different mailbox
         response = sfn_client.start_execution(
             stateMachineArn=step_func_arn,
-            input='{"mailbox": "A12AB123"}',
+            input='{"mailbox": "SOMETHING-ELSE"}',
         )
         step_func_exec_arn = response.get("executionArn", None)
         self.assertIsNotNone(step_func_exec_arn)
@@ -229,7 +216,7 @@ class TestMeshCheckSendParametersApplication(TestCase):
         # do running check - should pass (1 step function running with my mailbox)
         try:
             response = self.app.main(
-                event=sample_trigger_event(), context=MeshTestCommon.CONTEXT
+                event=sample_trigger_event(), context=MeshTestingCommon.CONTEXT
             )
         except SingletonCheckFailure as e:
             self.fail(e.msg)
@@ -248,13 +235,13 @@ class TestMeshCheckSendParametersApplication(TestCase):
         # 'start' another instance with same mailbox as mine
         response = sfn_client.start_execution(
             stateMachineArn=step_func_arn,
-            input='{"mailbox": "X12XY123"}',
+            input='{"mailbox": "MESH-TEST2"}',
         )
         step_func_exec_arn = response.get("executionArn", None)
         self.assertIsNotNone(step_func_exec_arn)
         # do running check - should return 500 and log MESHSEND0003 error message
         response = self.app.main(
-            event=sample_trigger_event(), context=MeshTestCommon.CONTEXT
+            event=sample_trigger_event(), context=MeshTestingCommon.CONTEXT
         )
         expected_return_code = {"statusCode": 500}
         self.assertEqual(response, {**response, **expected_return_code})

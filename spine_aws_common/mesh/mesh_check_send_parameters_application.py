@@ -2,6 +2,7 @@
 Module for MESH API functionality for step functions
 """
 import json
+import os
 from math import ceil
 import boto3
 from aws_lambda_powertools.utilities import parameters
@@ -50,7 +51,7 @@ class MeshCheckSendParametersApplication(LambdaApplication):
         self.log_object.write_log("MESHSEND0001", None, {"bucket": bucket, "file": key})
 
         # TODO nicer failure, log error and parameters missing in SSM Parameter Store
-        (src_mailbox, dest_mailbox, workflow_id) = self._get_mapping(bucket)
+        (src_mailbox, dest_mailbox, workflow_id) = self._get_mapping(bucket, key)
 
         self.log_object.write_log("MESHSEND0002", None, {"mailbox": src_mailbox})
         try:
@@ -111,11 +112,16 @@ class MeshCheckSendParametersApplication(LambdaApplication):
             {"mailbox": mailbox, "error": message},
         )
 
-    def _get_mapping(self, bucket):
+    def _get_mapping(self, bucket, key):
         """Get bucket to mailbox mapping from SSM parameter store"""
+        folder = os.path.dirname(key)
+        if len(folder) > 0:
+            folder += "/"
+
         config = parameters.get_parameters(
-            f"/{self.environment}/mesh/mapping/{bucket}/"
+            f"/{self.environment}/mesh/mapping/{bucket}/{folder}"
         )
+        print(f"CONFIG: {config}")
         src_mailbox = config["src_mailbox"]
         dest_mailbox = config["dest_mailbox"]
         workflow_id = config["workflow_id"]
