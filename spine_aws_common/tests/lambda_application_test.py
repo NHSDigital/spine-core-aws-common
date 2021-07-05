@@ -8,7 +8,7 @@ from aws_lambda_powertools.utilities.typing.lambda_context import LambdaContext
 from spine_aws_common.tests.utils.log_helper import LogHelper
 from spine_aws_common import LambdaApplication
 
-from moto import mock_lambda, mock_iam, mock_sns
+from moto import mock_lambda, mock_iam, mock_sns, mock_sqs
 import boto3
 
 import io
@@ -179,6 +179,30 @@ class TestLambdaApplication(TestCase):
 
         self.assertIn("MessageId", response)
 
+    @mock_sqs
+    def test_sqs_publish(self):
+        event = {
+            "version": "0",
+            "id": "d77bcbc4-0b2b-4d45-9694-b1df99175cfb",
+            "detail-type": "Scheduled Event",
+            "source": "aws.events",
+            "account": "123456789",
+            "time": "2016-09-25T04:55:26Z",
+            "region": "eu-west-2",
+            "resources": ["arn:aws:events:eu-west-2:123456789:rule/test-service-rule"],
+            "detail": {},
+            "internal_id": "1234_TEST",
+        }
+        self.app.main(event, {})
+        queueurl = self._mock_sqs_queue("mockqueue")
+        response = self.app.sqs_publish(
+            QueueUrl=queueurl,
+            MessageBody="foo",
+            MessageAttributes={"foo": {"DataType": "String", "StringValue": "bar"}},
+        )
+
+        self.assertIn("MessageId", response)
+
     def _get_test_zip_file(self):
         pfunc = """
 def lambda_handler(event, context):
@@ -209,6 +233,10 @@ def lambda_handler(event, context):
     def _mock_sns_topic(self, topic_name):
         mock_topic = boto3.client("sns").create_topic(Name=topic_name)
         return mock_topic.get("TopicArn")
+
+    def _mock_sqs_queue(self, queue_name):
+        mock_queue = boto3.client("sqs").create_queue(QueueName=queue_name)
+        return mock_queue["QueueUrl"]
 
     def _get_role_name(self):
         with mock_iam():

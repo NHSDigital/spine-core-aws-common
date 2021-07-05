@@ -112,6 +112,20 @@ class LambdaApplication:
         response = sns_client.publish(**kwargs)
         return response
 
+    def sqs_publish(self, **kwargs):
+        """
+        Delivers a message to a specified SQS queue
+        """
+        sqs_client = client("sqs")
+        internal_id = self._get_internal_id()
+        message_attr = kwargs.get("MessageAttributes", {})
+        message_attr.update(
+            {"internal_id": {"DataType": "String", "StringValue": internal_id}}
+        )
+        kwargs.update({"MessageAttributes": message_attr})
+        response = sqs_client.send_message(**kwargs)
+        return response
+
     @staticmethod
     def process_event(event):
         """
