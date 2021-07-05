@@ -1,5 +1,6 @@
 """ Testing MeshPollMailbox application """
 from unittest import mock, TestCase
+from http import HTTPStatus
 import boto3
 from moto import mock_s3, mock_ssm, mock_stepfunctions
 from spine_aws_common.mesh.tests.mesh_testing_common import MeshTestingCommon
@@ -79,7 +80,7 @@ class TestMeshCheckSendParametersApplication(TestCase):
         )
 
         mock_response = {
-            "statusCode": 200,
+            "statusCode": HTTPStatus.OK.value,
             "headers": {"Content-Type": "application/json"},
             "body": {
                 "internal_id": MeshTestingCommon.KNOWN_INTERNAL_ID,
@@ -239,12 +240,16 @@ class TestMeshCheckSendParametersApplication(TestCase):
         )
         step_func_exec_arn = response.get("executionArn", None)
         self.assertIsNotNone(step_func_exec_arn)
-        # do running check - should return 500 and log MESHSEND0003 error message
+        # do running check - should return 503 and log MESHSEND0003 error message
         response = self.app.main(
             event=sample_trigger_event(), context=MeshTestingCommon.CONTEXT
         )
-        expected_return_code = {"statusCode": 500}
+        expected_return_code = {"statusCode": HTTPStatus.TOO_MANY_REQUESTS.value}
+        expected_header = {"Retry-After": 18000}
         self.assertEqual(response, {**response, **expected_return_code})
+        self.assertEqual(
+            response["headers"], {**response["headers"], **expected_header}
+        )
         self.assertTrue(
             self.log_helper.was_value_logged("MESHSEND0003", "Log_Level", "ERROR")
         )

@@ -1,7 +1,7 @@
 """
 Module for MESH API functionality for step functions
 """
-import json
+from http import HTTPStatus
 import os
 from math import ceil
 import boto3
@@ -55,9 +55,11 @@ class MeshCheckSendParametersApplication(LambdaApplication):
 
         self.log_object.write_log("MESHSEND0002", None, {"mailbox": src_mailbox})
         try:
-            self._singleton_check_ok(src_mailbox)
+            MeshCommon.singleton_check(src_mailbox, self.my_step_function_name)
         except SingletonCheckFailure as e:
-            self._return_failure(500, src_mailbox, message=e.msg)
+            self._return_failure(
+                HTTPStatus.TOO_MANY_REQUESTS.value, src_mailbox, message=e.msg
+            )
             return
 
         file_size = self._get_file_size(bucket, key)
@@ -79,7 +81,7 @@ class MeshCheckSendParametersApplication(LambdaApplication):
             },
         )
         self.response = {
-            "statusCode": 200,
+            "statusCode": HTTPStatus.OK.value,
             "headers": {"Content-Type": "application/json"},
             "body": {
                 "internal_id": self.log_object.internal_id,
@@ -100,7 +102,10 @@ class MeshCheckSendParametersApplication(LambdaApplication):
     def _return_failure(self, status, mailbox, message=""):
         self.response = {
             "statusCode": status,
-            "headers": {"Content-Type": "application/json"},
+            "headers": {
+                "Content-Type": "application/json",
+                "Retry-After": 18000,
+            },
             "body": {
                 "internal_id": self.log_object.internal_id,
                 "error": message,
@@ -121,7 +126,6 @@ class MeshCheckSendParametersApplication(LambdaApplication):
         config = parameters.get_parameters(
             f"/{self.environment}/mesh/mapping/{bucket}/{folder}"
         )
-        print(f"CONFIG: {config}")
         src_mailbox = config["src_mailbox"]
         dest_mailbox = config["dest_mailbox"]
         workflow_id = config["workflow_id"]
@@ -134,42 +138,6 @@ class MeshCheckSendParametersApplication(LambdaApplication):
         response = s3_client.head_object(Bucket=bucket, Key=key)
         file_size = response.get("ContentLength")
         return file_size
-
-    def _singleton_check_ok(self, mailbox):
-        """Find out whether there is another step function running for my mailbox"""
-        sfn_client = boto3.client("stepfunctions")
-        response = sfn_client.list_state_machines()
-        # Get my step function arn
-        my_step_function_arn = None
-        for step_function in response.get("stateMachines", []):
-            if step_function.get("name", "") == self.my_step_function_name:
-                my_step_function_arn = step_function.get("stateMachineArn", None)
-
-        # TODO add this check to tests
-        if not my_step_function_arn:
-            raise SingletonCheckFailure(
-                f"No executing step function arn for '{self.my_step_function_name}"
-            )
-
-        response = sfn_client.list_executions(
-            stateMachineArn=my_step_function_arn,
-            statusFilter="RUNNING",
-        )
-        currently_running_step_funcs = []
-        for execution in response["executions"]:
-            currently_running_step_funcs.append(execution["executionArn"])
-
-        exec_count = 0
-        for execution_arn in currently_running_step_funcs:
-            response = sfn_client.describe_execution(executionArn=execution_arn)
-            step_function_input = json.loads(response.get("input", "{}"))
-            input_mailbox = step_function_input.get("mailbox", None)
-            if input_mailbox == mailbox:
-                exec_count = exec_count + 1
-            if exec_count > 1:
-                raise SingletonCheckFailure("Process already running for this mailbox")
-
-        return True
 
 
 # create instance of class in global space

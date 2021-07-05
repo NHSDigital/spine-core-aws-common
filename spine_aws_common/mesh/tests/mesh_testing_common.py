@@ -63,7 +63,6 @@ class MeshTestingCommon:
     def setup_mock_aws_ssm_parameter_store(environment, ssm_client):
         """Setup ssm param store for tests"""
         # Setup mapping
-        print(f"Setting up mock parameter store for {environment}")
         ssm_client.put_parameter(
             Name=f"/{environment}/mesh/mapping/"
             + f"{environment}-supplementary-data/outbound/src_mailbox",

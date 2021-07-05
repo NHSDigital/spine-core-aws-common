@@ -1,8 +1,10 @@
 """Common methods and classes used for mesh client"""
 # from io import BytesIO
 import os
+import json
 import tempfile
 import atexit
+from http import HTTPStatus
 import requests
 from urllib3.exceptions import InsecureRequestWarning
 import boto3
@@ -14,8 +16,7 @@ class SingletonCheckFailure(Exception):
 
     def __init__(self, msg=None):
         super().__init__()
-        if msg:
-            self.msg = msg
+        self.msg = msg
 
 
 class MeshCommon:  # pylint: disable=too-few-public-methods
@@ -23,6 +24,44 @@ class MeshCommon:  # pylint: disable=too-few-public-methods
 
     MIB = 1024 * 1024
     DEFAULT_CHUNK_SIZE = 20 * MIB
+
+    @staticmethod
+    def singleton_check(mailbox, my_step_function_name):
+        """Find out whether there is another step function running for my mailbox"""
+        sfn_client = boto3.client("stepfunctions")
+        response = sfn_client.list_state_machines()
+        # Get my step function arn
+        my_step_function_arn = None
+        for step_function in response.get("stateMachines", []):
+            if step_function.get("name", "") == my_step_function_name:
+                my_step_function_arn = step_function.get("stateMachineArn", None)
+
+        # TODO add this check to tests
+        if not my_step_function_arn:
+            raise SingletonCheckFailure(
+                "No executing step function arn for "
+                + f"step_function={my_step_function_name}"
+            )
+
+        response = sfn_client.list_executions(
+            stateMachineArn=my_step_function_arn,
+            statusFilter="RUNNING",
+        )
+        currently_running_step_funcs = []
+        for execution in response["executions"]:
+            currently_running_step_funcs.append(execution["executionArn"])
+
+        exec_count = 0
+        for execution_arn in currently_running_step_funcs:
+            response = sfn_client.describe_execution(executionArn=execution_arn)
+            step_function_input = json.loads(response.get("input", "{}"))
+            input_mailbox = step_function_input.get("mailbox", None)
+            if input_mailbox == mailbox:
+                exec_count = exec_count + 1
+            if exec_count > 1:
+                raise SingletonCheckFailure("Process already running for this mailbox")
+
+        return True
 
 
 class ExtendedMeshClient(MeshClient):
@@ -55,16 +94,11 @@ class MeshMailbox:
         # TODO refactor
         if not self.ssm_client:
             self.ssm_client = boto3.client("ssm")
-        print(f"Getting common params from /{self.environment}/mesh")
         common_params_result = self.ssm_client.get_parameters_by_path(
             Path=f"/{self.environment}/mesh", Recursive=False, WithDecryption=True
         )
         self.common_params = self._convert_params_to_dict(
             common_params_result.get("Parameters", {})
-        )
-        print(
-            f"Getting mailbox params from /{self.environment}"
-            + f"/mesh/mailboxes/{self.mailbox}"
         )
         mailbox_params_result = self.ssm_client.get_parameters_by_path(
             Path=f"/{self.environment}/mesh/mailboxes/{self.mailbox}",
@@ -156,7 +190,6 @@ class MeshMailbox:
         data=None,
     ):
         """Send a chunk"""
-        print("Sending ")
         if not chunk:
             message_id = self.mesh_client.send_message(
                 self.dest_mailbox,
@@ -169,9 +202,12 @@ class MeshMailbox:
             # function for sending one chunk only
             offset = chunk_size * chunk_num
             print(f"Calculated offset is {offset}")
-        return (200, message_id)
+            print("CHUNKING ON SEND IS NOT IMPLEMENTED YET")
+            return (HTTPStatus.NOT_IMPLEMENTED.value, None)
+        return (HTTPStatus.OK.value, message_id)
 
     def get_chunk(
         self, message_id, chunk_size=MeshCommon.DEFAULT_CHUNK_SIZE, chunk_num=1
     ):
         """Get a chunk"""
+        return (HTTPStatus.NOT_IMPLEMENTED.value, None)
