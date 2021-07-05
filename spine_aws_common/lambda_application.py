@@ -83,15 +83,33 @@ class LambdaApplication:
         )
         return logger
 
-    def invoke_lambda(self, payload: dict, **kwargs):
+    def invoke_lambda(self, **kwargs):
         """
         Invokes a Lambda function, passing in the internal ID to allow end-to-end log
-        tracking
+        tracking.
         """
         lambda_client = client("lambda")
         internal_id = self._get_internal_id()
+        payload = kwargs.get("Payload", {})
         payload.update({"internal_id": internal_id})
-        response = lambda_client.invoke(Payload=json.dumps(payload), **kwargs)
+        kwargs.update({"Payload": json.dumps(payload)})
+        response = lambda_client.invoke(**kwargs)
+        return response
+
+    def sns_publish(self, **kwargs):
+        """
+        Sends a message to an Amazon SNS topic, a SMS message to a phone number,
+        or a message to a mobile platform endpoint. Internal ID is added to the
+        message attributes
+        """
+        sns_client = client("sns")
+        internal_id = self._get_internal_id()
+        message_attr = kwargs.get("MessageAttributes", {})
+        message_attr.update(
+            {"internal_id": {"DataType": "String", "StringValue": internal_id}}
+        )
+        kwargs.update({"MessageAttributes": message_attr})
+        response = sns_client.publish(**kwargs)
         return response
 
     @staticmethod
