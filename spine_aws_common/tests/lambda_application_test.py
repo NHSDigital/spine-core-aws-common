@@ -12,6 +12,7 @@ from moto import mock_lambda, mock_iam, mock_sns, mock_sqs
 import boto3
 
 import io
+import os
 import zipfile
 import json
 
