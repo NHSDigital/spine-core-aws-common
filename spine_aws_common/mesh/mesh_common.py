@@ -5,6 +5,7 @@ import json
 import tempfile
 import atexit
 from http import HTTPStatus
+from collections import namedtuple
 import requests
 from urllib3.exceptions import InsecureRequestWarning
 import boto3
@@ -66,6 +67,20 @@ class MeshCommon:  # pylint: disable=too-few-public-methods
 
 class ExtendedMeshClient(MeshClient):
     """Extended functionality for lambda send"""
+
+
+# Named tuple for holding Mesh Message info
+MeshMessage = namedtuple(
+    "MeshMessage",
+    [
+        "filename",
+        "body",
+        "src_mailbox",
+        "dest_mailbox",
+        "workflow_id",
+        "message_id",
+    ],
+)
 
 
 class MeshMailbox:
@@ -180,23 +195,33 @@ class MeshMailbox:
         """Authenticate to MESH mailbox"""
         return self.mesh_client.handshake()
 
-    def send_chunk(  # pylint: disable=too-many-arguments
+    def send_chunk(
         self,
-        message_id=None,
-        file_name=None,
+        mesh_message_object,
         chunk=False,
         chunk_size=MeshCommon.DEFAULT_CHUNK_SIZE,
         chunk_num=1,
-        data=None,
     ):
         """Send a chunk"""
+        # override mailbox dest_mailbox if provided in message_object
+        if mesh_message_object.dest_mailbox:
+            dest_mailbox = mesh_message_object.dest_mailbox
+        else:
+            dest_mailbox = self.mailbox
+        # override mailbox workflow_id if provided in message_object
+        if mesh_message_object.workflow_id:
+            workflow_id = mesh_message_object.workflow_id
+        else:
+            workflow_id = self.mailbox.workflow_id
         if not chunk:
             message_id = self.mesh_client.send_message(
-                self.dest_mailbox,
-                workflow_id=self.workflow_id,
-                filename=file_name,
-                data=data,
+                dest_mailbox,
+                workflow_id=workflow_id,
+                filename=mesh_message_object.filename,
+                data=mesh_message_object.body,
             )
+            mesh_message_object = mesh_message_object._replace(message_id=message_id)
+
         else:
             # TODO chunking is more interesting, as mesh_client doesn't have a
             # function for sending one chunk only
@@ -204,10 +229,36 @@ class MeshMailbox:
             print(f"Calculated offset is {offset}")
             print("CHUNKING ON SEND IS NOT IMPLEMENTED YET")
             return (HTTPStatus.NOT_IMPLEMENTED.value, None)
-        return (HTTPStatus.OK.value, message_id)
+        return (HTTPStatus.OK.value, mesh_message_object)
 
     def get_chunk(
-        self, message_id, chunk_size=MeshCommon.DEFAULT_CHUNK_SIZE, chunk_num=1
+        self,
+        message_id,
+        chunk=False,
+        chunk_size=MeshCommon.DEFAULT_CHUNK_SIZE,
+        chunk_num=1,
     ):
         """Get a chunk"""
-        return (HTTPStatus.NOT_IMPLEMENTED.value, None)
+        if not chunk:
+            message_object = self.mesh_client.retrieve_message(message_id)
+            filename = message_object.mex_header(self, "filename", default=None)
+            workflow_id = message_object.mex_header(
+                self, "workflow_id", default="Not Provided"
+            )
+            src_mailbox = message_object.mex_header(
+                self, "Mex-From", default="Not Provided"
+            )
+            # TODO get other info available - compression etc
+            return_message_object = MeshMessage(
+                filename=filename,
+                body=message_object.read(),
+                dest_mailbox=self.mailbox,
+                src_mailbox=src_mailbox,
+                workflow_id=workflow_id,
+            )
+            return (HTTPStatus.OK.value, return_message_object)
+        else:
+            offset = chunk_size * chunk_num
+            print(f"Calculated offset is {offset}")
+            print("CHUNKING ON RECEIVE IS NOT IMPLEMENTED YET")
+            return (HTTPStatus.NOT_IMPLEMENTED.value, None)

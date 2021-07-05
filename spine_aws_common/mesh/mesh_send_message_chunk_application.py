@@ -5,7 +5,7 @@ import os
 from http import HTTPStatus
 import boto3
 from spine_aws_common import LambdaApplication
-from spine_aws_common.mesh.mesh_common import MeshCommon, MeshMailbox
+from spine_aws_common.mesh.mesh_common import MeshCommon, MeshMailbox, MeshMessage
 
 
 class MeshSendMessageChunkApplication(LambdaApplication):
@@ -56,14 +56,23 @@ class MeshSendMessageChunkApplication(LambdaApplication):
             chunk_size=chunk_size,
         )
         print(f"Got file contents:>{file_contents}<")
-        self.body = file_contents
+        self.body = file_contents  # for testing :-(
+        message_object = MeshMessage(
+            filename=os.path.basename(key),
+            body=file_contents,
+            message_id=message_id,
+            dest_mailbox=self.mailbox.dest_mailbox,
+            src_mailbox=self.mailbox.mailbox,
+            workflow_id=self.mailbox.workflow_id,
+        )
         if file_contents:
-            (status_code, message_id) = self.mailbox.send_chunk(
-                message_id,
+            (status_code, message_object) = self.mailbox.send_chunk(
+                mesh_message_object=message_object,
+                chunk=chunked,
                 chunk_size=chunk_size,
                 chunk_num=current_chunk,
-                data=file_contents,
             )
+            message_id = message_object.message_id
             status_code = HTTPStatus.OK.value
         else:
             status_code = HTTPStatus.NOT_FOUND.value
