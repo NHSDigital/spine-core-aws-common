@@ -8,11 +8,18 @@ class MeshTestingCommon:
 
     CONTEXT = {"aws_request_id": "TESTREQUEST"}
     KNOWN_INTERNAL_ID = "20210701225219765177_TESTER"
+    KNOWN_INTERNAL_ID1 = "20210701225219765177_TEST01"
+    KNOWN_INTERNAL_ID2 = "20210701225219765177_TEST02"
+    KNOWN_MESSAGE_ID = "20210704225158261556_F46E2B"
     FILE_CONTENT = FILE_CONTENT
 
-    def get_known_internal_id(self):  # pylint: disable=no-self-use
+    def get_known_internal_id1(self):
         """Get a known internal Id for testing and mocking purposes"""
-        return "20210701225219765177_TESTER"
+        return self.KNOWN_INTERNAL_ID1
+
+    def get_known_internal_id2(self):
+        """Get a known internal Id for testing and mocking purposes"""
+        return self.KNOWN_INTERNAL_ID2
 
     @staticmethod
     def setup_step_function(sfn_client, environment, step_function_name):
@@ -92,8 +99,24 @@ class MeshTestingCommon:
             Value="pwd123456",
         )
         ssm_client.put_parameter(
+            Name=f"/{environment}/mesh/mailboxes/MESH-TEST1/INBOUND_BUCKET",
+            Value=f"{environment}-supplementary-data",
+        )
+        ssm_client.put_parameter(
+            Name=f"/{environment}/mesh/mailboxes/MESH-TEST1/INBOUND_FOLDER",
+            Value="inbound",
+        )
+        ssm_client.put_parameter(
             Name=f"/{environment}/mesh/mailboxes/MESH-TEST2/MESH_MAILBOX_PASSWORD",
             Value="pwd123456",
+        )
+        ssm_client.put_parameter(
+            Name=f"/{environment}/mesh/mailboxes/MESH-TEST2/INBOUND_BUCKET",
+            Value=f"{environment}-other-data",
+        )
+        ssm_client.put_parameter(
+            Name=f"/{environment}/mesh/mailboxes/MESH-TEST2/INBOUND_FOLDER",
+            Value="inbound",
         )
         ssm_client.put_parameter(
             Name=f"/{environment}/mesh/MESH_VERIFY_SSL",

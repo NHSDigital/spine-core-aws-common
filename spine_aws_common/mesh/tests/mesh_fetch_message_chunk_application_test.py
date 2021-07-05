@@ -1,14 +1,14 @@
 """ Testing MeshSendMessageChunk Application """
-from http import HTTPStatus
 from unittest import mock, TestCase
+from http import HTTPStatus
 import boto3
 from moto import mock_s3, mock_ssm
 from spine_aws_common.mesh.tests.mesh_testing_common import MeshTestingCommon
 from spine_aws_common.tests.utils.log_helper import LogHelper
-from spine_aws_common.mesh import MeshSendMessageChunkApplication
+from spine_aws_common.mesh import MeshFetchMessageChunkApplication
 
 
-class TestMeshSendMessageChunkApplication(TestCase):
+class TestMeshFetchMessageChunkApplication(TestCase):
     """Testing MeshSendMessageChunk application"""
 
     def __init__(self, methodName):
@@ -35,7 +35,7 @@ class TestMeshSendMessageChunkApplication(TestCase):
         self.log_helper.set_stdout_capture()
         self.maxDiff = 1024  # pylint: disable="invalid-name"
 
-        self.app = MeshSendMessageChunkApplication()
+        self.app = MeshFetchMessageChunkApplication()
         self.environment = self.app.system_config["ENV"]
 
     def tearDown(self) -> None:
@@ -43,21 +43,22 @@ class TestMeshSendMessageChunkApplication(TestCase):
 
     @mock_ssm
     @mock_s3
-    @mock.patch.object(MeshSendMessageChunkApplication, "_create_internal_id")
-    def test_mesh_send_file_chunk_app_no_chunks_happy_path(
-        self, mock_create_internal_id
+    @mock.patch.object(MeshFetchMessageChunkApplication, "_create_new_internal_id")
+    def test_mesh_fetch_file_chunk_app_no_chunks_happy_path(
+        self, mock_create_new_internal_id
     ):
         """Test the lambda with small file, no chunking, happy path"""
-        mock_create_internal_id.return_value = MeshTestingCommon.KNOWN_INTERNAL_ID
+        mock_create_new_internal_id.return_value = MeshTestingCommon.KNOWN_INTERNAL_ID2
         s3_client = boto3.client("s3")
         ssm_client = boto3.client("ssm")
         MeshTestingCommon.setup_mock_aws_s3_buckets(self.environment, s3_client)
         MeshTestingCommon.setup_mock_aws_ssm_parameter_store(
             self.environment, ssm_client
         )
-        mock_input = self._sample_input_event()
-        mock_response = self._sample_input_event()
-        mock_response["body"].update({"complete": True})
+        mock_input = self._sample_first_input_event()
+        mock_response = self._sample_second_input_event()
+
+        mock_response["body"].update({"complete": True, "chunk_num": 1})
 
         try:
             response = self.app.main(
@@ -67,9 +68,14 @@ class TestMeshSendMessageChunkApplication(TestCase):
             # need to fail happy pass on any exception
             self.fail(f"Invocation crashed with Exception {str(e)}")
 
-        self.assertEqual(self.app.body, MeshTestingCommon.FILE_CONTENT.encode("utf8"))
-
-        response["body"].pop("message_id")
+        print(response)
+        self.assertNotEqual(
+            mock_input.get("internal_id"), response["body"].get("internal_id")
+        )
+        self.assertEqual(
+            response["body"].get("internal_id"),
+            mock_response["body"].get("internal_id"),
+        )
         self.assertDictEqual(mock_response, response)
         self.assertTrue(
             self.log_helper.was_value_logged("LAMBDA0001", "Log_Level", "INFO")
@@ -81,43 +87,47 @@ class TestMeshSendMessageChunkApplication(TestCase):
             self.log_helper.was_value_logged("LAMBDA0003", "Log_Level", "INFO")
         )
 
-    @mock_ssm
-    @mock_s3
-    @mock.patch.object(MeshSendMessageChunkApplication, "_create_internal_id")
-    def test_mesh_send_file_chunk_app_2_chunks_happy_path(
-        self, mock_create_internal_id
-    ):
-        """
-        Test that doing chunking works
-        """
-        mock_create_internal_id.return_value = MeshTestingCommon.KNOWN_INTERNAL_ID2
-        s3_client = boto3.client("s3")
-        ssm_client = boto3.client("ssm")
-        MeshTestingCommon.setup_mock_aws_s3_buckets(self.environment, s3_client)
-        MeshTestingCommon.setup_mock_aws_ssm_parameter_store(
-            self.environment, ssm_client
-        )
+    # @mock_ssm
+    # @mock_s3
+    # def test_mesh_fetch_file_chunk_app_2_chunks_happy_path(self):
+    #     """
+    #     Test that doing chunking works
+    #     """
+    #     s3_client = boto3.client("s3")
+    #     ssm_client = boto3.client("ssm")
+    #     MeshTestingCommon.setup_mock_aws_s3_buckets(self.environment, s3_client)
+    #     MeshTestingCommon.setup_mock_aws_ssm_parameter_store(
+    #         self.environment, ssm_client
+    #     )
 
-        response = {"statusCode": 200}
-        expected_return_code = {"statusCode": 200}
-        self.assertEqual(response, {**response, **expected_return_code})
+    #     response = {"statusCode": HTTPStatus.OK.value}
+    #     expected_return_code = {"statusCode": HTTPStatus.OK.value}
+    #     self.assertEqual(response, {**response, **expected_return_code})
 
-    def _sample_input_event(self):
-        """Return Example input event"""
+    @staticmethod
+    def _sample_first_input_event():
         return {
             "statusCode": HTTPStatus.OK.value,
             "headers": {"Content-Type": "application/json"},
             "body": {
-                "internal_id": MeshTestingCommon.KNOWN_INTERNAL_ID,
-                "src_mailbox": "MESH-TEST2",
-                "dest_mailbox": "MESH-TEST1",
-                "workflow_id": "TESTWORKFLOW",
-                "bucket": f"{self.environment}-supplementary-data",
-                "key": "outbound/testfile.json",
-                "chunk": False,
-                "chunk_number": 1,
-                "total_chunks": 1,
-                "chunk_size": 50,
                 "complete": False,
+                "internal_id": MeshTestingCommon.KNOWN_INTERNAL_ID1,
+                "message_id": MeshTestingCommon.KNOWN_MESSAGE_ID,
+                "dest_mailbox": "MESH-TEST1",
+            },
+        }
+
+    @staticmethod
+    def _sample_second_input_event():
+        return {
+            "statusCode": HTTPStatus.OK.value,
+            "headers": {"Content-Type": "application/json"},
+            "body": {
+                "complete": False,
+                "internal_id": MeshTestingCommon.KNOWN_INTERNAL_ID2,
+                "message_id": MeshTestingCommon.KNOWN_MESSAGE_ID,
+                "dest_mailbox": "MESH-TEST1",
+                "chunk_num": 2,
+                "aws_upload_id": None,
             },
         }

@@ -20,6 +20,14 @@ class SingletonCheckFailure(Exception):
         self.msg = msg
 
 
+class AwsFailedToPerformError(Exception):
+    """Errors raised by AWS functions"""
+
+    def __init__(self, msg=None):
+        super().__init__()
+        self.msg = msg
+
+
 class MeshCommon:  # pylint: disable=too-few-public-methods
     """Common"""
 
@@ -151,14 +159,6 @@ class MeshMailbox:
                 new_dict[var_name] = entry.get("Value", None)
         return new_dict
 
-    def get_common_parameters(self):
-        """Getter"""
-        return self.common_params
-
-    def get_mailbox_parameters(self):
-        """Getter"""
-        return self.mailbox_params
-
     def _write_certs_to_files(self):
         """Write the certificates to a local file"""
         temp_dir_object = tempfile.TemporaryDirectory()
@@ -241,16 +241,19 @@ class MeshMailbox:
         """Get a chunk"""
         if not chunk:
             message_object = self.mesh_client.retrieve_message(message_id)
-            filename = message_object.mex_header(self, "filename", default=None)
+            for (header, value) in message_object.mex_headers():
+                print(f"{header}={value}")
+            filename = message_object.mex_header("filename")
+            if not filename:
+                filename = message_id
             workflow_id = message_object.mex_header(
-                self, "workflow_id", default="Not Provided"
+                "workflowid", default="Not Provided"
             )
-            src_mailbox = message_object.mex_header(
-                self, "Mex-From", default="Not Provided"
-            )
+            src_mailbox = message_object.mex_header("from", default="Not Provided")
             # TODO get other info available - compression etc
             return_message_object = MeshMessage(
                 filename=filename,
+                message_id=message_id,
                 body=message_object.read(),
                 dest_mailbox=self.mailbox,
                 src_mailbox=src_mailbox,
