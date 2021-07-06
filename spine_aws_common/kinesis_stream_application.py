@@ -10,5 +10,4 @@ class KinesisStreamApplication(BatchApplication):
     Base class for Kinesis Stream Lambda applications
     """
 
-    def process_event(self, event):
-        return KinesisStreamEvent(event)
+    EVENT_TYPE = KinesisStreamEvent
