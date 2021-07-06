@@ -10,8 +10,7 @@ class SNSApplication(BatchApplication):
     Base class for SNS Lambda applications
     """
 
-    def process_event(self, event):
-        return SNSEvent(event)
+    EVENT_TYPE = SNSEvent
 
     def _get_internal_id_from_record(self, record):
         """

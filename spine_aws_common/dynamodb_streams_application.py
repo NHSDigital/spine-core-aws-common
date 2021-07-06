@@ -10,8 +10,7 @@ class DynamoDBStreamsApplication(BatchApplication):
     Base class for SQS Lambda applications
     """
 
-    def process_event(self, event):
-        return DynamoDBStreamEvent(event)
+    EVENT_TYPE = DynamoDBStreamEvent
 
     def _get_internal_id_from_record(self, record):
         """
