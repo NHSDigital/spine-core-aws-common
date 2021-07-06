@@ -70,15 +70,3 @@ class MeshPollMailboxApplication(LambdaApplication):
         self.log_object.write_log(
             "MESHPOLL0003", None, {"mailbox": mailbox, "error": message}
         )
-
-
-# create instance of class in global space
-# this ensures initial setup of logging/config is only done on cold start
-app = MeshPollMailboxApplication()
-
-
-def lambda_handler(event, context):
-    """
-    Standard lambda_handler
-    """
-    return app.main(event, context)

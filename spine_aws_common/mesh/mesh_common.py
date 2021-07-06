@@ -94,7 +94,7 @@ MeshMessage = namedtuple(
 class MeshMailbox:
     """Mesh mailbox object, gets parameters from SSM Parameter Store"""
 
-    def __init__(self, mailbox, environment="default", ssm_client=None):
+    def __init__(self, mailbox, environment="default"):
         self.mailbox = mailbox
         self.common_params = None
         self.mailbox_params = None
@@ -104,7 +104,7 @@ class MeshMailbox:
         self.environment = environment
         self.dest_mailbox = None
         self.workflow_id = None
-        self.ssm_client = ssm_client
+        self.temp_dir_object = None
         self._setup()
         atexit.register(self.clean_up)
 
@@ -115,15 +115,14 @@ class MeshMailbox:
     def _setup(self):
         """Get the parameters from SSM paramter store"""
         # TODO refactor
-        if not self.ssm_client:
-            self.ssm_client = boto3.client("ssm")
-        common_params_result = self.ssm_client.get_parameters_by_path(
+        ssm_client = boto3.client("ssm")
+        common_params_result = ssm_client.get_parameters_by_path(
             Path=f"/{self.environment}/mesh", Recursive=False, WithDecryption=True
         )
         self.common_params = self._convert_params_to_dict(
             common_params_result.get("Parameters", {})
         )
-        mailbox_params_result = self.ssm_client.get_parameters_by_path(
+        mailbox_params_result = ssm_client.get_parameters_by_path(
             Path=f"/{self.environment}/mesh/mailboxes/{self.mailbox}",
             Recursive=False,
             WithDecryption=True,
@@ -133,18 +132,17 @@ class MeshMailbox:
         )
         self._write_certs_to_files()
 
-        if self.common_params.get("MESH_VERIFY_SSL", "False") != "True":
+        maybe_verify = bool(self.common_params.get("MESH_VERIFY_SSL") == "True")
+
+        if not maybe_verify:
             requests.urllib3.disable_warnings(InsecureRequestWarning)
         self.mesh_client = ExtendedMeshClient(
             self.common_params["MESH_URL"],
             self.mailbox,
             self.mailbox_params["MESH_MAILBOX_PASSWORD"],
             shared_key=self.common_params["MESH_SHARED_KEY"].encode("utf8"),
-            cert=(  # self.client_cert_file, self.client_key_file),
-                "/tmp/client-sha2.crt",
-                "/tmp/client-sha2.key",
-            ),
-            verify=None,  # self.ca_cert_file,
+            cert=(self.client_cert_file.name, self.client_key_file.name),
+            verify=self.ca_cert_file.name if maybe_verify else None,
             max_chunk_size=MeshCommon.DEFAULT_CHUNK_SIZE,
         )
 
@@ -161,30 +159,34 @@ class MeshMailbox:
 
     def _write_certs_to_files(self):
         """Write the certificates to a local file"""
-        temp_dir_object = tempfile.TemporaryDirectory()
-        temp_dir = temp_dir_object.name
-        self.client_cert_file = ""
-        self.client_key_file = ""
+        self.temp_dir_object = (  # pylint: disable=consider-using-with
+            tempfile.TemporaryDirectory()
+        )
+        temp_dir = self.temp_dir_object.name
+
         # store as temporary files for the mesh client
-        with tempfile.NamedTemporaryFile(
-            dir=temp_dir, delete=False
-        ) as client_cert_file:
-            client_cert = self.common_params["MESH_CLIENT_CERT"]
-            client_cert_file.write(client_cert.encode("utf-8"))
-            self.client_cert_file = client_cert_file.name
-        with tempfile.NamedTemporaryFile(dir=temp_dir, delete=False) as client_key_file:
-            client_key = self.common_params["MESH_CLIENT_KEY"]
-            client_key_file.write(client_key.encode("utf-8"))
-            self.client_key_file = client_key_file.name
+        self.client_cert_file = (  # pylint: disable=consider-using-with
+            tempfile.NamedTemporaryFile(dir=temp_dir, delete=False)
+        )
+        client_cert = self.common_params["MESH_CLIENT_CERT"]
+        self.client_cert_file.write(client_cert.encode("utf-8"))
+        self.client_cert_file.seek(0)
+
+        self.client_key_file = (  # pylint: disable=consider-using-with
+            tempfile.NamedTemporaryFile(dir=temp_dir, delete=False)
+        )
+        client_key = self.common_params["MESH_CLIENT_KEY"]
+        self.client_key_file.write(client_key.encode("utf-8"))
+        self.client_key_file.seek(0)
 
         self.ca_cert_file = None
         if self.common_params.get("MESH_VERIFY_SSL", False) == "True":
-            with tempfile.NamedTemporaryFile(
-                dir=temp_dir, delete=False
-            ) as ca_cert_file:
-                ca_cert = self.common_params["MESH_CA_CERT"]
-                ca_cert_file.write(ca_cert.encode("utf-8"))
-                self.ca_cert_file = ca_cert_file.name
+            self.ca_cert_file = (  # pylint: disable=consider-using-with
+                tempfile.NamedTemporaryFile(dir=temp_dir, delete=False)
+            )
+            ca_cert = self.common_params["MESH_CA_CERT"]
+            self.ca_cert_file.write(ca_cert.encode("utf-8"))
+            self.ca_cert_file.seek(0)
 
     def set_destination_and_workflow(self, dest_mailbox, workflow_id):
         """Set destination mailbox and workflow_id"""

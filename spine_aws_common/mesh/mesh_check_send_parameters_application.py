@@ -138,13 +138,3 @@ class MeshCheckSendParametersApplication(LambdaApplication):
         response = s3_client.head_object(Bucket=bucket, Key=key)
         file_size = response.get("ContentLength")
         return file_size
-
-
-# create instance of class in global space
-# this ensures initial setup of logging/config is only done on cold start
-app = MeshCheckSendParametersApplication(additional_log_config="mesh_application.cfg")
-
-
-def lambda_handler(event, context):
-    """Standard lambda_handler"""
-    return app.main(event, context)
