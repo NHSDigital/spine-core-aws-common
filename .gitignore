@@ -9,6 +9,9 @@ htmlcov/
 coverage-all.txt
 *.zip
 
+# ignore extracted lambda deps
+spine_aws_common/mesh/mesh_implementation_lambdas_dependencies/*
+
 ### Terraform ###
 # Local .terraform directories
 **/.terraform/*

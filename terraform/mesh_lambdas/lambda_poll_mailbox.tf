@@ -6,6 +6,13 @@ resource "aws_lambda_function" "poll_mailbox" {
   timeout          = local.lambda_timeout
   source_code_hash = data.archive_file.mesh_implementation_lambdas.output_base64sha256
   role             = aws_iam_role.poll_mailbox.arn
+  layers           = [aws_lambda_layer_version.mesh_implementation_lambdas_dependencies.arn]
+
+  environment {
+    variables = {
+      ENV = local.name
+    }
+  }
 
   depends_on = [aws_cloudwatch_log_group.poll_mailbox]
 }
@@ -59,6 +66,74 @@ data "aws_iam_policy_document" "poll_mailbox" {
 
     resources = [
       "${aws_cloudwatch_log_group.poll_mailbox.arn}*"
+    ]
+  }
+
+  statement {
+    sid    = "SSMDescribe"
+    effect = "Allow"
+
+    actions = [
+      "ssm:DescribeParameters"
+    ]
+
+    resources = [
+      "arn:aws:ssm:eu-west-2:092420156801:parameter/meshtest2/*"
+    ]
+  }
+
+
+  statement {
+    sid    = "SSMGet"
+    effect = "Allow"
+
+    actions = [
+      "ssm:GetParametersByPath"
+    ]
+
+    resources = [
+      "arn:aws:ssm:eu-west-2:092420156801:parameter/meshtest2/*",
+      "arn:aws:ssm:eu-west-2:092420156801:parameter/meshtest2"
+    ]
+  }
+
+  statement {
+    sid    = "KMSAllow"
+    effect = "Allow"
+
+    actions = [
+      "kms:Decrypt"
+    ]
+
+    resources = [
+      "arn:aws:kms:eu-west-2:092420156801:key/dd6c0abc-30e6-4c37-8f86-8cf1ca6c2f00"
+    ]
+  }
+
+  statement {
+    sid    = "StepFuncDescribe"
+    effect = "Allow"
+
+    actions = [
+      "states:ListStateMachines"
+    ]
+
+    resources = [
+      "arn:aws:states:eu-west-2:092420156801:stateMachine:*"
+    ]
+  }
+
+  statement {
+    sid    = "StepFuncGet"
+    effect = "Allow"
+
+    actions = [
+      "states:ListExecutions",
+      "states:DescribeExecution"
+    ]
+
+    resources = [
+      "arn:aws:states:eu-west-2:092420156801:stateMachine:meshtest2*"
     ]
   }
 }

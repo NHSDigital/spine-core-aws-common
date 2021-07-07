@@ -6,6 +6,13 @@ resource "aws_lambda_function" "send_message_chunk" {
   timeout          = local.lambda_timeout
   source_code_hash = data.archive_file.mesh_implementation_lambdas.output_base64sha256
   role             = aws_iam_role.send_message_chunk.arn
+  layers           = [aws_lambda_layer_version.mesh_implementation_lambdas_dependencies.arn]
+
+  environment {
+    variables = {
+      ENV = local.name
+    }
+  }
 
   depends_on = [aws_cloudwatch_log_group.send_message_chunk]
 }
