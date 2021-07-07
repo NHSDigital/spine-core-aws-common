@@ -2,6 +2,11 @@ resource "aws_s3_bucket" "mesh" {
   bucket = local.name
   acl    = "private"
 
+  logging {
+    target_bucket = aws_s3_bucket.s3logs.id
+    target_prefix = "bucket_logs/"
+  }
+
   server_side_encryption_configuration {
     rule {
       apply_server_side_encryption_by_default {
@@ -21,7 +26,7 @@ resource "aws_s3_bucket_public_access_block" "mesh" {
   restrict_public_buckets = true
 }
 
-# TODO AWS CloudTrail object level logging
+# TODO AWS CloudTrail object level logging in to aws_s3_bucket.s3logs.id
 # meshtest2-S3Event
 
 resource "aws_s3_bucket_object" "folders" {
