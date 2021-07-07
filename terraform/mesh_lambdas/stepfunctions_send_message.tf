@@ -1,5 +1,6 @@
 resource "aws_sfn_state_machine" "send_message" {
   name     = "${local.name}-send-message"
+  type     = "STANDARD"
   role_arn = aws_iam_role.send_message.arn
 
   logging_configuration {
@@ -9,62 +10,44 @@ resource "aws_sfn_state_machine" "send_message" {
   }
 
   definition = jsonencode({
-    Comment = "This is your state machine"
-    StartAt = "Poll for messages"
+    Comment = "${local.name}-send-message"
+    StartAt = "Check send parameters"
     States = {
-      "For each waiting message" = {
-        ItemsPath = "$.body.messageList"
-        Iterator = {
-          StartAt = "Get and store message chunk"
-          States = {
-            "File complete" = {
-              Type = "Succeed"
-            }
-            "Get and store message chunk" = {
-              "Next"     = "Is this the last chunk?"
-              OutputPath = "$.Payload"
-              Parameters = {
-                FunctionName = "${aws_lambda_function.check_send_parameters.arn}:$LATEST"
-                "Payload.$"  = "$"
-              }
-              Resource = "arn:aws:states:::lambda:invoke"
-              Retry = [
-                {
-                  BackoffRate = 2
-                  ErrorEquals = [
-                    "Lambda.ServiceException",
-                    "Lambda.AWSLambdaException",
-                    "Lambda.SdkClientException",
-                  ]
-                  IntervalSeconds = 2
-                  "MaxAttempts"   = 6
-                },
-              ]
-              Type = "Task"
-            }
-            "Is this the last chunk?" = {
-              Choices = [
-                {
-                  BooleanEquals = true
-                  "Next"        = "File complete"
-                  "Variable"    = "$.body.isLastChunk"
-                },
-              ]
-              Default = "Get and store message chunk"
-              "Type"  = "Choice"
-            }
-          }
+      "Check send parameters" = {
+        Next       = "Send message chunk"
+        OutputPath = "$.Payload"
+        Parameters = {
+          FunctionName = "${aws_lambda_function.check_send_parameters.arn}:$LATEST"
+          "Payload.$"  = "$"
         }
-        MaxConcurrency = 1
-        "Next"         = "Were there exactly 500 messages?"
-        "ResultPath"   = null
-        "Type"         = "Map"
+        Resource = "arn:aws:states:::lambda:invoke"
+        Retry = [
+          {
+            BackoffRate = 2
+            ErrorEquals = [
+              "Lambda.ServiceException",
+              "Lambda.AWSLambdaException",
+              "Lambda.SdkClientException",
+            ]
+            IntervalSeconds = 2
+            MaxAttempts     = 6
+          },
+        ]
+        Type = "Task"
       }
-      "Poll complete " = {
-        Type = "Succeed"
+      Choice = {
+        Choices = [
+          {
+            BooleanEquals = false
+            Next          = "Send message chunk"
+            Variable      = "$.body.isLastChunk"
+          },
+        ]
+        Default = "Success"
+        Type    = "Choice"
       }
-      "Poll for messages" = {
-        "Next"     = "For each waiting message"
+      "Send message chunk" = {
+        Next       = "Choice"
         OutputPath = "$.Payload"
         Parameters = {
           FunctionName = "${aws_lambda_function.send_message_chunk.arn}:$LATEST"
@@ -80,21 +63,13 @@ resource "aws_sfn_state_machine" "send_message" {
               "Lambda.SdkClientException",
             ]
             IntervalSeconds = 2
-            "MaxAttempts"   = 6
+            MaxAttempts     = 6
           },
         ]
         Type = "Task"
       }
-      "Were there exactly 500 messages?" = {
-        Choices = [
-          {
-            "Next"        = "Poll for messages"
-            NumericEquals = 500
-            "Variable"    = "$.body.messageCount"
-          },
-        ]
-        Default = "Poll complete"
-        "Type"  = "Choice"
+      Success = {
+        Type = "Succeed"
       }
     }
   })
@@ -144,14 +119,19 @@ data "aws_iam_policy_document" "send_message" {
     effect = "Allow"
 
     actions = [
-      "logs:CreateLogGroup",
-      "logs:CreateLogStream",
-      "logs:PutLogEvents"
+      "logs:CreateLogDelivery",
+      "logs:GetLogDelivery",
+      "logs:UpdateLogDelivery",
+      "logs:DeleteLogDelivery",
+      "logs:ListLogDeliveries",
+      "logs:PutResourcePolicy",
+      "logs:DescribeResourcePolicies",
+      "logs:DescribeLogGroups"
     ]
 
-    resources = [
-      "${aws_cloudwatch_log_group.send_message.arn}*"
-    ]
+    # AWS Bug creating a policy too large if you use anything but "*" here
+    # https://forums.aws.amazon.com/thread.jspa?threadID=321488
+    resources = ["*"]
   }
 
   statement {

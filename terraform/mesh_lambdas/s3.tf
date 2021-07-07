@@ -2,6 +2,7 @@ resource "aws_s3_bucket" "mesh" {
   bucket = local.name
   acl    = "private"
 
+  # TODO up to KMS encryption
   server_side_encryption_configuration {
     rule {
       apply_server_side_encryption_by_default {
@@ -10,6 +11,18 @@ resource "aws_s3_bucket" "mesh" {
     }
   }
 }
+
+resource "aws_s3_bucket_public_access_block" "mesh" {
+  bucket = aws_s3_bucket.mesh.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# TODO AWS CloudTrail object level logging
+# meshtest2-S3Event
 
 resource "aws_s3_bucket_object" "folders" {
   for_each = toset([
