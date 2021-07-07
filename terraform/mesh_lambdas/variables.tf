@@ -2,7 +2,6 @@ variable "name_prefix" {
   description = "name to prefix on to the resources"
 }
 
-# TODO maybe break this into three configs?
 variable "config" {
   description = "Shared Mesh configuration"
 
@@ -10,8 +9,8 @@ variable "config" {
     ca_cert     = string # secret
     client_cert = string # secret
     client_key  = string # secret
+    environment = string
     shared_key  = string # secret
-    environment = string # integration|production
     verify_ssl  = bool
   })
 
@@ -19,8 +18,8 @@ variable "config" {
     ca_cert     = ""
     client_cert = ""
     client_key  = ""
-    shared_key  = ""
     environment = ""
+    shared_key  = ""
     verify_ssl  = true
   }
 
@@ -34,11 +33,11 @@ variable "mailboxes" {
   description = "Configuration of Mesh mailboxes"
 
   type = list(object({
+    allowed_recipients   = string
+    allowed_senders      = string
+    allowed_workflow_ids = string
     id                   = string
     password             = string # secret
-    allowed_senders      = string
-    allowed_recipients   = string
-    allowed_workflow_ids = string
     # inbound_bucket       = string # outputs not inputs
     # inbound_folder       = string # outputs not inputs
   }))
@@ -50,11 +49,11 @@ variable "outbound_mappings" {
   description = "Configuration of Mesh outbound mappings"
 
   type = list(object({
+    dest_mailbox = string
+    src_mailbox  = string
+    workflow_id  = string
     # bucket       = string # outputs not inputs
     # folder       = string # outputs not inputs
-    src_mailbox  = string
-    dest_mailbox = string
-    workflow_id  = string
   }))
 
   default = []
