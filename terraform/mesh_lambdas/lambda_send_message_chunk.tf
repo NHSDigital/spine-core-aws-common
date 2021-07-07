@@ -68,4 +68,58 @@ data "aws_iam_policy_document" "send_message_chunk" {
       "${aws_cloudwatch_log_group.send_message_chunk.arn}*"
     ]
   }
+
+  statement {
+    sid    = "SSMDescribe"
+    effect = "Allow"
+
+    actions = [
+      "ssm:DescribeParameters"
+    ]
+
+    resources = [
+      "arn:aws:ssm:eu-west-2:${data.aws_caller_identity.current.account_id}:parameter/${local.name}/*"
+    ]
+  }
+
+  statement {
+    sid    = "SSMGet"
+    effect = "Allow"
+
+    actions = [
+      "ssm:GetParametersByPath"
+    ]
+
+    resources = [
+      "arn:aws:ssm:eu-west-2:${data.aws_caller_identity.current.account_id}:parameter/${local.name}/*",
+      "arn:aws:ssm:eu-west-2:${data.aws_caller_identity.current.account_id}:parameter/${local.name}"
+    ]
+  }
+
+  statement {
+    sid    = "KMSDecrypt"
+    effect = "Allow"
+
+    actions = [
+      "kms:Decrypt"
+    ]
+
+    resources = [
+      aws_kms_alias.mesh.target_key_arn
+    ]
+  }
+
+  statement {
+    sid    = "S3Allow"
+    effect = "Allow"
+
+    actions = [
+      "s3:GetObject"
+    ]
+
+    resources = [
+      aws_s3_bucket.mesh.arn,
+      "${aws_s3_bucket.mesh.arn}/*"
+    ]
+  }
 }
