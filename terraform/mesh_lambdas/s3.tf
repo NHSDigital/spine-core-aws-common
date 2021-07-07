@@ -2,11 +2,11 @@ resource "aws_s3_bucket" "mesh" {
   bucket = local.name
   acl    = "private"
 
-  # TODO up to KMS encryption
   server_side_encryption_configuration {
     rule {
       apply_server_side_encryption_by_default {
-        sse_algorithm = "AES256"
+        kms_master_key_id = aws_kms_key.mesh.arn
+        sse_algorithm     = "aws:kms"
       }
     }
   }

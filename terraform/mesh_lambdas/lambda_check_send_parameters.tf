@@ -65,74 +65,89 @@ data "aws_iam_policy_document" "check_send_parameters" {
     ]
 
     resources = [
-      "${aws_cloudwatch_log_group.check_send_parameters.arn}*"
+      aws_cloudwatch_log_group.check_send_parameters.arn,
+      "${aws_cloudwatch_log_group.check_send_parameters.arn}:*"
+    ]
+  }
+
+  statement {
+    sid    = "SSMDescribe"
+    effect = "Allow"
+
+    actions = [
+      "ssm:DescribeParameters"
+    ]
+
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "SSMAllow"
+    effect = "Allow"
+
+    actions = [
+      "ssm:GetParametersByPath"
+    ]
+
+    resources = [
+      "arn:aws:ssm:eu-west-2:${data.aws_caller_identity.current.account_id}:parameter/${local.name}/*",
+      "arn:aws:ssm:eu-west-2:${data.aws_caller_identity.current.account_id}:parameter/${local.name}"
+    ]
+  }
+
+  statement {
+    sid    = "KMSDecrypt"
+    effect = "Allow"
+
+    actions = [
+      "kms:Decrypt"
+    ]
+
+    resources = [
+      aws_kms_alias.mesh.target_key_arn
+    ]
+  }
+
+  statement {
+    sid    = "SFNList"
+    effect = "Allow"
+
+    actions = [
+      "states:ListStateMachines"
+    ]
+
+    resources = [
+      "arn:aws:states:eu-west-2:${data.aws_caller_identity.current.account_id}:stateMachine:*"
+    ]
+  }
+
+  statement {
+    sid    = "SFNAllow"
+    effect = "Allow"
+
+    actions = [
+      "states:ListExecutions",
+      "states:DescribeExecution",
+    ]
+
+    resources = [
+      aws_sfn_state_machine.get_messages.arn,
+      aws_sfn_state_machine.send_message.arn
+    ]
+  }
+
+  statement {
+    sid    = "S3Allow"
+    effect = "Allow"
+
+    actions = [
+      "s3:GetObject",
+      "s3:ListBucket",
+    ]
+
+    resources = [
+      aws_s3_bucket.mesh.arn,
+      "${aws_s3_bucket.mesh.arn}/*"
     ]
   }
 }
-
-# {
-#     "Version": "2012-10-17",
-#     "Statement": [
-#         {
-#             "Effect": "Allow",
-#             "Action": [
-#                 "logs:CreateLogStream",
-#                 "logs:PutLogEvents"
-#             ],
-#             "Resource": [
-#                 "arn:aws:logs:eu-west-2:092420156801:log-group:/aws/lambda/meshtest2-mesh-check-send-parameters:*",
-#                 "arn:aws:logs:eu-west-2:092420156801:log-group:/aws/vendedlogs/states/meshtest2-mesh-get-messages-Logs:*"
-#             ]
-#         },
-#         {
-#             "Effect": "Allow",
-#             "Action": [
-#                 "ssm:DescribeParameters"
-#             ],
-#             "Resource": "*"
-#         },
-#         {
-#             "Effect": "Allow",
-#             "Action": [
-#                 "ssm:GetParametersByPath"
-#             ],
-#             "Resource": [
-#                 "arn:aws:ssm:eu-west-2:092420156801:parameter/meshtest2/*",
-#                 "arn:aws:ssm:eu-west-2:092420156801:parameter/meshtest2"
-#             ]
-#         },
-#         {
-#             "Effect": "Allow",
-#             "Action": "kms:Decrypt",
-#             "Resource": [
-#                 "arn:aws:kms:eu-west-2:092420156801:key/dd6c0abc-30e6-4c37-8f86-8cf1ca6c2f00",
-#                 "arn:aws:kms:eu-west-2:092420156801:key/4f295c4c-17fd-4c9d-84e9-266b01de0a5a"
-#             ]
-#         },
-#         {
-#             "Effect": "Allow",
-#             "Action": "states:ListStateMachines",
-#             "Resource": "arn:aws:states:eu-west-2:092420156801:stateMachine:*"
-#         },
-#         {
-#             "Effect": "Allow",
-#             "Action": [
-#                 "states:ListExecutions",
-#                 "states:DescribeExecution"
-#             ],
-#             "Resource": [
-#                 "arn:aws:states:eu-west-2:092420156801:stateMachine:meshtest2-*"
-#             ]
-#         },
-#         {
-#             "Effect": "Allow",
-#             "Action": [
-#                 "s3:GetObject",
-#                 "s3:ListBucket"
-#             ],
-#             "Resource": [
-#                 "arn:aws:s3:::meshtest2-*"
-#             ]
-#         }
-#     ]
-# }

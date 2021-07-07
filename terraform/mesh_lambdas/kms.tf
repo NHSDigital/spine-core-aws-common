@@ -1,4 +1,17 @@
-data "aws_iam_policy_document" "kms_key_policy" {
+resource "aws_kms_key" "mesh" {
+  description             = local.name
+  deletion_window_in_days = 14
+  is_enabled              = true
+  enable_key_rotation     = true
+  policy                  = data.aws_iam_policy_document.mesh.json
+}
+
+resource "aws_kms_alias" "mesh" {
+  name          = "alias/${local.name}"
+  target_key_id = aws_kms_key.mesh.key_id
+}
+
+data "aws_iam_policy_document" "mesh" {
   statement {
     sid       = "Enable IAM User Permissions"
     effect    = "Allow"

@@ -82,7 +82,6 @@ data "aws_iam_policy_document" "poll_mailbox" {
     ]
   }
 
-
   statement {
     sid    = "SSMGet"
     effect = "Allow"
@@ -97,18 +96,18 @@ data "aws_iam_policy_document" "poll_mailbox" {
     ]
   }
 
-  # statement {
-  #   sid    = "KMSAllow"
-  #   effect = "Allow"
+  statement {
+    sid    = "KMSDecrypt"
+    effect = "Allow"
 
-  #   actions = [
-  #     "kms:Decrypt"
-  #   ]
+    actions = [
+      "kms:Decrypt"
+    ]
 
-  #   resources = [
-  #     "arn:aws:kms:eu-west-2:${data.aws_caller_identity.current.account_id}:key/dd6c0abc-30e6-4c37-8f86-8cf1ca6c2f00"
-  #   ]
-  # }
+    resources = [
+      aws_kms_alias.mesh.target_key_arn
+    ]
+  }
 
   statement {
     sid    = "StepFuncDescribe"
