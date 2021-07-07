@@ -12,7 +12,3 @@ output "config" {
 output "mailboxes" {
   value = var.mailboxes
 }
-
-output "outbound_mappings" {
-  value = var.outbound_mappings
-}

@@ -38,22 +38,13 @@ variable "mailboxes" {
     allowed_workflow_ids = string
     id                   = string
     password             = string # secret
-    # inbound_bucket       = string # outputs not inputs
     # inbound_folder       = string # outputs not inputs
-  }))
-
-  default = []
-}
-
-variable "outbound_mappings" {
-  description = "Configuration of Mesh outbound mappings"
-
-  type = list(object({
-    dest_mailbox = string
-    src_mailbox  = string
-    workflow_id  = string
-    # bucket       = string # outputs not inputs
-    # folder       = string # outputs not inputs
+    outbound_mappings = list(object({
+      dest_mailbox = string
+      src_mailbox  = string
+      workflow_id  = string
+      # folder       = string # outputs not inputs
+    }))
   }))
 
   default = []
