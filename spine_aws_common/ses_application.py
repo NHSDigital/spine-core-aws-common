@@ -10,5 +10,4 @@ class SESApplication(BatchApplication):
     Base class for SES Lambda applications
     """
 
-    def process_event(self, event):
-        return SESEvent(event)
+    EVENT_TYPE = SESEvent

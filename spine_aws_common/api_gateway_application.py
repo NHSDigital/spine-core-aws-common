@@ -10,8 +10,7 @@ class APIGatewayApplication(WebApplication):
     Base class for API Gateway Lambda applications
     """
 
-    def process_event(self, event):
-        return APIGatewayProxyEvent(event)
+    EVENT_TYPE = APIGatewayProxyEvent
 
     def _get_internal_id(self):
         """

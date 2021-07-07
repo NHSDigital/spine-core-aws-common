@@ -10,8 +10,7 @@ class SQSApplication(BatchApplication):
     Base class for SQS Lambda applications
     """
 
-    def process_event(self, event):
-        return SQSEvent(event)
+    EVENT_TYPE = SQSEvent
 
     def _get_internal_id_from_record(self, record):
         """

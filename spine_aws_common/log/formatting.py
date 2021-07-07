@@ -4,7 +4,6 @@ Created 18th June 2019
 import re
 import six
 
-from spine_aws_common.log.constants import LoggingConstants
 from spine_aws_common.log.loglineprocessor import (
     check_for_param_dictionary,
     LogLineProcessor,
@@ -107,19 +106,6 @@ def create_log_line(log_preamble, log_text, substitution_dict):
     # Replace newlines with spaces
     log_line = re.sub(r"\n|\r", " ", log_line)
     return log_line
-
-
-def create_placehold_log(log_row_dict):
-    """
-    Write log text which does not contain any actual log text - just the
-    identifier of the traceable process as a pointer to the existence of AUDIT
-    logs
-    """
-    log_text = ""
-    for identifier in LoggingConstants.IDENTIFIERS:
-        if log_row_dict.get(identifier):
-            log_text += " {}={}".format(identifier, log_row_dict[identifier])
-    return log_text
 
 
 def substitute_preamble_for_monitor(log_preamble):
