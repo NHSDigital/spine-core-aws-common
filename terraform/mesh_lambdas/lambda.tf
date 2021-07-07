@@ -1,9 +1,9 @@
 locals {
   lambdas = [
+    "fetch-message-chunk",
     "check-send-parameters",
+    "poll-mailbox",
     "send-message-chunk",
-    "get-store-message-chunk",
-    "poll-for-messages",
   ]
 }
 

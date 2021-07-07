@@ -1,18 +1,13 @@
-locals {
-  function_name = var.function_name
-  code_name     = var.code_name
-}
-
 data "archive_file" "function" {
   type        = "zip"
-  source_dir  = "${path.module}/../../mesh_lambdas/code/${local.code_name}"
+  source_dir  = "${path.module}/../../../spine_aws_common/mesh/mesh_implementation_lambdas"
   output_path = "${path.module}/${local.code_name}.zip"
 }
 
 resource "aws_lambda_function" "function" {
   function_name    = local.function_name
   filename         = data.archive_file.function.output_path
-  handler          = "lambda_function.lambda_handler"
+  handler          = "mesh_${replace(local.code_name, "-", "_")}_application_lambda.lambda_handler"
   runtime          = local.python_runtime
   timeout          = local.lambda_timeout
   source_code_hash = data.archive_file.function.output_base64sha256
