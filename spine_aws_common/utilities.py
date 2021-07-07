@@ -50,3 +50,15 @@ class StopWatch:
         date_split = seed_time.split(".")
         self.start_time = datetime.strptime(date_split[0], "%Y%m%dT%H%M%S")
         self.start_time += timedelta(milliseconds=int(date_split[1]))
+
+
+def human_readable_bytes(num):
+    """Size in human readable format for logs"""
+    if abs(num) < 1024:
+        return f"{num}B"
+    num /= 1024.0
+    for unit in ["Ki", "Mi", "Gi", "Ti"]:
+        if abs(num) < 1024.0:
+            return f"{num:.1f}{unit}B"
+        num /= 1024.0
+    return f"{num:.1f}PiB"

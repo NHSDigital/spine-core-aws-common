@@ -1,6 +1,7 @@
 six
 boto3
 aws-lambda-powertools
+moto[s3,ssm,stepfunctions]
 build
 pep8-naming
 black

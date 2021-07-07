@@ -18,9 +18,11 @@ class LogHelper:
         sys.stderr = self.captured_err_output
 
     def clean_up(self):
-        """Cleanup after use"""
+        """Cleanup after use and output for test results"""
         sys.stdout = sys.__stdout__
         sys.stderr = sys.__stderr__
+        print(self.captured_output.getvalue(), file=sys.stdout)
+        print(self.captured_err_output.getvalue(), file=sys.stderr)
         self.captured_output.close()
         self.captured_err_output.close()
 

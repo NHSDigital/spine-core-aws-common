@@ -129,9 +129,9 @@ class LoggingAdapter(logging.Handler):
             (name, level, levelname), (name, level, levelname)
         )
 
-        for finder in self._MESSAGE_MAP:
+        for finder, value in self._MESSAGE_MAP.items():
             if finder in message:
-                message = self._MESSAGE_MAP[finder]
+                message = value
 
         return LoggingAdapter._LOGGER_DETAIL_MAP.get(
             (name, level, levelname, message), (name, level, levelname, message)
