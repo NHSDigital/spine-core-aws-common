@@ -19,7 +19,7 @@ class MeshPollMailboxApplication(LambdaApplication):
         """
         super().__init__(additional_log_config, load_ssm_params)
         self.mailbox_name = None
-        self.environment = os.environ.get("ENV", "default")
+        self.environment = os.environ.get("Environment", "default")
         # TODO figure out better way to do this:
         self.my_step_function_name = f"{self.environment}-mesh-get-messages"
 
@@ -28,7 +28,7 @@ class MeshPollMailboxApplication(LambdaApplication):
         self.mailbox_name = self.event["mailbox"]
 
     def start(self):
-        mailbox = MeshMailbox(self.mailbox_name, self.environment)
+        mailbox = MeshMailbox(self.log_object, self.mailbox_name, self.environment)
 
         try:
             MeshCommon.singleton_check(self.mailbox_name, self.my_step_function_name)
@@ -42,7 +42,9 @@ class MeshPollMailboxApplication(LambdaApplication):
         message_count = len(message_list)
         output_list = []
         for message in message_list:
-            output_list.append({"message_id": message, "mailbox": self.mailbox_name})
+            output_list.append(
+                {"message_id": message, "dest_mailbox": self.mailbox_name}
+            )
         # to set response for the lambda
         self.response = {
             "statusCode": 200,

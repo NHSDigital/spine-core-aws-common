@@ -25,7 +25,7 @@ class MeshCheckSendParametersApplication(LambdaApplication):
     def __init__(self, additional_log_config=None, load_ssm_params=False):
         """Initialise variables"""
         super().__init__(additional_log_config, load_ssm_params)
-        self.environment = self.system_config.get("ENV", "default")
+        self.environment = self.system_config.get("Environment", "default")
         self.chunk_size = None
         self.my_step_function_name = None
 
@@ -44,6 +44,8 @@ class MeshCheckSendParametersApplication(LambdaApplication):
         self.my_step_function_name = f"{self.environment}-mesh-send-message"
 
     def start(self):
+        # in case of crash, set to internal server error so next stage fails
+        self.response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR.value}
         # TODO nicer failure, log error and parameters missing in request
         bucket = self.event.detail["requestParameters"]["bucketName"]
         key = self.event.detail["requestParameters"]["key"]

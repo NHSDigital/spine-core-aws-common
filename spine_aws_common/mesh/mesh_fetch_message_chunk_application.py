@@ -24,7 +24,7 @@ class MeshFetchMessageChunkApplication(LambdaApplication):
         super().__init__(additional_log_config, load_ssm_params)
         self.mailbox = None
         self.input = {}
-        self.environment = os.environ.get("ENV", "default")
+        self.environment = os.environ.get("Environment", "default")
         self.chunk_size = os.environ.get("CHUNK_SIZE", MeshCommon.DEFAULT_CHUNK_SIZE)
 
     def start(self):
@@ -33,7 +33,7 @@ class MeshFetchMessageChunkApplication(LambdaApplication):
         old_internal_id = self.input.get("internal_id", "Not Provided")
         message_id = self.input["message_id"]
         mailbox_name = self.input["dest_mailbox"]
-        self.mailbox = MeshMailbox(mailbox_name, self.environment)
+        self.mailbox = MeshMailbox(self.log_object, mailbox_name, self.environment)
         self.log_object.internal_id = self._create_new_internal_id()
         self.log_object.write_log(
             "MESHFETCH0001",

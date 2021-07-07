@@ -52,7 +52,9 @@ class TestMeshMailbox(TestCase):
             self.environment, self.ssm_client
         )
 
-        mailbox = MeshMailbox("MESH-TEST2", self.environment, self.ssm_client)
+        mailbox = MeshMailbox(
+            mock.MagicMock, "MESH-TEST2", self.environment, self.ssm_client
+        )
         response = mailbox.authenticate()
         self.assertEqual(response, b"hello")
         response = mailbox.mesh_client.list_messages()

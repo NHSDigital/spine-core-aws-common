@@ -13,6 +13,10 @@ class MeshTestingCommon:
     KNOWN_MESSAGE_ID = "20210704225158261556_F46E2B"
     FILE_CONTENT = FILE_CONTENT
 
+    def get_known_internal_id(self):
+        """Get a known internal Id for testing and mocking purposes"""
+        return self.KNOWN_INTERNAL_ID
+
     def get_known_internal_id1(self):
         """Get a known internal Id for testing and mocking purposes"""
         return self.KNOWN_INTERNAL_ID1
@@ -95,7 +99,7 @@ class MeshTestingCommon:
             Value="BackBone",
         )
         ssm_client.put_parameter(
-            Name=f"/{environment}/mesh/mailboxes/MESH-TEST1/MESH_MAILBOX_PASSWORD",
+            Name=f"/{environment}/mesh/mailboxes/MESH-TEST1/MAILBOX_PASSWORD",
             Value="pwd123456",
         )
         ssm_client.put_parameter(
@@ -107,7 +111,7 @@ class MeshTestingCommon:
             Value="inbound",
         )
         ssm_client.put_parameter(
-            Name=f"/{environment}/mesh/mailboxes/MESH-TEST2/MESH_MAILBOX_PASSWORD",
+            Name=f"/{environment}/mesh/mailboxes/MESH-TEST2/MAILBOX_PASSWORD",
             Value="pwd123456",
         )
         ssm_client.put_parameter(

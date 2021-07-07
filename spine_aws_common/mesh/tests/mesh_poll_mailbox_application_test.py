@@ -24,7 +24,7 @@ class TestMeshPollMailboxApplication(TestCase):
             "AWS_LAMBDA_FUNCTION_NAME": "lambda_test",
             "AWS_LAMBDA_FUNCTION_MEMORY_SIZE": "128",
             "AWS_LAMBDA_FUNCTION_VERSION": "1",
-            "ENV": "meshtest",
+            "Environment": "meshtest",
             "CHUNK_SIZE": "10",
         },
     )
@@ -34,7 +34,7 @@ class TestMeshPollMailboxApplication(TestCase):
         self.log_helper.set_stdout_capture()
         self.maxDiff = 1024  # pylint: disable="invalid-name"
         self.app = MeshPollMailboxApplication()
-        self.environment = self.app.system_config["ENV"]
+        self.environment = self.app.system_config["Environment"]
 
     def tearDown(self) -> None:
         super().tearDown()

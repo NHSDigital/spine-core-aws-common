@@ -26,7 +26,7 @@ class TestMeshCheckSendParametersApplication(TestCase):
             "AWS_LAMBDA_FUNCTION_NAME": "lambda_test",
             "AWS_LAMBDA_FUNCTION_MEMORY_SIZE": "128",
             "AWS_LAMBDA_FUNCTION_VERSION": "1",
-            "ENV": "meshtest",
+            "Environment": "meshtest",
             "CHUNK_SIZE": "10",
         },
     )
@@ -36,7 +36,7 @@ class TestMeshCheckSendParametersApplication(TestCase):
         self.log_helper.set_stdout_capture()
 
         self.app = MeshCheckSendParametersApplication()
-        self.environment = self.app.system_config["ENV"]
+        self.environment = self.app.system_config["Environment"]
 
     def setup_mock_aws_environment(self, s3_client, ssm_client):
         """Setup standard environment for tests"""
