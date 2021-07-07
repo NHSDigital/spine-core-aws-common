@@ -78,7 +78,7 @@ data "aws_iam_policy_document" "poll_mailbox" {
     ]
 
     resources = [
-      "arn:aws:ssm:eu-west-2:092420156801:parameter/meshtest2/*"
+      "arn:aws:ssm:eu-west-2:${data.aws_caller_identity.current.account_id}:parameter/${local.name}/*"
     ]
   }
 
@@ -92,23 +92,23 @@ data "aws_iam_policy_document" "poll_mailbox" {
     ]
 
     resources = [
-      "arn:aws:ssm:eu-west-2:092420156801:parameter/meshtest2/*",
-      "arn:aws:ssm:eu-west-2:092420156801:parameter/meshtest2"
+      "arn:aws:ssm:eu-west-2:${data.aws_caller_identity.current.account_id}:parameter/${local.name}/*",
+      "arn:aws:ssm:eu-west-2:${data.aws_caller_identity.current.account_id}:parameter/${local.name}"
     ]
   }
 
-  statement {
-    sid    = "KMSAllow"
-    effect = "Allow"
+  # statement {
+  #   sid    = "KMSAllow"
+  #   effect = "Allow"
 
-    actions = [
-      "kms:Decrypt"
-    ]
+  #   actions = [
+  #     "kms:Decrypt"
+  #   ]
 
-    resources = [
-      "arn:aws:kms:eu-west-2:092420156801:key/dd6c0abc-30e6-4c37-8f86-8cf1ca6c2f00"
-    ]
-  }
+  #   resources = [
+  #     "arn:aws:kms:eu-west-2:${data.aws_caller_identity.current.account_id}:key/dd6c0abc-30e6-4c37-8f86-8cf1ca6c2f00"
+  #   ]
+  # }
 
   statement {
     sid    = "StepFuncDescribe"
@@ -119,7 +119,7 @@ data "aws_iam_policy_document" "poll_mailbox" {
     ]
 
     resources = [
-      "arn:aws:states:eu-west-2:092420156801:stateMachine:*"
+      "arn:aws:states:eu-west-2:${data.aws_caller_identity.current.account_id}:stateMachine:*"
     ]
   }
 
@@ -133,7 +133,7 @@ data "aws_iam_policy_document" "poll_mailbox" {
     ]
 
     resources = [
-      "arn:aws:states:eu-west-2:092420156801:stateMachine:meshtest2*"
+      "arn:aws:states:eu-west-2:${data.aws_caller_identity.current.account_id}:stateMachine:${local.name}*"
     ]
   }
 }
