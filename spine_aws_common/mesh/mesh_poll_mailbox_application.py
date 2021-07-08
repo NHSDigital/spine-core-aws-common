@@ -28,6 +28,8 @@ class MeshPollMailboxApplication(LambdaApplication):
         self.mailbox_name = self.event["mailbox"]
 
     def start(self):
+        # in case of crash
+        self.response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR.value}
         mailbox = MeshMailbox(self.log_object, self.mailbox_name, self.environment)
 
         try:
@@ -41,13 +43,26 @@ class MeshPollMailboxApplication(LambdaApplication):
         message_list = mailbox.mesh_client.list_messages()
         message_count = len(message_list)
         output_list = []
+        if message_count == 0:
+            # return 204 to keep state transitions to minimum if no messages
+            self.response = {"statusCode": HTTPStatus.NO_CONTENT.value, "body": {}}
+            return
         for message in message_list:
             output_list.append(
-                {"message_id": message, "dest_mailbox": self.mailbox_name}
+                {
+                    "headers": {"Content-Type": "application/json"},
+                    "body": {
+                        "complete": False,
+                        "internal_id": self.log_object.internal_id,
+                        "message_id": message,
+                        "dest_mailbox": self.mailbox_name,
+                    },
+                }
             )
+
         # to set response for the lambda
         self.response = {
-            "statusCode": 200,
+            "statusCode": HTTPStatus.OK.value,
             "headers": {"Content-Type": "application/json"},
             "body": {
                 "internal_id": self.log_object.internal_id,
