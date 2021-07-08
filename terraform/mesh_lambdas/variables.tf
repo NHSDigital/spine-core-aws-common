@@ -37,7 +37,7 @@ variable "mailboxes" {
     allowed_senders      = string
     allowed_workflow_ids = string
     id                   = string
-    password             = string # secret
+    # password             = string # secret
     # inbound_folder       = string # outputs not inputs
     outbound_mappings = list(object({
       dest_mailbox = string

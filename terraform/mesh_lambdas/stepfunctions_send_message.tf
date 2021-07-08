@@ -14,7 +14,7 @@ resource "aws_sfn_state_machine" "send_message" {
     StartAt = "Check send parameters"
     States = {
       "Check send parameters" = {
-        Next       = "Send message chunk"
+        Next       = "Failed?"
         OutputPath = "$.Payload"
         Parameters = {
           FunctionName = "${aws_lambda_function.check_send_parameters.arn}:$LATEST"
@@ -35,19 +35,33 @@ resource "aws_sfn_state_machine" "send_message" {
         ]
         Type = "Task"
       }
-      Choice = {
+      "Completed sending?" = {
         Choices = [
           {
-            BooleanEquals = false
-            Next          = "Send message chunk"
-            Variable      = "$.body.isLastChunk"
+            BooleanEquals = true
+            Next          = "Success"
+            Variable      = "$.body.complete"
           },
         ]
-        Default = "Success"
+        Default = "Send message chunk"
+        Type    = "Choice"
+      }
+      Fail = {
+        Type = "Fail"
+      }
+      "Failed?" = {
+        Choices = [
+          {
+            Next                     = "Fail"
+            NumericGreaterThanEquals = 300
+            Variable                 = "$.statusCode"
+          },
+        ]
+        Default = "Send message chunk"
         Type    = "Choice"
       }
       "Send message chunk" = {
-        Next       = "Choice"
+        Next       = "Completed sending?"
         OutputPath = "$.Payload"
         Parameters = {
           FunctionName = "${aws_lambda_function.send_message_chunk.arn}:$LATEST"
