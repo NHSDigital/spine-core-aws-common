@@ -153,11 +153,13 @@ data "aws_iam_policy_document" "send_message" {
     sid    = "LamdaInvokeAllow"
     effect = "Allow"
 
+    actions = [
+      "lambda:InvokeFunction"
+    ]
+
     resources = [
       aws_lambda_function.send_message_chunk.arn,
       aws_lambda_function.check_send_parameters.arn
     ]
-
-    actions = ["lambda:InvokeFunction"]
   }
 }

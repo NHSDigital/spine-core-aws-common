@@ -25,15 +25,3 @@ resource "aws_s3_bucket_public_access_block" "mesh" {
   ignore_public_acls      = true
   restrict_public_buckets = true
 }
-
-resource "aws_s3_bucket_object" "folders" {
-  for_each = toset([
-    "inbound",
-    "outbound",
-  ])
-
-  bucket       = aws_s3_bucket.mesh.id
-  key          = "${each.key}/"
-  acl          = "private"
-  content_type = "application/x-directory"
-}
