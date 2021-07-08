@@ -26,9 +26,6 @@ resource "aws_s3_bucket_public_access_block" "mesh" {
   restrict_public_buckets = true
 }
 
-# TODO AWS CloudTrail object level logging in to aws_s3_bucket.s3logs.id
-# meshtest2-S3Event
-
 resource "aws_s3_bucket_object" "folders" {
   for_each = toset([
     "inbound",

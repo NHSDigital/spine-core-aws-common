@@ -18,7 +18,7 @@ variable "config" {
     ca_cert     = ""
     client_cert = ""
     client_key  = ""
-    environment = ""
+    environment = "integration"
     shared_key  = ""
     verify_ssl  = true
   }
@@ -41,8 +41,8 @@ variable "mailboxes" {
     # inbound_folder       = string # outputs not inputs
     outbound_mappings = list(object({
       dest_mailbox = string
-      src_mailbox  = string
-      workflow_id  = string
+      # src_mailbox  = string # is id
+      workflow_id = string
       # folder       = string # outputs not inputs
     }))
   }))

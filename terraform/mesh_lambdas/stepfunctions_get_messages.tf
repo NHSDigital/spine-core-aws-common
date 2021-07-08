@@ -156,6 +156,7 @@ data "aws_iam_policy_document" "get_messages" {
     ]
 
     # AWS Bug creating a policy too large if you use anything but "*" here
+    # resulting in a failed terraform deployment
     # https://forums.aws.amazon.com/thread.jspa?threadID=321488
     resources = ["*"]
   }
