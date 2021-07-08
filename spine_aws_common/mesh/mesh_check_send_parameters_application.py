@@ -41,7 +41,7 @@ class MeshCheckSendParametersApplication(LambdaApplication):
             self.system_config.get("CHUNK_SIZE", MeshCommon.DEFAULT_CHUNK_SIZE)
         )
         # TODO figure out better way to do this:
-        self.my_step_function_name = f"{self.environment}-mesh-send-message"
+        self.my_step_function_name = f"{self.environment}-send-message"
 
     def start(self):
         # in case of crash, set to internal server error so next stage fails

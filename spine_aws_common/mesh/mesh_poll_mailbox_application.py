@@ -21,7 +21,7 @@ class MeshPollMailboxApplication(LambdaApplication):
         self.mailbox_name = None
         self.environment = os.environ.get("Environment", "default")
         # TODO figure out better way to do this:
-        self.my_step_function_name = f"{self.environment}-mesh-get-messages"
+        self.my_step_function_name = f"{self.environment}-get-messages"
 
     def initialise(self):
         # initialise
