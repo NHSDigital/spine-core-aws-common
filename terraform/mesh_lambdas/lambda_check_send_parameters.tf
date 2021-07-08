@@ -3,7 +3,7 @@ resource "aws_lambda_function" "check_send_parameters" {
   filename         = data.archive_file.mesh_implementation_lambdas.output_path
   handler          = "mesh_check_send_parameters_application_lambda.lambda_handler"
   runtime          = local.python_runtime
-  timeout          = local.lambda_timeout
+  timeout          = 60
   source_code_hash = data.archive_file.mesh_implementation_lambdas.output_base64sha256
   role             = aws_iam_role.check_send_parameters.arn
   layers           = [aws_lambda_layer_version.mesh_implementation_lambdas_dependencies.arn]
