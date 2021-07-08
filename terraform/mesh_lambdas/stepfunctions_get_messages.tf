@@ -167,7 +167,9 @@ data "aws_iam_policy_document" "get_messages" {
 
     resources = [
       aws_lambda_function.fetch_message_chunk.arn,
-      aws_lambda_function.check_send_parameters.arn
+      "${aws_lambda_function.fetch_message_chunk.arn}:*",
+      aws_lambda_function.check_send_parameters.arn,
+      "${aws_lambda_function.check_send_parameters.arn}:*"
     ]
 
     actions = ["lambda:InvokeFunction"]
