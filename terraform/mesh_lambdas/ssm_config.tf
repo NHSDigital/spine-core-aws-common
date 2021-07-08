@@ -1,23 +1,47 @@
 resource "aws_ssm_parameter" "ca_cert" {
   name  = "/${local.name}/mesh/MESH_CA_CERT"
   type  = "SecureString"
-  value = "TBC"
+  value = "To Replace"
+
+  lifecycle {
+    ignore_changes = [
+      value
+    ]
+  }
 }
 resource "aws_ssm_parameter" "client_cert" {
   name  = "/${local.name}/mesh/MESH_CLIENT_CERT"
   type  = "SecureString"
-  value = "TBC"
+  value = "To Replace"
+
+  lifecycle {
+    ignore_changes = [
+      value
+    ]
+  }
 }
 resource "aws_ssm_parameter" "client_key" {
   name  = "/${local.name}/mesh/MESH_CLIENT_KEY"
   type  = "SecureString"
-  value = "TBC"
+  value = "To Replace"
+
+  lifecycle {
+    ignore_changes = [
+      value
+    ]
+  }
 }
 
 resource "aws_ssm_parameter" "shared_key" {
   name  = "/${local.name}/mesh/MESH_SHARED_KEY"
   type  = "SecureString"
-  value = "TBC"
+  value = "To Replace"
+
+  lifecycle {
+    ignore_changes = [
+      value
+    ]
+  }
 }
 
 resource "aws_ssm_parameter" "url" {
@@ -27,7 +51,8 @@ resource "aws_ssm_parameter" "url" {
 }
 
 resource "aws_ssm_parameter" "verify_ssl" {
-  name  = "/${local.name}/mesh/MESH_VERIFY_SSL"
-  type  = "String"
+  name = "/${local.name}/mesh/MESH_VERIFY_SSL"
+  type = "String"
+  # This is effectively converting the bool type from Terraform to Python
   value = var.config.verify_ssl ? "True" : "False"
 }

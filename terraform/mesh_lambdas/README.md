@@ -1,3 +1,12 @@
+# Mesh Lambdas
+
+A terraform module to provide AWS infrastructure capable of sending and recieving Mesh messages
+
+## Configuration
+
+_*TODO*_
+
+```
 variable "name_prefix" {
   description = "name to prefix on to the resources"
 }
@@ -33,9 +42,9 @@ variable "mailboxes" {
   description = "Configuration of Mesh mailboxes"
 
   type = list(object({
-    allowed_recipients   = optional(string)
-    allowed_senders      = optional(string)
-    allowed_workflow_ids = optional(string)
+    allowed_recipients   = string
+    allowed_senders      = string
+    allowed_workflow_ids = string
     id                   = string
     # password             = string # secret
     # inbound_folder       = string # outputs not inputs
@@ -49,3 +58,4 @@ variable "mailboxes" {
 
   default = []
 }
+```
