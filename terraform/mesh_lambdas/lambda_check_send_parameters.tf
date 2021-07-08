@@ -113,26 +113,30 @@ data "aws_iam_policy_document" "check_send_parameters" {
     effect = "Allow"
 
     actions = [
+      "states:ListExecutions",
       "states:ListStateMachines"
     ]
 
     resources = [
-      "arn:aws:states:eu-west-2:${data.aws_caller_identity.current.account_id}:stateMachine:*"
+      "arn:aws:states:eu-west-2:${data.aws_caller_identity.current.account_id}:stateMachine:*",
+      aws_sfn_state_machine.get_messages.arn,
+      aws_sfn_state_machine.send_message.arn
     ]
   }
+
+
 
   statement {
     sid    = "SFNAllow"
     effect = "Allow"
 
     actions = [
-      "states:ListExecutions",
       "states:DescribeExecution",
     ]
 
     resources = [
-      aws_sfn_state_machine.get_messages.arn,
-      aws_sfn_state_machine.send_message.arn
+      "${replace(aws_sfn_state_machine.get_messages.arn, "stateMachine", "execution")}*",
+      "${replace(aws_sfn_state_machine.send_message.arn, "stateMachine", "execution")}*"
     ]
   }
 
