@@ -10,7 +10,7 @@ resource "aws_lambda_function" "poll_mailbox" {
 
   environment {
     variables = {
-      ENV = local.name
+      Environment = local.name
     }
   }
 

@@ -10,7 +10,7 @@ resource "aws_lambda_function" "check_send_parameters" {
 
   environment {
     variables = {
-      ENV = local.name
+      Environment = local.name
     }
   }
 

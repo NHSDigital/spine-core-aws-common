@@ -10,7 +10,7 @@ resource "aws_lambda_function" "send_message_chunk" {
 
   environment {
     variables = {
-      ENV = local.name
+      Environment = local.name
     }
   }
 
