@@ -10,6 +10,7 @@ import requests
 from urllib3.exceptions import InsecureRequestWarning
 import boto3
 from mesh_client import MeshClient
+from spine_aws_common.logger import Logger
 
 
 class SingletonCheckFailure(Exception):
@@ -94,7 +95,7 @@ MeshMessage = namedtuple(
 class MeshMailbox:
     """Mesh mailbox object, gets parameters from SSM Parameter Store"""
 
-    def __init__(self, mailbox, environment="default"):
+    def __init__(self, log_object: Logger, mailbox, environment="default"):
         self.mailbox = mailbox
         self.common_params = None
         self.mailbox_params = None
@@ -105,6 +106,7 @@ class MeshMailbox:
         self.dest_mailbox = None
         self.workflow_id = None
         self.temp_dir_object = None
+        self.log_object = log_object
         self._setup()
         atexit.register(self.clean_up)
 
@@ -116,6 +118,9 @@ class MeshMailbox:
         """Get the parameters from SSM paramter store"""
         # TODO refactor
         ssm_client = boto3.client("ssm")
+        self.log_object.write_log(
+            "MESH0001", None, {"mailbox": self.mailbox, "environment": self.environment}
+        )
         common_params_result = ssm_client.get_parameters_by_path(
             Path=f"/{self.environment}/mesh", Recursive=False, WithDecryption=True
         )
@@ -139,7 +144,7 @@ class MeshMailbox:
         self.mesh_client = ExtendedMeshClient(
             self.common_params["MESH_URL"],
             self.mailbox,
-            self.mailbox_params["MESH_MAILBOX_PASSWORD"],
+            self.mailbox_params["MAILBOX_PASSWORD"],
             shared_key=self.common_params["MESH_SHARED_KEY"].encode("utf8"),
             cert=(self.client_cert_file.name, self.client_key_file.name),
             verify=self.ca_cert_file.name if maybe_verify else None,

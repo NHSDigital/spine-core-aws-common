@@ -21,7 +21,7 @@ class MeshSendMessageChunkApplication(LambdaApplication):
         self.mailbox = None
         self.input = {}
         self.body = None
-        self.environment = os.environ.get("ENV", "default")
+        self.environment = os.environ.get("Environment", "default")
 
     def start(self):
         # TODO refactor
@@ -41,7 +41,9 @@ class MeshSendMessageChunkApplication(LambdaApplication):
         chunked = self.input.get("chunked", False)
         message_id = self.input.get("message_id", None)
 
-        self.mailbox = MeshMailbox(self.input["src_mailbox"], self.environment)
+        self.mailbox = MeshMailbox(
+            self.log_object, self.input["src_mailbox"], self.environment
+        )
         self.mailbox.set_destination_and_workflow(
             self.input["dest_mailbox"], self.input["workflow_id"]
         )
