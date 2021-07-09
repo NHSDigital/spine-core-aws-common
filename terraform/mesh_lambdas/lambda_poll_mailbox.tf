@@ -110,29 +110,30 @@ data "aws_iam_policy_document" "poll_mailbox" {
   }
 
   statement {
-    sid    = "StepFuncDescribe"
-    effect = "Allow"
-
-    actions = [
-      "states:ListStateMachines"
-    ]
-
-    resources = [
-      "arn:aws:states:eu-west-2:${data.aws_caller_identity.current.account_id}:stateMachine:*"
-    ]
-  }
-
-  statement {
-    sid    = "StepFuncGet"
+    sid    = "SFNList"
     effect = "Allow"
 
     actions = [
       "states:ListExecutions",
-      "states:DescribeExecution"
+      "states:ListStateMachines"
     ]
 
     resources = [
-      "arn:aws:states:eu-west-2:${data.aws_caller_identity.current.account_id}:stateMachine:${local.name}*"
+      "arn:aws:states:eu-west-2:${data.aws_caller_identity.current.account_id}:stateMachine:*",
+    ]
+  }
+
+  statement {
+    sid    = "SFNAllow"
+    effect = "Allow"
+
+    actions = [
+      "states:DescribeExecution",
+    ]
+
+    resources = [
+      "${replace(aws_sfn_state_machine.get_messages.arn, "stateMachine", "execution")}*",
+      "${replace(aws_sfn_state_machine.send_message.arn, "stateMachine", "execution")}*"
     ]
   }
 }

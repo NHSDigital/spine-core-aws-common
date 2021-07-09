@@ -124,8 +124,6 @@ data "aws_iam_policy_document" "check_send_parameters" {
     ]
   }
 
-
-
   statement {
     sid    = "SFNAllow"
     effect = "Allow"
