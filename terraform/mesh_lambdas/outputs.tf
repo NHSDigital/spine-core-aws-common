@@ -10,5 +10,5 @@ output "config" {
 }
 
 output "mailboxes" {
-  value = var.mailboxes
+  value = module.mailboxes[*]
 }

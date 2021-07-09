@@ -1,26 +1,18 @@
 variable "name_prefix" {
-  description = "name to prefix on to the resources"
+  description = "Name to prefix on to the resources"
 }
 
 variable "config" {
   description = "Shared Mesh configuration"
 
   type = object({
-    # ca_cert     = string # secret
-    # client_cert = string # secret
-    # client_key  = string # secret
     environment = string
-    # shared_key  = string # secret
-    verify_ssl = bool
+    verify_ssl  = bool
   })
 
   default = {
-    # ca_cert     = ""
-    # client_cert = ""
-    # client_key  = ""
     environment = "integration"
-    # shared_key  = ""
-    verify_ssl = true
+    verify_ssl  = true
   }
 
   validation {
@@ -32,18 +24,15 @@ variable "config" {
 variable "mailboxes" {
   description = "Configuration of Mesh mailboxes"
 
+  # TODO make outbound_mappings optional
   type = list(object({
+    id                   = string
     allowed_recipients   = optional(string)
     allowed_senders      = optional(string)
     allowed_workflow_ids = optional(string)
-    id                   = string
-    # password             = string # secret
-    # inbound_folder       = string # outputs not inputs
     outbound_mappings = list(object({
       dest_mailbox = string
-      # src_mailbox  = string # is id
-      workflow_id = string
-      # folder       = string # outputs not inputs
+      workflow_id  = string
     }))
   }))
 
