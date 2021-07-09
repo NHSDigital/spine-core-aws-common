@@ -13,19 +13,35 @@ resource "aws_sfn_state_machine" "get_messages" {
     Comment = "${local.name}-get-messages"
     StartAt = "Poll for messages"
     States = {
+      Fail = {
+        Type = "Fail"
+      }
+      "Failed?" = {
+        Choices = [
+          {
+            Next          = "Poll complete"
+            NumericEquals = 204
+            Variable      = "$.statusCode"
+          },
+          {
+            Next                     = "Fail"
+            NumericGreaterThanEquals = 300
+            Variable                 = "$.statusCode"
+          },
+        ]
+        Default = "For each waiting message"
+        Type    = "Choice"
+      }
       "For each waiting message" = {
-        ItemsPath = "$.body.messageList"
+        ItemsPath = "$.body.message_list"
         Iterator = {
-          StartAt = "Get and store message chunk"
+          StartAt = "Fetch message chunk"
           States = {
-            "File complete" = {
-              Type = "Succeed"
-            }
-            "Get and store message chunk" = {
-              "Next"     = "Is this the last chunk?"
+            "Fetch message chunk" = {
+              Next       = "Is this the last chunk?"
               OutputPath = "$.Payload"
               Parameters = {
-                FunctionName = "${aws_lambda_function.check_send_parameters.arn}:$LATEST"
+                FunctionName = "${aws_lambda_function.fetch_message_chunk.arn}:$LATEST"
                 "Payload.$"  = "$"
               }
               Resource = "arn:aws:states:::lambda:invoke"
@@ -38,37 +54,40 @@ resource "aws_sfn_state_machine" "get_messages" {
                     "Lambda.SdkClientException",
                   ]
                   IntervalSeconds = 2
-                  "MaxAttempts"   = 6
+                  MaxAttempts     = 6
                 },
               ]
               Type = "Task"
+            }
+            "File complete" = {
+              "Type" = "Succeed"
             }
             "Is this the last chunk?" = {
               Choices = [
                 {
                   BooleanEquals = true
-                  "Next"        = "File complete"
-                  "Variable"    = "$.body.isLastChunk"
+                  Next          = "File complete"
+                  Variable      = "$.body.complete"
                 },
               ]
-              Default = "Get and store message chunk"
-              "Type"  = "Choice"
+              Default = "Fetch message chunk"
+              Type    = "Choice"
             }
           }
         }
         MaxConcurrency = 1
-        "Next"         = "Were there exactly 500 messages?"
-        "ResultPath"   = null
-        "Type"         = "Map"
+        Next           = "Were there exactly 500 messages?"
+        ResultPath     = null
+        Type           = "Map"
       }
       "Poll complete" = {
         Type = "Succeed"
       }
       "Poll for messages" = {
-        "Next"     = "For each waiting message"
+        Next       = "Failed?"
         OutputPath = "$.Payload"
         Parameters = {
-          FunctionName = "${aws_lambda_function.fetch_message_chunk.arn}:$LATEST"
+          FunctionName = "${aws_lambda_function.poll_mailbox.arn}:$LATEST"
           "Payload.$"  = "$"
         }
         Resource = "arn:aws:states:::lambda:invoke"
@@ -81,7 +100,7 @@ resource "aws_sfn_state_machine" "get_messages" {
               "Lambda.SdkClientException",
             ]
             IntervalSeconds = 2
-            "MaxAttempts"   = 6
+            MaxAttempts     = 6
           },
         ]
         Type = "Task"
@@ -89,9 +108,9 @@ resource "aws_sfn_state_machine" "get_messages" {
       "Were there exactly 500 messages?" = {
         Choices = [
           {
-            "Next"        = "Poll for messages"
+            Next          = "Poll for messages"
             NumericEquals = 500
-            "Variable"    = "$.body.messageCount"
+            Variable      = "$.body.message_count"
           },
         ]
         Default = "Poll complete"
@@ -168,8 +187,8 @@ data "aws_iam_policy_document" "get_messages" {
     resources = [
       aws_lambda_function.fetch_message_chunk.arn,
       "${aws_lambda_function.fetch_message_chunk.arn}:*",
-      aws_lambda_function.check_send_parameters.arn,
-      "${aws_lambda_function.check_send_parameters.arn}:*"
+      aws_lambda_function.poll_mailbox.arn,
+      "${aws_lambda_function.poll_mailbox.arn}:*"
     ]
 
     actions = ["lambda:InvokeFunction"]
