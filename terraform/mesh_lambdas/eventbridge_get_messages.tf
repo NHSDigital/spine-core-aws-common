@@ -5,14 +5,15 @@ resource "aws_cloudwatch_event_rule" "get_messages" {
 }
 
 resource "aws_cloudwatch_event_target" "get_messages" {
+  for_each = { for mailbox in var.mailboxes : mailbox.id => mailbox }
+
   rule      = aws_cloudwatch_event_rule.get_messages.name
-  target_id = "GetMessages"
+  target_id = "GetMessages${each.key}"
   arn       = aws_sfn_state_machine.get_messages.arn
   role_arn  = aws_iam_role.get_messages_event.arn
 
-  # TODO need this to come from list of mailboxes
   input = jsonencode({
-    mailbox = "X26OT179"
+    mailbox = each.key
   })
 }
 

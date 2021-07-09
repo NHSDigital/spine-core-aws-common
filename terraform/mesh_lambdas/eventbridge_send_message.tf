@@ -20,6 +20,11 @@ resource "aws_cloudwatch_event_rule" "send_message_event" {
         bucketName = [
           aws_s3_bucket.mesh.id
         ]
+        key = [
+          {
+            prefix = "outbound"
+          }
+        ]
       }
     }
   })
