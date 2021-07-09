@@ -52,7 +52,8 @@ resource "aws_ssm_parameter" "mailbox_inbound_folder" {
   name      = "/${var.name}/mesh/mailboxes/${var.mailbox_id}/INBOUND_FOLDER"
   overwrite = true
   type      = "String"
-  value     = aws_s3_bucket_object.inbound.key
+  # trim the trailing slash from the key, to stop double slash in the lambda output
+  value = replace(aws_s3_bucket_object.inbound.key, "/", "")
 }
 
 # src_mailbox will always be the id of the parent mailbox variable
