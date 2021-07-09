@@ -1,14 +1,6 @@
-output "bucket" {
+output "output" {
   value = {
-    name = aws_s3_bucket.mesh.id
-    arn  = aws_s3_bucket.mesh.arn
+    config    = var.config
+    mailboxes = module.mailboxes[*]
   }
-}
-
-output "config" {
-  value = var.config
-}
-
-output "mailboxes" {
-  value = module.mailboxes[*]
 }
