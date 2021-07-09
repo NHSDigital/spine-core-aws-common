@@ -1,6 +1,9 @@
 """ Testing MeshPollMailbox application """
+
+from http import HTTPStatus
 import json
 from unittest import mock, TestCase
+import requests_mock
 import boto3
 from moto import mock_s3, mock_ssm, mock_stepfunctions
 from spine_aws_common.mesh import MeshPollMailboxApplication
@@ -43,8 +46,18 @@ class TestMeshPollMailboxApplication(TestCase):
     @mock_ssm
     @mock_s3
     @mock_stepfunctions
-    def test_mesh_poll_mailbox(self):
+    @requests_mock.Mocker()
+    def test_mesh_poll_mailbox_happy_path(self, mock_response):
         """Test the lambda"""
+        message1 = "20210704225941465332_TEST01"
+        message2 = "20210705133616577537_TEST02"
+        message3 = "20210705134726725149_TEST03"
+        # Mock response from MESH server
+        mock_response.get(
+            "/messageexchange/MESH-TEST1/inbox",
+            text=json.dumps({"messages": [message1, message2, message3]}),
+        )
+
         mailbox_name = "MESH-TEST1"
         mock_input = {"mailbox": mailbox_name}
         s3_client = boto3.client("s3")
@@ -67,9 +80,18 @@ class TestMeshPollMailboxApplication(TestCase):
             # need to fail happy pass on any exception
             self.fail(f"Invocation crashed with Exception {str(e)}")
 
-        print(json.dumps(mock_input))
-        print(json.dumps(response))
+        self.assertEqual(HTTPStatus.OK.value, response["statusCode"])
+        # check 3 messages received
         self.assertEqual(3, response["body"]["message_count"])
+        # check first message format in message_list
+        self.assertEqual(
+            message1, response["body"]["message_list"][0]["body"]["message_id"]
+        )
+        self.assertEqual(False, response["body"]["message_list"][0]["body"]["complete"])
+        self.assertEqual(
+            mailbox_name, response["body"]["message_list"][0]["body"]["dest_mailbox"]
+        )
+        # check the correct logs exist
         self.assertLogs("LAMBDA0001", level="INFO")
         self.assertLogs("LAMBDA0002", level="INFO")
         self.assertLogs("LAMBDA0003", level="INFO")

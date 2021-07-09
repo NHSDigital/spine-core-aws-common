@@ -70,7 +70,6 @@ class MeshPollMailboxApplication(LambdaApplication):
                 "message_list": output_list,
             },
         }
-        print(self.response)
 
     def _return_failure(self, status, mailbox, message=""):
         self.response = {
