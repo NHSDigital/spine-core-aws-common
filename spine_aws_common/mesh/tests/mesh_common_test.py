@@ -1,8 +1,9 @@
 """Tests for MeshMailbox class (mesh_client wrapper)"""
 from unittest import mock, TestCase
 import os
+import json
 import boto3
-
+import requests_mock
 from moto import mock_ssm
 from spine_aws_common.mesh.mesh_common import MeshMailbox
 from spine_aws_common.mesh.tests.mesh_testing_common import MeshTestingCommon
@@ -41,20 +42,22 @@ class TestMeshMailbox(TestCase):
         self.log_helper.clean_up()
 
     @mock_ssm
-    def test_mesh_mailbox(self):
+    @requests_mock.Mocker()
+    def test_mesh_mailbox(self, mock_response):
         """Test mailbox functionality"""
-        print("Starting test")
 
-        # TODO:
-        # 1. TEST against real server DONE
-        # 2. Fake responses from mesh server
+        mock_response.post(
+            "/messageexchange/MESH-TEST2", text=json.dumps({"mailboxId": "MESH-TEST2"})
+        )
+        mock_response.get(
+            "/messageexchange/MESH-TEST2/inbox", text=json.dumps({"messages": []})
+        )
+
         MeshTestingCommon.setup_mock_aws_ssm_parameter_store(
             self.environment, self.ssm_client
         )
 
-        mailbox = MeshMailbox(
-            mock.MagicMock, "MESH-TEST2", self.environment, self.ssm_client
-        )
+        mailbox = MeshMailbox(mock.MagicMock(), "MESH-TEST2", self.environment)
         response = mailbox.authenticate()
         self.assertEqual(response, b"hello")
         response = mailbox.mesh_client.list_messages()

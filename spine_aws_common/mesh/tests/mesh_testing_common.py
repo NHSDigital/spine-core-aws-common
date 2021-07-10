@@ -15,17 +15,20 @@ class MeshTestingCommon:
     KNOWN_MESSAGE_ID3 = "20210705134726725149_MESG03"
     FILE_CONTENT = FILE_CONTENT
 
-    def get_known_internal_id(self):
+    @classmethod
+    def get_known_internal_id(cls):
         """Get a known internal Id for testing and mocking purposes"""
-        return self.KNOWN_INTERNAL_ID
+        return MeshTestingCommon.KNOWN_INTERNAL_ID
 
-    def get_known_internal_id1(self):
+    @classmethod
+    def get_known_internal_id1(cls):
         """Get a known internal Id for testing and mocking purposes"""
-        return self.KNOWN_INTERNAL_ID1
+        return MeshTestingCommon.KNOWN_INTERNAL_ID1
 
-    def get_known_internal_id2(self):
+    @classmethod
+    def get_known_internal_id2(cls):
         """Get a known internal Id for testing and mocking purposes"""
-        return self.KNOWN_INTERNAL_ID2
+        return MeshTestingCommon.KNOWN_INTERNAL_ID2
 
     @staticmethod
     def setup_step_function(sfn_client, environment, step_function_name):
