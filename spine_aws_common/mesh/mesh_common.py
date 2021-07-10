@@ -248,8 +248,8 @@ class MeshMailbox:
         """Get a chunk"""
         if not chunk:
             message_object = self.mesh_client.retrieve_message(message_id)
-            for (header, value) in message_object.mex_headers():
-                print(f"{header}={value}")
+            # for (header, value) in message_object.mex_headers():
+            #     print(f"{header}={value}")
             filename = message_object.mex_header("filename")
             if not filename:
                 filename = message_id
@@ -267,8 +267,9 @@ class MeshMailbox:
                 workflow_id=workflow_id,
             )
             return (HTTPStatus.OK.value, return_message_object)
-        else:
-            offset = chunk_size * chunk_num
-            print(f"Calculated offset is {offset}")
-            print("CHUNKING ON RECEIVE IS NOT IMPLEMENTED YET")
-            return (HTTPStatus.NOT_IMPLEMENTED.value, None)
+
+        # chunked
+        offset = chunk_size * chunk_num
+        print(f"Calculated offset is {offset}")
+        print("CHUNKING ON RECEIVE IS NOT IMPLEMENTED YET")
+        return (HTTPStatus.NOT_IMPLEMENTED.value, None)

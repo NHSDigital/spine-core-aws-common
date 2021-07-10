@@ -1,6 +1,8 @@
-""" Testing MeshSendMessageChunk Application """
+""" Testing MeshFetchMessageChunk Application """
+import json
 from unittest import mock, TestCase
 from http import HTTPStatus
+import requests_mock
 import boto3
 from moto import mock_s3, mock_ssm
 from spine_aws_common.mesh.tests.mesh_testing_common import MeshTestingCommon
@@ -9,7 +11,7 @@ from spine_aws_common.mesh import MeshFetchMessageChunkApplication
 
 
 class TestMeshFetchMessageChunkApplication(TestCase):
-    """Testing MeshSendMessageChunk application"""
+    """Testing MeshFetchMessageChunk application"""
 
     def __init__(self, methodName):
         super().__init__(methodName=methodName)
@@ -44,10 +46,49 @@ class TestMeshFetchMessageChunkApplication(TestCase):
     @mock_ssm
     @mock_s3
     @mock.patch.object(MeshFetchMessageChunkApplication, "_create_new_internal_id")
+    @requests_mock.Mocker()
     def test_mesh_fetch_file_chunk_app_no_chunks_happy_path(
-        self, mock_create_new_internal_id
+        self, mock_create_new_internal_id, mock_response
     ):
         """Test the lambda with small file, no chunking, happy path"""
+        # Mock responses from MESH server
+        mock_response.get(
+            f"/messageexchange/MESH-TEST1/inbox/{MeshTestingCommon.KNOWN_MESSAGE_ID1}",
+            text="123456789012345678901234567890123",
+            headers={
+                "Content-Type": "application/octet-stream",
+                "Content-Length": "33",
+                "Connection": "keep-alive",
+                "Mex-Messageid": MeshTestingCommon.KNOWN_MESSAGE_ID1,
+                "Mex-From": "MESH-TEST2",
+                "Mex-To": "MESH-TEST1",
+                "Mex-Fromsmtp": "mesh.automation.testclient2@nhs.org",
+                "Mex-Tosmtp": "mesh.automation.testclient1@nhs.org",
+                "Mex-Filename": "testfile.txt",
+                "Mex-Workflowid": "TESTWORKFLOW",
+                "Mex-Messagetype": "DATA",
+                "Mex-Version": "1.0",
+                "Mex-Addresstype": "ALL",
+                "Mex-Statuscode": "00",
+                "Mex-Statusevent": "TRANSFER",
+                "Mex-Statusdescription": "Transferred to recipient mailbox",
+                "Mex-Statussuccess": "SUCCESS",
+                "Mex-Statustimestamp": "20210705162157",
+                "Mex-Content-Compressed": "N",
+                "Etag": "915cd12d58ce2f820959e9ba41b2ebb02f2e6005",
+            },
+        )
+        mock_response.put(
+            f"/messageexchange/MESH-TEST1/inbox/{MeshTestingCommon.KNOWN_MESSAGE_ID1}"
+            + "/status/acknowledged",
+            text=json.dumps({"messageId": MeshTestingCommon.KNOWN_MESSAGE_ID1}),
+            headers={
+                "Content-Type": "application/json",
+                "Transfer-Encoding": "chunked",
+                "Connection": "keep-alive",
+            },
+        )
+
         mock_create_new_internal_id.return_value = MeshTestingCommon.KNOWN_INTERNAL_ID2
         s3_client = boto3.client("s3")
         ssm_client = boto3.client("ssm")
@@ -68,7 +109,6 @@ class TestMeshFetchMessageChunkApplication(TestCase):
             # need to fail happy pass on any exception
             self.fail(f"Invocation crashed with Exception {str(e)}")
 
-        print(response)
         self.assertNotEqual(
             mock_input.get("internal_id"), response["body"].get("internal_id")
         )
@@ -112,7 +152,7 @@ class TestMeshFetchMessageChunkApplication(TestCase):
             "body": {
                 "complete": False,
                 "internal_id": MeshTestingCommon.KNOWN_INTERNAL_ID1,
-                "message_id": MeshTestingCommon.KNOWN_MESSAGE_ID,
+                "message_id": MeshTestingCommon.KNOWN_MESSAGE_ID1,
                 "dest_mailbox": "MESH-TEST1",
             },
         }
@@ -125,7 +165,7 @@ class TestMeshFetchMessageChunkApplication(TestCase):
             "body": {
                 "complete": False,
                 "internal_id": MeshTestingCommon.KNOWN_INTERNAL_ID2,
-                "message_id": MeshTestingCommon.KNOWN_MESSAGE_ID,
+                "message_id": MeshTestingCommon.KNOWN_MESSAGE_ID1,
                 "dest_mailbox": "MESH-TEST1",
                 "chunk_num": 2,
                 "aws_upload_id": None,

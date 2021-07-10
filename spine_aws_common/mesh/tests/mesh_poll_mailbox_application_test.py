@@ -49,13 +49,19 @@ class TestMeshPollMailboxApplication(TestCase):
     @requests_mock.Mocker()
     def test_mesh_poll_mailbox_happy_path(self, mock_response):
         """Test the lambda"""
-        message1 = "20210704225941465332_TEST01"
-        message2 = "20210705133616577537_TEST02"
-        message3 = "20210705134726725149_TEST03"
+
         # Mock response from MESH server
         mock_response.get(
             "/messageexchange/MESH-TEST1/inbox",
-            text=json.dumps({"messages": [message1, message2, message3]}),
+            text=json.dumps(
+                {
+                    "messages": [
+                        MeshTestingCommon.KNOWN_MESSAGE_ID1,
+                        MeshTestingCommon.KNOWN_MESSAGE_ID2,
+                        MeshTestingCommon.KNOWN_MESSAGE_ID3,
+                    ]
+                }
+            ),
         )
 
         mailbox_name = "MESH-TEST1"
@@ -85,7 +91,8 @@ class TestMeshPollMailboxApplication(TestCase):
         self.assertEqual(3, response["body"]["message_count"])
         # check first message format in message_list
         self.assertEqual(
-            message1, response["body"]["message_list"][0]["body"]["message_id"]
+            MeshTestingCommon.KNOWN_MESSAGE_ID1,
+            response["body"]["message_list"][0]["body"]["message_id"],
         )
         self.assertEqual(False, response["body"]["message_list"][0]["body"]["complete"])
         self.assertEqual(

@@ -1,6 +1,8 @@
 """ Testing MeshSendMessageChunk Application """
+import json
 from http import HTTPStatus
 from unittest import mock, TestCase
+import requests_mock
 import boto3
 from moto import mock_s3, mock_ssm
 from spine_aws_common.mesh.tests.mesh_testing_common import MeshTestingCommon
@@ -44,11 +46,50 @@ class TestMeshSendMessageChunkApplication(TestCase):
     @mock_ssm
     @mock_s3
     @mock.patch.object(MeshSendMessageChunkApplication, "_create_internal_id")
+    @requests_mock.Mocker()
     def test_mesh_send_file_chunk_app_no_chunks_happy_path(
-        self, mock_create_internal_id
+        self, mock_create_internal_id, mock_response
     ):
         """Test the lambda with small file, no chunking, happy path"""
+        # Mock responses from MESH server
+        mock_response.get(
+            f"/messageexchange/MESH-TEST1/inbox/{MeshTestingCommon.KNOWN_MESSAGE_ID1}",
+            text="123456789012345678901234567890123",
+            headers={
+                "Content-Type": "application/octet-stream",
+                "Content-Length": 33,
+                "Connection": "keep-alive",
+                "Mex-Messageid": MeshTestingCommon.KNOWN_MESSAGE_ID1,
+                "Mex-From": "MESH-TEST2",
+                "Mex-To": "MESH-TEST1",
+                "Mex-Fromsmtp": "mesh.automation.testclient2@nhs.org",
+                "Mex-Tosmtp": "mesh.automation.testclient1@nhs.org",
+                "Mex-Filename": "testfile.txt",
+                "Mex-Workflowid": "TESTWORKFLOW",
+                "Mex-Messagetype": "DATA",
+                "Mex-Version": "1.0",
+                "Mex-Addresstype": "ALL",
+                "Mex-Statuscode": "00",
+                "Mex-Statusevent": "TRANSFER",
+                "Mex-Statusdescription": "Transferred to recipient mailbox",
+                "Mex-Statussuccess": "SUCCESS",
+                "Mex-Statustimestamp": "20210705162157",
+                "Mex-Content-Compressed": "N",
+                "Etag": "915cd12d58ce2f820959e9ba41b2ebb02f2e6005",
+            },
+        )
+        mock_response.get(
+            "PUT /messageexchange/MESH-TEST1/inbox/"
+            + f"{MeshTestingCommon.KNOWN_MESSAGE_ID1}/status/acknowledged",
+            text=json.dumps({"messageId": MeshTestingCommon.KNOWN_MESSAGE_ID1}),
+            headers={
+                "Transfer-Encoding": "chunked",
+                "Connection": "keep-alive",
+                "Content-Encoding": "gzip",
+            },
+        )
         mock_create_internal_id.return_value = MeshTestingCommon.KNOWN_INTERNAL_ID
+
         s3_client = boto3.client("s3")
         ssm_client = boto3.client("ssm")
         MeshTestingCommon.setup_mock_aws_s3_buckets(self.environment, s3_client)
