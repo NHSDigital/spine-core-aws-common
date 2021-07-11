@@ -14,8 +14,8 @@ from spine_aws_common.tests.utils.log_helper import LogHelper
 class TestMeshPollMailboxApplication(TestCase):
     """Testing MeshPollMailbox application"""
 
-    def __init__(self, methodName: str) -> None:
-        super().__init__(methodName=methodName)
+    def __init__(self, method_name):
+        super().__init__(methodName=method_name)
 
     @mock_ssm
     @mock_s3

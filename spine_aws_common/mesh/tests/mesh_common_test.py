@@ -13,8 +13,8 @@ from spine_aws_common.tests.utils.log_helper import LogHelper
 class TestMeshMailbox(TestCase):
     """Testing MeshMailbox class"""
 
-    def __init__(self, methodName):
-        super().__init__(methodName=methodName)
+    def __init__(self, method_name):
+        super().__init__(methodName=method_name)
         self.environment = None
         self.ssm_client = None
 

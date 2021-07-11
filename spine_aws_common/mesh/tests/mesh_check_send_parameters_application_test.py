@@ -12,8 +12,8 @@ from spine_aws_common.mesh.mesh_common import SingletonCheckFailure
 class TestMeshCheckSendParametersApplication(TestCase):
     """Testing MeshPollMailbox application"""
 
-    def __init__(self, methodName):
-        super().__init__(methodName=methodName)
+    def __init__(self, method_name):
+        super().__init__(methodName=method_name)
         self.environment = None
 
     @mock_ssm
@@ -38,18 +38,6 @@ class TestMeshCheckSendParametersApplication(TestCase):
         self.app = MeshCheckSendParametersApplication()
         self.environment = self.app.system_config["Environment"]
 
-    @mock.patch.dict(
-        "os.environ",
-        values={
-            "AWS_REGION": "eu-west-2",
-            "AWS_EXECUTION_ENV": "AWS_Lambda_python3.8",
-            "AWS_LAMBDA_FUNCTION_NAME": "lambda_test",
-            "AWS_LAMBDA_FUNCTION_MEMORY_SIZE": "128",
-            "AWS_LAMBDA_FUNCTION_VERSION": "1",
-            "Environment": "meshtest",
-            "CHUNK_SIZE": "10",
-        },
-    )
     def setup_mock_aws_environment(self, s3_client, ssm_client):
         """Setup standard environment for tests"""
         location = {"LocationConstraint": "eu-west-2"}
@@ -77,18 +65,6 @@ class TestMeshCheckSendParametersApplication(TestCase):
         MeshCheckSendParametersApplication,
         "_get_internal_id",
         MeshTestingCommon.get_known_internal_id,
-    )
-    @mock.patch.dict(
-        "os.environ",
-        values={
-            "AWS_REGION": "eu-west-2",
-            "AWS_EXECUTION_ENV": "AWS_Lambda_python3.8",
-            "AWS_LAMBDA_FUNCTION_NAME": "lambda_test",
-            "AWS_LAMBDA_FUNCTION_MEMORY_SIZE": "128",
-            "AWS_LAMBDA_FUNCTION_VERSION": "1",
-            "Environment": "meshtest",
-            "CHUNK_SIZE": "10",
-        },
     )
     def test_mesh_check_send_parameters_happy_path(self):
         """Test the lambda as a whole, happy path"""
@@ -147,18 +123,6 @@ class TestMeshCheckSendParametersApplication(TestCase):
         MeshCheckSendParametersApplication,
         "_get_internal_id",
         MeshTestingCommon.get_known_internal_id,
-    )
-    @mock.patch.dict(
-        "os.environ",
-        values={
-            "AWS_REGION": "eu-west-2",
-            "AWS_EXECUTION_ENV": "AWS_Lambda_python3.8",
-            "AWS_LAMBDA_FUNCTION_NAME": "lambda_test",
-            "AWS_LAMBDA_FUNCTION_MEMORY_SIZE": "128",
-            "AWS_LAMBDA_FUNCTION_VERSION": "1",
-            "Environment": "meshtest",
-            "CHUNK_SIZE": "10",
-        },
     )
     def test_running_as_singleton(self):
         """

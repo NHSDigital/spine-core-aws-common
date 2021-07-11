@@ -13,8 +13,8 @@ from spine_aws_common.mesh import MeshFetchMessageChunkApplication
 class TestMeshFetchMessageChunkApplication(TestCase):
     """Testing MeshFetchMessageChunk application"""
 
-    def __init__(self, methodName):
-        super().__init__(methodName=methodName)
+    def __init__(self, method_name):
+        super().__init__(methodName=method_name)
         self.environment = None
 
     @mock_ssm
