@@ -38,7 +38,7 @@ class MeshCommon:  # pylint: disable=too-few-public-methods
     @staticmethod
     def singleton_check(mailbox, my_step_function_name):
         """Find out whether there is another step function running for my mailbox"""
-        sfn_client = boto3.client("stepfunctions")
+        sfn_client = boto3.client("stepfunctions", region_name="eu-west-2")
         response = sfn_client.list_state_machines()
         # Get my step function arn
         my_step_function_arn = None
@@ -72,6 +72,17 @@ class MeshCommon:  # pylint: disable=too-few-public-methods
                 raise SingletonCheckFailure("Process already running for this mailbox")
 
         return True
+
+    @staticmethod
+    def convert_params_to_dict(params):
+        """Convert paramater dict to key:value dict"""
+        new_dict = {}
+        for entry in params:
+            name = entry.get("Name", None)
+            if name:
+                var_name = os.path.basename(name)
+                new_dict[var_name] = entry.get("Value", None)
+        return new_dict
 
 
 class ExtendedMeshClient(MeshClient):
@@ -117,14 +128,14 @@ class MeshMailbox:
     def _setup(self):
         """Get the parameters from SSM paramter store"""
         # TODO refactor
-        ssm_client = boto3.client("ssm")
+        ssm_client = boto3.client("ssm", region_name="eu-west-2")
         self.log_object.write_log(
             "MESH0001", None, {"mailbox": self.mailbox, "environment": self.environment}
         )
         common_params_result = ssm_client.get_parameters_by_path(
             Path=f"/{self.environment}/mesh", Recursive=False, WithDecryption=True
         )
-        self.common_params = self._convert_params_to_dict(
+        self.common_params = MeshCommon.convert_params_to_dict(
             common_params_result.get("Parameters", {})
         )
         mailbox_params_result = ssm_client.get_parameters_by_path(
@@ -132,7 +143,7 @@ class MeshMailbox:
             Recursive=False,
             WithDecryption=True,
         )
-        self.mailbox_params = self._convert_params_to_dict(
+        self.mailbox_params = MeshCommon.convert_params_to_dict(
             mailbox_params_result.get("Parameters", {})
         )
         self._write_certs_to_files()
@@ -150,17 +161,6 @@ class MeshMailbox:
             verify=self.ca_cert_file.name if maybe_verify else None,
             max_chunk_size=MeshCommon.DEFAULT_CHUNK_SIZE,
         )
-
-    @staticmethod
-    def _convert_params_to_dict(params):
-        """Convert paramater dict to key:value dict"""
-        new_dict = {}
-        for entry in params:
-            name = entry.get("Name", None)
-            if name:
-                var_name = os.path.basename(name)
-                new_dict[var_name] = entry.get("Value", None)
-        return new_dict
 
     def _write_certs_to_files(self):
         """Write the certificates to a local file"""

@@ -66,13 +66,13 @@ class TestMeshPollMailboxApplication(TestCase):
 
         mailbox_name = "MESH-TEST1"
         mock_input = {"mailbox": mailbox_name}
-        s3_client = boto3.client("s3")
-        ssm_client = boto3.client("ssm")
+        s3_client = boto3.client("s3", region_name="eu-west-2")
+        ssm_client = boto3.client("ssm", region_name="eu-west-2")
         MeshTestingCommon.setup_mock_aws_s3_buckets(self.environment, s3_client)
         MeshTestingCommon.setup_mock_aws_ssm_parameter_store(
             self.environment, ssm_client
         )
-        sfn_client = boto3.client("stepfunctions")
+        sfn_client = boto3.client("stepfunctions", region_name="eu-west-2")
         response = MeshTestingCommon.setup_step_function(
             sfn_client,
             self.environment,

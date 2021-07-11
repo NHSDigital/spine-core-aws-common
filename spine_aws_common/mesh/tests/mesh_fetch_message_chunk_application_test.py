@@ -90,8 +90,8 @@ class TestMeshFetchMessageChunkApplication(TestCase):
         )
 
         mock_create_new_internal_id.return_value = MeshTestingCommon.KNOWN_INTERNAL_ID2
-        s3_client = boto3.client("s3")
-        ssm_client = boto3.client("ssm")
+        s3_client = boto3.client("s3", region_name="eu-west-2")
+        ssm_client = boto3.client("ssm", region_name="eu-west-2")
         MeshTestingCommon.setup_mock_aws_s3_buckets(self.environment, s3_client)
         MeshTestingCommon.setup_mock_aws_ssm_parameter_store(
             self.environment, ssm_client

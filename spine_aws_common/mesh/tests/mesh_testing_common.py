@@ -1,4 +1,5 @@
 """Common methods and classes used for testing mesh client"""
+from botocore.config import Config
 
 FILE_CONTENT = "123456789012345678901234567890123"
 
@@ -14,6 +15,8 @@ class MeshTestingCommon:
     KNOWN_MESSAGE_ID2 = "20210705133616577537_MESG02"
     KNOWN_MESSAGE_ID3 = "20210705134726725149_MESG03"
     FILE_CONTENT = FILE_CONTENT
+
+    aws_config = Config(region_name="eu-west-2")
 
     @classmethod
     def get_known_internal_id(cls):
@@ -131,24 +134,18 @@ class MeshTestingCommon:
             Name=f"/{environment}/mesh/MESH_VERIFY_SSL",
             Value="False",
         )
-        with open("ca.crt", "r") as ca_cert_file:
-            ca_cert = ca_cert_file.read()
-            ssm_client.put_parameter(
-                Name=f"/{environment}/mesh/MESH_CA_CERT",
-                Value=ca_cert,
-            )
-            ca_cert_file.close()
-        with open("client-sha2.crt", "r") as client_cert_file:
-            client_cert = client_cert_file.read()
-            ssm_client.put_parameter(
-                Name=f"/{environment}/mesh/MESH_CLIENT_CERT",
-                Value=client_cert,
-            )
-            client_cert_file.close()
-        with open("client-sha2.key", "r") as client_key_file:
-            client_key = client_key_file.read()
-            ssm_client.put_parameter(
-                Name=f"/{environment}/mesh/MESH_CLIENT_KEY",
-                Value=client_key,
-            )
-            client_key_file.close()
+        ca_cert = "BLAH"
+        client_cert = "BLAH"
+        client_key = "BLAH"
+        ssm_client.put_parameter(
+            Name=f"/{environment}/mesh/MESH_CA_CERT",
+            Value=ca_cert,
+        )
+        ssm_client.put_parameter(
+            Name=f"/{environment}/mesh/MESH_CLIENT_CERT",
+            Value=client_cert,
+        )
+        ssm_client.put_parameter(
+            Name=f"/{environment}/mesh/MESH_CLIENT_KEY",
+            Value=client_key,
+        )

@@ -36,7 +36,7 @@ class TestMeshMailbox(TestCase):
         self.log_helper = LogHelper()
         self.log_helper.set_stdout_capture()
         self.environment = os.environ["ENV"]
-        self.ssm_client = boto3.client("ssm")
+        self.ssm_client = boto3.client("ssm", region_name="eu-west-2")
 
     def tearDown(self):
         self.log_helper.clean_up()

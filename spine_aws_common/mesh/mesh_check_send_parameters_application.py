@@ -5,7 +5,6 @@ from http import HTTPStatus
 import os
 from math import ceil
 import boto3
-from aws_lambda_powertools.utilities import parameters
 from aws_lambda_powertools.utilities.data_classes import EventBridgeEvent
 from spine_aws_common import LambdaApplication
 from spine_aws_common.utilities import human_readable_bytes
@@ -125,12 +124,20 @@ class MeshCheckSendParametersApplication(LambdaApplication):
         if len(folder) > 0:
             folder += "/"
 
-        config = parameters.get_parameters(
-            f"/{self.environment}/mesh/mapping/{bucket}/{folder}"
+        path = f"/{self.environment}/mesh/mapping/{bucket}/{folder}"
+        ssm_client = boto3.client("ssm", region_name="eu-west-2")
+        mailbox_mapping_params = ssm_client.get_parameters_by_path(
+            Path=path,
+            Recursive=False,
+            WithDecryption=True,
         )
-        src_mailbox = config["src_mailbox"]
-        dest_mailbox = config["dest_mailbox"]
-        workflow_id = config["workflow_id"]
+        mailbox_mapping = MeshCommon.convert_params_to_dict(
+            mailbox_mapping_params.get("Parameters", {})
+        )
+
+        src_mailbox = mailbox_mapping["src_mailbox"]
+        dest_mailbox = mailbox_mapping["dest_mailbox"]
+        workflow_id = mailbox_mapping["workflow_id"]
         return (src_mailbox, dest_mailbox, workflow_id)
 
     @staticmethod

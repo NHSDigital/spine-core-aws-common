@@ -47,6 +47,18 @@ class TestMeshSendMessageChunkApplication(TestCase):
     @mock_s3
     @mock.patch.object(MeshSendMessageChunkApplication, "_create_new_internal_id")
     @requests_mock.Mocker()
+    @mock.patch.dict(
+        "os.environ",
+        values={
+            "AWS_REGION": "eu-west-2",
+            "AWS_EXECUTION_ENV": "AWS_Lambda_python3.8",
+            "AWS_LAMBDA_FUNCTION_NAME": "lambda_test",
+            "AWS_LAMBDA_FUNCTION_MEMORY_SIZE": "128",
+            "AWS_LAMBDA_FUNCTION_VERSION": "1",
+            "Environment": "meshtest",
+            "CHUNK_SIZE": "10",
+        },
+    )
     def test_mesh_send_file_chunk_app_no_chunks_happy_path(
         self, mock_create_new_internal_id, mock_response
     ):
@@ -63,8 +75,8 @@ class TestMeshSendMessageChunkApplication(TestCase):
             },
         )
 
-        s3_client = boto3.client("s3")
-        ssm_client = boto3.client("ssm")
+        s3_client = boto3.client("s3", config=MeshTestingCommon.aws_config)
+        ssm_client = boto3.client("ssm", config=MeshTestingCommon.aws_config)
         MeshTestingCommon.setup_mock_aws_s3_buckets(self.environment, s3_client)
         MeshTestingCommon.setup_mock_aws_ssm_parameter_store(
             self.environment, ssm_client
@@ -98,6 +110,18 @@ class TestMeshSendMessageChunkApplication(TestCase):
     @mock_ssm
     @mock_s3
     @mock.patch.object(MeshSendMessageChunkApplication, "_create_new_internal_id")
+    @mock.patch.dict(
+        "os.environ",
+        values={
+            "AWS_REGION": "eu-west-2",
+            "AWS_EXECUTION_ENV": "AWS_Lambda_python3.8",
+            "AWS_LAMBDA_FUNCTION_NAME": "lambda_test",
+            "AWS_LAMBDA_FUNCTION_MEMORY_SIZE": "128",
+            "AWS_LAMBDA_FUNCTION_VERSION": "1",
+            "Environment": "meshtest",
+            "CHUNK_SIZE": "10",
+        },
+    )
     def test_mesh_send_file_chunk_app_2_chunks_happy_path(
         self, mock_create_new_internal_id
     ):
@@ -105,8 +129,8 @@ class TestMeshSendMessageChunkApplication(TestCase):
         Test that doing chunking works
         """
         mock_create_new_internal_id.return_value = MeshTestingCommon.KNOWN_INTERNAL_ID2
-        s3_client = boto3.client("s3")
-        ssm_client = boto3.client("ssm")
+        s3_client = boto3.client("s3", config=MeshTestingCommon.aws_config)
+        ssm_client = boto3.client("ssm", config=MeshTestingCommon.aws_config)
         MeshTestingCommon.setup_mock_aws_s3_buckets(self.environment, s3_client)
         MeshTestingCommon.setup_mock_aws_ssm_parameter_store(
             self.environment, ssm_client
