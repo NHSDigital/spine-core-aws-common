@@ -2,6 +2,8 @@ six
 boto3
 aws-lambda-powertools
 moto[s3,ssm,stepfunctions]
+requests
+requests_mock
 mesh_client
 build
 pep8-naming
