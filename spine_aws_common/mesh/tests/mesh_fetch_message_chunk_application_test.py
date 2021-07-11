@@ -10,6 +10,7 @@ from spine_aws_common.tests.utils.log_helper import LogHelper
 from spine_aws_common.mesh import MeshFetchMessageChunkApplication
 
 
+# pylint:disable=duplicate-code
 class TestMeshFetchMessageChunkApplication(TestCase):
     """Testing MeshFetchMessageChunk application"""
 

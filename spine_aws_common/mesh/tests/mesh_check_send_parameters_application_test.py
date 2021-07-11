@@ -9,6 +9,7 @@ from spine_aws_common.mesh import MeshCheckSendParametersApplication
 from spine_aws_common.mesh.mesh_common import SingletonCheckFailure
 
 
+# pylint:disable=duplicate-code
 class TestMeshCheckSendParametersApplication(TestCase):
     """Testing MeshPollMailbox application"""
 

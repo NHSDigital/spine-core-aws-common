@@ -11,6 +11,7 @@ from spine_aws_common.mesh.tests.mesh_testing_common import MeshTestingCommon
 from spine_aws_common.tests.utils.log_helper import LogHelper
 
 
+# pylint:disable=duplicate-code
 class TestMeshPollMailboxApplication(TestCase):
     """Testing MeshPollMailbox application"""
 
