@@ -21,7 +21,7 @@ class BatchApplication(LambdaApplication):
         """
         Application initialisation
         """
-        self.records = self.event.records
+        self.records = getattr(self.event, "records", [])
 
     def start(self):
         """

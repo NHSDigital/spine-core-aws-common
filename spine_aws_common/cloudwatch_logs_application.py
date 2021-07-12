@@ -10,5 +10,4 @@ class CloudwatchLogsApplication(LambdaApplication):
     Base class for Cloudwatch Logs Lambda applications
     """
 
-    def process_event(self, event):
-        return CloudWatchLogsEvent(event)
+    EVENT_TYPE = CloudWatchLogsEvent

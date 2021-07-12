@@ -12,8 +12,7 @@ class S3ObjectEventApplication(LambdaApplication):
     Base class for S3 Object Event Lambda applications
     """
 
-    def process_event(self, event):
-        return S3ObjectLambdaEvent(event)
+    EVENT_TYPE = S3ObjectLambdaEvent
 
     def _get_internal_id(self):
         """

@@ -1,1 +1,1 @@
-include *.cfg
+global-include cloudlogbase.cfg

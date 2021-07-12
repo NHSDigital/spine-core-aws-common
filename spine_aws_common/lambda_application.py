@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 import uuid
 from abc import abstractmethod
 from aws_lambda_powertools.utilities import parameters
+from aws_lambda_powertools.utilities.data_classes.common import DictWrapper
 from aws_lambda_powertools.utilities.typing.lambda_context import LambdaContext
 from spine_aws_common.logger import Logger, configure_logging_adapter
 from spine_aws_common.utilities import StopWatch
@@ -19,6 +20,9 @@ class LambdaApplication:
     """
     Base class for Lambda applications
     """
+
+    # Base class will always return event in same format
+    EVENT_TYPE = DictWrapper
 
     def __init__(self, additional_log_config=None, load_ssm_params=False):
         self.context = None
@@ -81,15 +85,13 @@ class LambdaApplication:
         )
         return logger
 
-    @staticmethod
-    def process_event(event):
+    def process_event(self, event):
         """
         Processes event object passed in by Lambda service
         Can be overridden to customise event parsing
         """
-        return event
+        return self.EVENT_TYPE(event)
 
-    @abstractmethod
     def initialise(self):
         """
         Application initialisation
@@ -105,7 +107,7 @@ class LambdaApplication:
         """
         Get internalID from the event
         """
-        return self.event.get("internal_id", self._create_new_internal_id())
+        return self.event.get("internal_id") or self._create_new_internal_id()
 
     @staticmethod
     def _create_new_internal_id():

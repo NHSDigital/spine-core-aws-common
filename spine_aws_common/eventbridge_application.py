@@ -10,5 +10,4 @@ class EventbridgeApplication(LambdaApplication):
     Base class for Eventbridge Lambda applications
     """
 
-    def process_event(self, event):
-        return EventBridgeEvent(event)
+    EVENT_TYPE = EventBridgeEvent
