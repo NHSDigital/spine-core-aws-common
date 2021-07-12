@@ -1,4 +1,5 @@
 """Common methods and classes used for testing mesh client"""
+from botocore.config import Config
 
 FILE_CONTENT = "123456789012345678901234567890123"
 
@@ -10,20 +11,37 @@ class MeshTestingCommon:
     KNOWN_INTERNAL_ID = "20210701225219765177_TESTER"
     KNOWN_INTERNAL_ID1 = "20210701225219765177_TEST01"
     KNOWN_INTERNAL_ID2 = "20210701225219765177_TEST02"
-    KNOWN_MESSAGE_ID = "20210704225158261556_F46E2B"
+    KNOWN_MESSAGE_ID1 = "20210704225941465332_MESG01"
+    KNOWN_MESSAGE_ID2 = "20210705133616577537_MESG02"
+    KNOWN_MESSAGE_ID3 = "20210705134726725149_MESG03"
     FILE_CONTENT = FILE_CONTENT
 
-    def get_known_internal_id(self):
-        """Get a known internal Id for testing and mocking purposes"""
-        return self.KNOWN_INTERNAL_ID
+    aws_config = Config(region_name="eu-west-2")
 
-    def get_known_internal_id1(self):
-        """Get a known internal Id for testing and mocking purposes"""
-        return self.KNOWN_INTERNAL_ID1
+    os_environ_values = {
+        "AWS_REGION": "eu-west-2",
+        "AWS_EXECUTION_ENV": "AWS_Lambda_python3.8",
+        "AWS_LAMBDA_FUNCTION_NAME": "lambda_test",
+        "AWS_LAMBDA_FUNCTION_MEMORY_SIZE": "128",
+        "AWS_LAMBDA_FUNCTION_VERSION": "1",
+        "Environment": "meshtest",
+        "CHUNK_SIZE": "10",
+    }
 
-    def get_known_internal_id2(self):
+    @classmethod
+    def get_known_internal_id(cls):
         """Get a known internal Id for testing and mocking purposes"""
-        return self.KNOWN_INTERNAL_ID2
+        return MeshTestingCommon.KNOWN_INTERNAL_ID
+
+    @classmethod
+    def get_known_internal_id1(cls):
+        """Get a known internal Id for testing and mocking purposes"""
+        return MeshTestingCommon.KNOWN_INTERNAL_ID1
+
+    @classmethod
+    def get_known_internal_id2(cls):
+        """Get a known internal Id for testing and mocking purposes"""
+        return MeshTestingCommon.KNOWN_INTERNAL_ID2
 
     @staticmethod
     def setup_step_function(sfn_client, environment, step_function_name):
@@ -126,24 +144,18 @@ class MeshTestingCommon:
             Name=f"/{environment}/mesh/MESH_VERIFY_SSL",
             Value="False",
         )
-        with open("ca.crt", "r") as ca_cert_file:
-            ca_cert = ca_cert_file.read()
-            ssm_client.put_parameter(
-                Name=f"/{environment}/mesh/MESH_CA_CERT",
-                Value=ca_cert,
-            )
-            ca_cert_file.close()
-        with open("client-sha2.crt", "r") as client_cert_file:
-            client_cert = client_cert_file.read()
-            ssm_client.put_parameter(
-                Name=f"/{environment}/mesh/MESH_CLIENT_CERT",
-                Value=client_cert,
-            )
-            client_cert_file.close()
-        with open("client-sha2.key", "r") as client_key_file:
-            client_key = client_key_file.read()
-            ssm_client.put_parameter(
-                Name=f"/{environment}/mesh/MESH_CLIENT_KEY",
-                Value=client_key,
-            )
-            client_key_file.close()
+        ca_cert = "BLAH"
+        client_cert = "BLAH"
+        client_key = "BLAH"
+        ssm_client.put_parameter(
+            Name=f"/{environment}/mesh/MESH_CA_CERT",
+            Value=ca_cert,
+        )
+        ssm_client.put_parameter(
+            Name=f"/{environment}/mesh/MESH_CLIENT_CERT",
+            Value=client_cert,
+        )
+        ssm_client.put_parameter(
+            Name=f"/{environment}/mesh/MESH_CLIENT_KEY",
+            Value=client_key,
+        )

@@ -28,7 +28,8 @@ class MeshFetchMessageChunkApplication(LambdaApplication):
         self.chunk_size = os.environ.get("CHUNK_SIZE", MeshCommon.DEFAULT_CHUNK_SIZE)
 
     def start(self):
-        # TODO copy more stuff from send_message_chunk
+        # TODO refactor
+        # pylint: disable=too-many-locals
         self.input = self.event.get("body", {})
         old_internal_id = self.input.get("internal_id", "Not Provided")
         message_id = self.input["message_id"]
@@ -45,7 +46,6 @@ class MeshFetchMessageChunkApplication(LambdaApplication):
         chunked = self.input.get("chunked")
         current_chunk = self.input.get("chunk", 1)
 
-        filename = "testfile.json"
         total_chunks = 1
         mailbox_params = self.mailbox.mailbox_params
         bucket = mailbox_params["INBOUND_BUCKET"]
@@ -56,8 +56,6 @@ class MeshFetchMessageChunkApplication(LambdaApplication):
         (return_code, message_object) = self.mailbox.get_chunk(
             message_id, chunk_size=self.chunk_size, chunk_num=1
         )
-
-        print(f"MESH returned: {return_code}")
 
         s3_client = boto3.client("s3")
         location = {"LocationConstraint": "eu-west-2"}

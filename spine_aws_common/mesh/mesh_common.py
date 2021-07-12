@@ -29,7 +29,7 @@ class AwsFailedToPerformError(Exception):
         self.msg = msg
 
 
-class MeshCommon:  # pylint: disable=too-few-public-methods
+class MeshCommon:
     """Common"""
 
     MIB = 1024 * 1024
@@ -38,7 +38,7 @@ class MeshCommon:  # pylint: disable=too-few-public-methods
     @staticmethod
     def singleton_check(mailbox, my_step_function_name):
         """Find out whether there is another step function running for my mailbox"""
-        sfn_client = boto3.client("stepfunctions")
+        sfn_client = boto3.client("stepfunctions", region_name="eu-west-2")
         response = sfn_client.list_state_machines()
         # Get my step function arn
         my_step_function_arn = None
@@ -73,6 +73,33 @@ class MeshCommon:  # pylint: disable=too-few-public-methods
 
         return True
 
+    @staticmethod
+    def convert_params_to_dict(params):
+        """Convert paramater dict to key:value dict"""
+        new_dict = {}
+        for entry in params:
+            name = entry.get("Name", None)
+            if name:
+                var_name = os.path.basename(name)
+                new_dict[var_name] = entry.get("Value", None)
+        return new_dict
+
+    @staticmethod
+    def return_failure(log_object, status, logpoint, mailbox, message=""):
+        """Return a failure response with retry"""
+        log_object.write_log(logpoint, None, {"mailbox": mailbox, "error": message})
+        return {
+            "statusCode": status,
+            "headers": {
+                "Content-Type": "application/json",
+                "Retry-After": 18000,
+            },
+            "body": {
+                "internal_id": log_object.internal_id,
+                "error": message,
+            },
+        }
+
 
 class ExtendedMeshClient(MeshClient):
     """Extended functionality for lambda send"""
@@ -92,7 +119,7 @@ MeshMessage = namedtuple(
 )
 
 
-class MeshMailbox:
+class MeshMailbox:  # pylint: disable=too-many-instance-attributes
     """Mesh mailbox object, gets parameters from SSM Parameter Store"""
 
     def __init__(self, log_object: Logger, mailbox, environment="default"):
@@ -117,14 +144,14 @@ class MeshMailbox:
     def _setup(self):
         """Get the parameters from SSM paramter store"""
         # TODO refactor
-        ssm_client = boto3.client("ssm")
+        ssm_client = boto3.client("ssm", region_name="eu-west-2")
         self.log_object.write_log(
             "MESH0001", None, {"mailbox": self.mailbox, "environment": self.environment}
         )
         common_params_result = ssm_client.get_parameters_by_path(
             Path=f"/{self.environment}/mesh", Recursive=False, WithDecryption=True
         )
-        self.common_params = self._convert_params_to_dict(
+        self.common_params = MeshCommon.convert_params_to_dict(
             common_params_result.get("Parameters", {})
         )
         mailbox_params_result = ssm_client.get_parameters_by_path(
@@ -132,7 +159,7 @@ class MeshMailbox:
             Recursive=False,
             WithDecryption=True,
         )
-        self.mailbox_params = self._convert_params_to_dict(
+        self.mailbox_params = MeshCommon.convert_params_to_dict(
             mailbox_params_result.get("Parameters", {})
         )
         self._write_certs_to_files()
@@ -151,47 +178,30 @@ class MeshMailbox:
             max_chunk_size=MeshCommon.DEFAULT_CHUNK_SIZE,
         )
 
-    @staticmethod
-    def _convert_params_to_dict(params):
-        """Convert paramater dict to key:value dict"""
-        new_dict = {}
-        for entry in params:
-            name = entry.get("Name", None)
-            if name:
-                var_name = os.path.basename(name)
-                new_dict[var_name] = entry.get("Value", None)
-        return new_dict
-
     def _write_certs_to_files(self):
         """Write the certificates to a local file"""
-        self.temp_dir_object = (  # pylint: disable=consider-using-with
-            tempfile.TemporaryDirectory()
-        )
+        # pylint: disable=consider-using-with
+        self.temp_dir_object = tempfile.TemporaryDirectory()
         temp_dir = self.temp_dir_object.name
 
         # store as temporary files for the mesh client
-        self.client_cert_file = (  # pylint: disable=consider-using-with
-            tempfile.NamedTemporaryFile(dir=temp_dir, delete=False)
-        )
+        self.client_cert_file = tempfile.NamedTemporaryFile(dir=temp_dir, delete=False)
         client_cert = self.common_params["MESH_CLIENT_CERT"]
         self.client_cert_file.write(client_cert.encode("utf-8"))
         self.client_cert_file.seek(0)
 
-        self.client_key_file = (  # pylint: disable=consider-using-with
-            tempfile.NamedTemporaryFile(dir=temp_dir, delete=False)
-        )
+        self.client_key_file = tempfile.NamedTemporaryFile(dir=temp_dir, delete=False)
         client_key = self.common_params["MESH_CLIENT_KEY"]
         self.client_key_file.write(client_key.encode("utf-8"))
         self.client_key_file.seek(0)
 
         self.ca_cert_file = None
         if self.common_params.get("MESH_VERIFY_SSL", False) == "True":
-            self.ca_cert_file = (  # pylint: disable=consider-using-with
-                tempfile.NamedTemporaryFile(dir=temp_dir, delete=False)
-            )
+            self.ca_cert_file = tempfile.NamedTemporaryFile(dir=temp_dir, delete=False)
             ca_cert = self.common_params["MESH_CA_CERT"]
             self.ca_cert_file.write(ca_cert.encode("utf-8"))
             self.ca_cert_file.seek(0)
+        # pylint: enable=consider-using-with
 
     def set_destination_and_workflow(self, dest_mailbox, workflow_id):
         """Set destination mailbox and workflow_id"""
@@ -248,8 +258,8 @@ class MeshMailbox:
         """Get a chunk"""
         if not chunk:
             message_object = self.mesh_client.retrieve_message(message_id)
-            for (header, value) in message_object.mex_headers():
-                print(f"{header}={value}")
+            # for (header, value) in message_object.mex_headers():
+            #     print(f"{header}={value}")
             filename = message_object.mex_header("filename")
             if not filename:
                 filename = message_id
@@ -267,8 +277,9 @@ class MeshMailbox:
                 workflow_id=workflow_id,
             )
             return (HTTPStatus.OK.value, return_message_object)
-        else:
-            offset = chunk_size * chunk_num
-            print(f"Calculated offset is {offset}")
-            print("CHUNKING ON RECEIVE IS NOT IMPLEMENTED YET")
-            return (HTTPStatus.NOT_IMPLEMENTED.value, None)
+
+        # chunked
+        offset = chunk_size * chunk_num
+        print(f"Calculated offset is {offset}")
+        print("CHUNKING ON RECEIVE IS NOT IMPLEMENTED YET")
+        return (HTTPStatus.NOT_IMPLEMENTED.value, None)

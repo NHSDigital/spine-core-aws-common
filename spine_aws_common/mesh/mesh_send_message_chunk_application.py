@@ -57,7 +57,6 @@ class MeshSendMessageChunkApplication(LambdaApplication):
             current_chunk=current_chunk,
             chunk_size=chunk_size,
         )
-        print(f"Got file contents:>{file_contents}<")
         self.body = file_contents  # for testing :-(
         message_object = MeshMessage(
             filename=os.path.basename(key),

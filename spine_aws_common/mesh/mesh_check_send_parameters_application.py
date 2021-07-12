@@ -5,7 +5,6 @@ from http import HTTPStatus
 import os
 from math import ceil
 import boto3
-from aws_lambda_powertools.utilities import parameters
 from aws_lambda_powertools.utilities.data_classes import EventBridgeEvent
 from spine_aws_common import LambdaApplication
 from spine_aws_common.utilities import human_readable_bytes
@@ -59,8 +58,12 @@ class MeshCheckSendParametersApplication(LambdaApplication):
         try:
             MeshCommon.singleton_check(src_mailbox, self.my_step_function_name)
         except SingletonCheckFailure as e:
-            self._return_failure(
-                HTTPStatus.TOO_MANY_REQUESTS.value, src_mailbox, message=e.msg
+            self.response = MeshCommon.return_failure(
+                self.log_object,
+                HTTPStatus.TOO_MANY_REQUESTS.value,
+                "MESHSEND0003",
+                src_mailbox,
+                message=e.msg,
             )
             return
 
@@ -101,36 +104,26 @@ class MeshCheckSendParametersApplication(LambdaApplication):
             },
         }
 
-    def _return_failure(self, status, mailbox, message=""):
-        self.response = {
-            "statusCode": status,
-            "headers": {
-                "Content-Type": "application/json",
-                "Retry-After": 18000,
-            },
-            "body": {
-                "internal_id": self.log_object.internal_id,
-                "error": message,
-            },
-        }
-        self.log_object.write_log(
-            "MESHSEND0003",
-            None,
-            {"mailbox": mailbox, "error": message},
-        )
-
     def _get_mapping(self, bucket, key):
         """Get bucket to mailbox mapping from SSM parameter store"""
         folder = os.path.dirname(key)
         if len(folder) > 0:
             folder += "/"
 
-        config = parameters.get_parameters(
-            f"/{self.environment}/mesh/mapping/{bucket}/{folder}"
+        path = f"/{self.environment}/mesh/mapping/{bucket}/{folder}"
+        ssm_client = boto3.client("ssm", region_name="eu-west-2")
+        mailbox_mapping_params = ssm_client.get_parameters_by_path(
+            Path=path,
+            Recursive=False,
+            WithDecryption=True,
         )
-        src_mailbox = config["src_mailbox"]
-        dest_mailbox = config["dest_mailbox"]
-        workflow_id = config["workflow_id"]
+        mailbox_mapping = MeshCommon.convert_params_to_dict(
+            mailbox_mapping_params.get("Parameters", {})
+        )
+
+        src_mailbox = mailbox_mapping["src_mailbox"]
+        dest_mailbox = mailbox_mapping["dest_mailbox"]
+        workflow_id = mailbox_mapping["workflow_id"]
         return (src_mailbox, dest_mailbox, workflow_id)
 
     @staticmethod
