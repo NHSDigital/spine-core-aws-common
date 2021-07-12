@@ -68,7 +68,7 @@ class TestMeshCheckSendParametersApplication(MeshTestCase):
                 "dest_mailbox": "MESH-TEST1",
                 "workflow_id": "TESTWORKFLOW",
                 "bucket": f"{self.environment}-supplementary-data",
-                "key": "outbound/anotherfile.json",
+                "key": "outbound/testfile.json",
                 "chunk": True,
                 "chunk_number": 1,
                 "total_chunks": 4,
