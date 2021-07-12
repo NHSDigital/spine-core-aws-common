@@ -30,7 +30,7 @@ class MeshFetchMessageChunkApplication(LambdaApplication):
     def start(self):
         # TODO refactor
         # pylint: disable=too-many-locals
-        self.input = self.event.get("body", {})
+        self.input = self.event.get("body")
         old_internal_id = self.input.get("internal_id", "Not Provided")
         message_id = self.input["message_id"]
         mailbox_name = self.input["dest_mailbox"]
@@ -72,7 +72,7 @@ class MeshFetchMessageChunkApplication(LambdaApplication):
                     CreateBucketConfiguration=location,
                 )
 
-        self.response = self.event
+        self.response = self.event.raw_event
 
         # store file to s3 as partial upload or putobject
         if not chunked:
