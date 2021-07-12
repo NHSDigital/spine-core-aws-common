@@ -1,3 +1,4 @@
+# pylint: disable=duplicate-code
 """ Testing MeshFetchMessageChunk Application """
 import json
 from unittest import mock, TestCase
@@ -10,7 +11,6 @@ from spine_aws_common.tests.utils.log_helper import LogHelper
 from spine_aws_common.mesh import MeshFetchMessageChunkApplication
 
 
-# pylint:disable=duplicate-code
 class TestMeshFetchMessageChunkApplication(TestCase):
     """Testing MeshFetchMessageChunk application"""
 
@@ -20,18 +20,7 @@ class TestMeshFetchMessageChunkApplication(TestCase):
 
     @mock_ssm
     @mock_s3
-    @mock.patch.dict(
-        "os.environ",
-        values={
-            "AWS_REGION": "eu-west-2",
-            "AWS_EXECUTION_ENV": "AWS_Lambda_python3.8",
-            "AWS_LAMBDA_FUNCTION_NAME": "lambda_test",
-            "AWS_LAMBDA_FUNCTION_MEMORY_SIZE": "128",
-            "AWS_LAMBDA_FUNCTION_VERSION": "1",
-            "Environment": "meshtest",
-            "CHUNK_SIZE": "10",
-        },
-    )
+    @mock.patch.dict("os.environ", MeshTestingCommon.os_environ_values)
     def setUp(self):
         """Common setup for all tests"""
         self.log_helper = LogHelper()
@@ -118,12 +107,7 @@ class TestMeshFetchMessageChunkApplication(TestCase):
             mock_response["body"].get("internal_id"),
         )
         self.assertDictEqual(mock_response, response)
-        self.assertTrue(
-            self.log_helper.was_value_logged("LAMBDA0001", "Log_Level", "INFO")
-        )
-        self.assertTrue(
-            self.log_helper.was_value_logged("LAMBDA0002", "Log_Level", "INFO")
-        )
+        # Check it completed ok
         self.assertTrue(
             self.log_helper.was_value_logged("LAMBDA0003", "Log_Level", "INFO")
         )

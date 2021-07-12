@@ -58,8 +58,12 @@ class MeshCheckSendParametersApplication(LambdaApplication):
         try:
             MeshCommon.singleton_check(src_mailbox, self.my_step_function_name)
         except SingletonCheckFailure as e:
-            self._return_failure(
-                HTTPStatus.TOO_MANY_REQUESTS.value, src_mailbox, message=e.msg
+            self.response = MeshCommon.return_failure(
+                self.log_object,
+                HTTPStatus.TOO_MANY_REQUESTS.value,
+                "MESHSEND0003",
+                src_mailbox,
+                message=e.msg,
             )
             return
 
@@ -99,24 +103,6 @@ class MeshCheckSendParametersApplication(LambdaApplication):
                 "message_id": None,
             },
         }
-
-    def _return_failure(self, status, mailbox, message=""):
-        self.response = {
-            "statusCode": status,
-            "headers": {
-                "Content-Type": "application/json",
-                "Retry-After": 18000,
-            },
-            "body": {
-                "internal_id": self.log_object.internal_id,
-                "error": message,
-            },
-        }
-        self.log_object.write_log(
-            "MESHSEND0003",
-            None,
-            {"mailbox": mailbox, "error": message},
-        )
 
     def _get_mapping(self, bucket, key):
         """Get bucket to mailbox mapping from SSM parameter store"""

@@ -35,8 +35,12 @@ class MeshPollMailboxApplication(LambdaApplication):
         try:
             MeshCommon.singleton_check(self.mailbox_name, self.my_step_function_name)
         except SingletonCheckFailure as e:
-            self._return_failure(
-                HTTPStatus.TOO_MANY_REQUESTS.value, self.mailbox_name, message=e.msg
+            self.response = MeshCommon.return_failure(
+                self.log_object,
+                HTTPStatus.TOO_MANY_REQUESTS.value,
+                "MESHPOLL0003",
+                self.mailbox_name,
+                message=e.msg,
             )
             return
 
@@ -70,19 +74,3 @@ class MeshPollMailboxApplication(LambdaApplication):
                 "message_list": output_list,
             },
         }
-
-    def _return_failure(self, status, mailbox, message=""):
-        self.response = {
-            "statusCode": status,
-            "headers": {
-                "Content-Type": "application/json",
-                "Retry-After": 18000,
-            },
-            "body": {
-                "internal_id": self.log_object.internal_id,
-                "error": message,
-            },
-        }
-        self.log_object.write_log(
-            "MESHPOLL0003", None, {"mailbox": mailbox, "error": message}
-        )

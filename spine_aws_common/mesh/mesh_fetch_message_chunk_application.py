@@ -28,7 +28,8 @@ class MeshFetchMessageChunkApplication(LambdaApplication):
         self.chunk_size = os.environ.get("CHUNK_SIZE", MeshCommon.DEFAULT_CHUNK_SIZE)
 
     def start(self):
-        # TODO copy more stuff from send_message_chunk
+        # TODO refactor
+        # pylint: disable=too-many-locals
         self.input = self.event.get("body", {})
         old_internal_id = self.input.get("internal_id", "Not Provided")
         message_id = self.input["message_id"]
