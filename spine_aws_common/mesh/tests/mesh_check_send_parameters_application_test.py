@@ -1,30 +1,23 @@
-# pylint: disable=duplicate-code
 """ Testing MeshPollMailbox application """
-from unittest import mock, TestCase
+from unittest import mock
 from http import HTTPStatus
 import boto3
 from moto import mock_s3, mock_ssm, mock_stepfunctions
-from spine_aws_common.mesh.tests.mesh_testing_common import MeshTestingCommon
-from spine_aws_common.tests.utils.log_helper import LogHelper
+from spine_aws_common.mesh.tests.mesh_testing_common import (
+    MeshTestingCommon,
+    MeshTestCase,
+)
 from spine_aws_common.mesh import MeshCheckSendParametersApplication
 from spine_aws_common.mesh.mesh_common import SingletonCheckFailure
 
 
-class TestMeshCheckSendParametersApplication(TestCase):
+class TestMeshCheckSendParametersApplication(MeshTestCase):
     """Testing MeshPollMailbox application"""
 
-    def __init__(self, method_name):
-        super().__init__(methodName=method_name)
-        self.environment = None
-
-    @mock_ssm
-    @mock_s3
     @mock.patch.dict("os.environ", MeshTestingCommon.os_environ_values)
     def setUp(self):
-        """Common setup for all tests"""
-        self.log_helper = LogHelper()
-        self.log_helper.set_stdout_capture()
-
+        """Override setup to use correct application object"""
+        super().setUp()
         self.app = MeshCheckSendParametersApplication()
         self.environment = self.app.system_config["Environment"]
 
@@ -45,16 +38,13 @@ class TestMeshCheckSendParametersApplication(TestCase):
             self.environment, ssm_client
         )
 
-    def tearDown(self):
-        self.log_helper.clean_up()
-
     @mock_stepfunctions
     @mock_ssm
     @mock_s3
     @mock.patch.object(
         MeshCheckSendParametersApplication,
         "_get_internal_id",
-        MeshTestingCommon.get_known_internal_id,
+        MeshTestingCommon.get_known_internal_id1,
     )
     def test_mesh_check_send_parameters_happy_path(self):
         """Test the lambda as a whole, happy path"""
@@ -73,12 +63,12 @@ class TestMeshCheckSendParametersApplication(TestCase):
             "statusCode": HTTPStatus.OK.value,
             "headers": {"Content-Type": "application/json"},
             "body": {
-                "internal_id": MeshTestingCommon.KNOWN_INTERNAL_ID,
+                "internal_id": MeshTestingCommon.KNOWN_INTERNAL_ID1,
                 "src_mailbox": "MESH-TEST2",
                 "dest_mailbox": "MESH-TEST1",
                 "workflow_id": "TESTWORKFLOW",
                 "bucket": f"{self.environment}-supplementary-data",
-                "key": "outbound/testfile.json",
+                "key": "outbound/anotherfile.json",
                 "chunk": True,
                 "chunk_number": 1,
                 "total_chunks": 4,
