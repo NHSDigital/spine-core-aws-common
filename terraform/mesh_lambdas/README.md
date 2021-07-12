@@ -4,58 +4,33 @@ A terraform module to provide AWS infrastructure capable of sending and recievin
 
 ## Configuration
 
-_*TODO*_
+Example configuration required to use this module
 
 ```
-variable "name_prefix" {
-  description = "name to prefix on to the resources"
-}
+module "mesh" {
+  source = "git::https://github.com/nhsdigital/spine-core-aws-common.git//terraform/mesh_lambdas?ref=v0.0.4"
 
-variable "config" {
-  description = "Shared Mesh configuration"
+  name_prefix = "example-project-that-needs-mesh"
 
-  type = object({
-    # ca_cert     = string # secret
-    # client_cert = string # secret
-    # client_key  = string # secret
-    environment = string
-    # shared_key  = string # secret
-    verify_ssl = bool
-  })
-
-  default = {
-    # ca_cert     = ""
-    # client_cert = ""
-    # client_key  = ""
+  config = {
     environment = "integration"
-    # shared_key  = ""
-    verify_ssl = true
+    verify_ssl  = true
   }
 
-  validation {
-    condition     = var.config.environment == "integration" || var.config.environment == "production"
-    error_message = "The environment value must be either \"integration\" or \"production\"."
-  }
-}
-
-variable "mailboxes" {
-  description = "Configuration of Mesh mailboxes"
-
-  type = list(object({
-    allowed_recipients   = string
-    allowed_senders      = string
-    allowed_workflow_ids = string
-    id                   = string
-    # password             = string # secret
-    # inbound_folder       = string # outputs not inputs
-    outbound_mappings = list(object({
-      dest_mailbox = string
-      # src_mailbox  = string # is id
-      workflow_id = string
-      # folder       = string # outputs not inputs
-    }))
-  }))
-
-  default = []
+  mailboxes = [
+      {
+        id = "X26OT178"
+        outbound_mappings = [
+          {
+            dest_mailbox = "X26OT179"
+            workflow_id  = "TESTWORKFLOW"
+          }
+        ]
+      },
+      {
+        id                = "X26OT179"
+        outbound_mappings = []
+      }
+    ]
 }
 ```
