@@ -1,5 +1,8 @@
 """Common methods and classes used for testing mesh client"""
+from unittest import TestCase
 from botocore.config import Config
+from moto import mock_ssm, mock_s3
+from spine_aws_common.tests.utils.log_helper import LogHelper
 
 FILE_CONTENT = "123456789012345678901234567890123"
 
@@ -159,3 +162,22 @@ class MeshTestingCommon:
             Name=f"/{environment}/mesh/MESH_CLIENT_KEY",
             Value=client_key,
         )
+
+
+class MeshTestCase(TestCase):
+    """Common setup for Mesh test cases"""
+
+    def __init__(self, method_name):
+        super().__init__(methodName=method_name)
+        self.environment = None
+        self.app = None
+
+    @mock_s3
+    @mock_ssm
+    def setUp(self):
+        """Common setup for all tests"""
+        self.log_helper = LogHelper()
+        self.log_helper.set_stdout_capture()
+
+    def tearDown(self):
+        self.log_helper.clean_up()

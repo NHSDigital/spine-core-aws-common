@@ -2,36 +2,26 @@
 """ Testing MeshSendMessageChunk Application """
 import json
 from http import HTTPStatus
-from unittest import mock, TestCase
+from unittest import mock
 import requests_mock
 import boto3
 from moto import mock_s3, mock_ssm
-from spine_aws_common.mesh.tests.mesh_testing_common import MeshTestingCommon
-from spine_aws_common.tests.utils.log_helper import LogHelper
+from spine_aws_common.mesh.tests.mesh_testing_common import (
+    MeshTestingCommon,
+    MeshTestCase,
+)
 from spine_aws_common.mesh import MeshSendMessageChunkApplication
 
 
-class TestMeshSendMessageChunkApplication(TestCase):
+class TestMeshSendMessageChunkApplication(MeshTestCase):
     """Testing MeshSendMessageChunk application"""
 
-    def __init__(self, method_name):
-        super().__init__(methodName=method_name)
-        self.environment = None
-
-    @mock_ssm
-    @mock_s3
     @mock.patch.dict("os.environ", MeshTestingCommon.os_environ_values)
     def setUp(self):
-        """Common setup for all tests"""
-        self.log_helper = LogHelper()
-        self.log_helper.set_stdout_capture()
-        self.maxDiff = 1024  # pylint: disable="invalid-name"
-
+        """Override setup to use correct application object"""
+        super().setUp()
         self.app = MeshSendMessageChunkApplication()
         self.environment = self.app.system_config["Environment"]
-
-    def tearDown(self) -> None:
-        self.log_helper.clean_up()
 
     @mock_ssm
     @mock_s3
