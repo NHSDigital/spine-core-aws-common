@@ -6,8 +6,8 @@ from unittest import mock
 import requests_mock
 import boto3
 from moto import mock_s3, mock_ssm, mock_stepfunctions
-from spine_aws_common.mesh import MeshPollMailboxApplication
-from spine_aws_common.mesh.tests.mesh_testing_common import (
+from mesh_aws_client import MeshPollMailboxApplication
+from mesh_aws_client.tests.mesh_testing_common import (
     MeshTestingCommon,
     MeshTestCase,
 )

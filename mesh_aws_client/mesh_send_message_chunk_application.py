@@ -5,7 +5,7 @@ import os
 from http import HTTPStatus
 import boto3
 from spine_aws_common import LambdaApplication
-from spine_aws_common.mesh.mesh_common import MeshCommon, MeshMailbox, MeshMessage
+from mesh_aws_client.mesh_common import MeshCommon, MeshMailbox, MeshMessage
 
 
 class MeshSendMessageChunkApplication(LambdaApplication):
@@ -126,3 +126,13 @@ class MeshSendMessageChunkApplication(LambdaApplication):
         else:
             file_content = None
         return file_content
+
+
+# create instance of class in global space
+# this ensures initial setup of logging/config is only done on cold start
+app = MeshSendMessageChunkApplication()
+
+
+def lambda_handler(event, context):
+    """Standard lambda_handler"""
+    return app.main(event, context)

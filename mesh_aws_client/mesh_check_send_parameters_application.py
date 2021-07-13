@@ -8,7 +8,7 @@ import boto3
 from aws_lambda_powertools.utilities.data_classes import EventBridgeEvent
 from spine_aws_common import LambdaApplication
 from spine_aws_common.utilities import human_readable_bytes
-from spine_aws_common.mesh.mesh_common import MeshCommon, SingletonCheckFailure
+from mesh_aws_client.mesh_common import MeshCommon, SingletonCheckFailure
 
 
 def calculate_chunks(file_size, chunk_size):
@@ -133,3 +133,11 @@ class MeshCheckSendParametersApplication(LambdaApplication):
         response = s3_client.head_object(Bucket=bucket, Key=key)
         file_size = response.get("ContentLength")
         return file_size
+
+
+app = MeshCheckSendParametersApplication()
+
+
+def lambda_handler(event, context):
+    """Standard lambda_handler"""
+    return app.main(event, context)

@@ -3,12 +3,12 @@ from unittest import mock
 from http import HTTPStatus
 import boto3
 from moto import mock_s3, mock_ssm, mock_stepfunctions
-from spine_aws_common.mesh.tests.mesh_testing_common import (
+from mesh_aws_client.tests.mesh_testing_common import (
     MeshTestingCommon,
     MeshTestCase,
 )
-from spine_aws_common.mesh import MeshCheckSendParametersApplication
-from spine_aws_common.mesh.mesh_common import SingletonCheckFailure
+from mesh_aws_client import MeshCheckSendParametersApplication
+from mesh_aws_client.mesh_common import SingletonCheckFailure
 
 
 class TestMeshCheckSendParametersApplication(MeshTestCase):

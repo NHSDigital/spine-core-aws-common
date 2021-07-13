@@ -100,6 +100,26 @@ class MeshCommon:
             },
         }
 
+    @staticmethod
+    def get_ssm_params(path, recursive=False, decryption=True):
+        """Get parameters from SSM param store and return as simple dict"""
+        # TODO region name fix
+        ssm_client = boto3.client("ssm", region_name="eu-west-2")
+
+        params_result = ssm_client.get_parameters_by_path(
+            Path=path,
+            Recursive=recursive,
+            WithDecryption=decryption,
+        )
+        params = params_result.get("Parameters", {})
+        new_params_dict = {}
+        for entry in params:
+            name = entry.get("Name", None)
+            if name:
+                var_name = os.path.basename(name)
+                new_params_dict[var_name] = entry.get("Value", None)
+        return new_params_dict
+
 
 class ExtendedMeshClient(MeshClient):
     """Extended functionality for lambda send"""
