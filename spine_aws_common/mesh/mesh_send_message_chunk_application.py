@@ -26,8 +26,8 @@ class MeshSendMessageChunkApplication(LambdaApplication):
     def start(self):
         # TODO refactor
         # TODO add log points
-        self.input = self.event.get("body", {})
-        self.response = self.event
+        self.input = self.event.get("body")
+        self.response = self.event.raw_event
 
         is_finished = self.input.get("complete", False)
         if is_finished:

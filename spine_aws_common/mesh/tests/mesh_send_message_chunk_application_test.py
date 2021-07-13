@@ -1,4 +1,3 @@
-# pylint: disable=duplicate-code
 """ Testing MeshSendMessageChunk Application """
 import json
 from http import HTTPStatus

@@ -11,6 +11,7 @@ from aws_lambda_powertools.event_handler.api_gateway import (
     ResponseBuilder,
     Response,
 )
+from aws_lambda_powertools.utilities.data_classes.common import BaseProxyEvent
 
 from spine_aws_common.lambda_application import LambdaApplication
 
@@ -19,6 +20,8 @@ class WebApplication(LambdaApplication):
     """
     Base class for Web Lambda applications
     """
+
+    EVENT_TYPE = BaseProxyEvent
 
     def __init__(self, additional_log_config=None, load_ssm_params=False):
         super().__init__(

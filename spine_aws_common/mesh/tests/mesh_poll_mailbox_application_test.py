@@ -1,4 +1,3 @@
-# pylint: disable=duplicate-code
 """ Testing MeshPollMailbox application """
 
 from http import HTTPStatus

@@ -1,4 +1,3 @@
-# pylint: disable=duplicate-code
 """ Testing MeshFetchMessageChunk Application """
 import json
 from unittest import mock
@@ -80,7 +79,6 @@ class TestMeshFetchMessageChunkApplication(MeshTestCase):
         mock_response = self._sample_second_input_event()
 
         mock_response["body"].update({"complete": True, "chunk_num": 1})
-
         try:
             response = self.app.main(
                 event=mock_input, context=MeshTestingCommon.CONTEXT

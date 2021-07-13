@@ -14,7 +14,6 @@ from spine_aws_common.log.constants import LoggingConstants
 from spine_aws_common.log.formatting import (
     add_default_keys,
     evaluate_log_keys,
-    create_placehold_log,
     create_log_line,
     substitute_preamble_for_monitor,
 )
@@ -134,13 +133,6 @@ class Logger:
                 log_row_dict_masked,
                 LoggingConstants.LFR_AUDIT,
             )
-            if self._WRITEPLACEHOLDER:
-                self._write_to_cloudwatch(
-                    log_preamble,
-                    create_placehold_log(log_row_dict_masked),
-                    log_row_dict_masked,
-                    LoggingConstants.LFR_OPERATIONS,
-                )
         else:
             self._write_to_cloudwatch(
                 log_preamble,

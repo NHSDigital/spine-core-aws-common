@@ -10,8 +10,7 @@ class ALBApplication(WebApplication):
     Base class for ALB Lambda applications
     """
 
-    def process_event(self, event):
-        return ALBEvent(event)
+    EVENT_TYPE = ALBEvent
 
     def _get_internal_id(self):
         """

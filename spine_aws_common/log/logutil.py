@@ -7,7 +7,6 @@ from spine_aws_common.log.details import get_log_details
 from spine_aws_common.log.formatting import (
     add_default_keys,
     create_log_preamble,
-    create_placehold_log,
     evaluate_log_keys,
     substitute_preamble_for_monitor,
 )
@@ -73,14 +72,6 @@ def write_log(
             log_details.log_text,
             log_row_dict_masked,
             LoggingConstants.LFR_AUDIT,
-        )
-
-        # Placeholder.
-        write_to_file(
-            log_preamble,
-            create_placehold_log(log_row_dict_masked),
-            log_row_dict_masked,
-            LoggingConstants.LFR_OPERATIONS,
         )
     else:
         write_to_file(
