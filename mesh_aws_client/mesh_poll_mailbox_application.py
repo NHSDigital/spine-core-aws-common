@@ -4,8 +4,7 @@ Module for MESH API functionality for step functions
 import os
 from http import HTTPStatus
 from spine_aws_common import LambdaApplication
-from spine_aws_common.mesh.mesh_common import MeshMailbox
-from spine_aws_common.mesh.mesh_common import MeshCommon, SingletonCheckFailure
+from mesh_aws_client.mesh_common import MeshMailbox, MeshCommon, SingletonCheckFailure
 
 
 class MeshPollMailboxApplication(LambdaApplication):
@@ -74,3 +73,13 @@ class MeshPollMailboxApplication(LambdaApplication):
                 "message_list": output_list,
             },
         }
+
+
+# create instance of class in global space
+# this ensures initial setup of logging/config is only done on cold start
+app = MeshPollMailboxApplication()
+
+
+def lambda_handler(event, context):
+    """Standard lambda_handler"""
+    return app.main(event, context)

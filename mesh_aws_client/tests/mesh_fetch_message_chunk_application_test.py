@@ -5,11 +5,11 @@ from http import HTTPStatus
 import requests_mock
 import boto3
 from moto import mock_s3, mock_ssm
-from spine_aws_common.mesh.tests.mesh_testing_common import (
+from mesh_aws_client.tests.mesh_testing_common import (
     MeshTestingCommon,
     MeshTestCase,
 )
-from spine_aws_common.mesh import MeshFetchMessageChunkApplication
+from mesh_aws_client import MeshFetchMessageChunkApplication
 
 
 class TestMeshFetchMessageChunkApplication(MeshTestCase):

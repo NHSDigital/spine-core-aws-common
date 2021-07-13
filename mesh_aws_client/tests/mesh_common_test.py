@@ -5,8 +5,8 @@ import json
 import boto3
 import requests_mock
 from moto import mock_ssm
-from spine_aws_common.mesh.mesh_common import MeshMailbox
-from spine_aws_common.mesh.tests.mesh_testing_common import MeshTestingCommon
+from mesh_aws_client.mesh_common import MeshMailbox
+from mesh_aws_client.tests.mesh_testing_common import MeshTestingCommon
 from spine_aws_common.tests.utils.log_helper import LogHelper
 
 
