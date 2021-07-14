@@ -56,7 +56,7 @@ class TestMeshCheckSendParametersApplication(MeshTestCase):
         response = MeshTestingCommon.setup_step_function(
             sfn_client,
             self.environment,
-            f"{self.environment}-mesh-send-message",
+            f"{self.environment}-send-message",
         )
 
         mock_response = {
@@ -119,7 +119,7 @@ class TestMeshCheckSendParametersApplication(MeshTestCase):
         response = MeshTestingCommon.setup_step_function(
             sfn_client,
             self.environment,
-            f"{self.environment}-mesh-send-message",
+            f"{self.environment}-send-message",
         )
         step_func_arn = response.get("stateMachineArn", None)
         self.assertIsNotNone(step_func_arn)
@@ -155,7 +155,7 @@ class TestMeshCheckSendParametersApplication(MeshTestCase):
         response = MeshTestingCommon.setup_step_function(
             sfn_client,
             self.environment,
-            f"{self.environment}-mesh-get-messages",
+            f"{self.environment}-get-messages",
         )
         step_func2_arn = response.get("stateMachineArn", None)
         self.assertIsNotNone(step_func2_arn)
