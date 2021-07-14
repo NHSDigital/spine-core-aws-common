@@ -1,7 +1,21 @@
+resource "null_resource" "mesh_aws_client" {
+  triggers = {
+    # hack so this always triggers
+    mesh_aws_client_dependencies = timestamp()
+  }
+  provisioner "local-exec" {
+    command = "/bin/bash ${path.module}/scripts/mesh_aws_client.sh"
+  }
+}
+
 data "archive_file" "mesh_aws_client" {
   type        = "zip"
-  source_dir  = "${path.module}/../../mesh_aws_client"
+  source_dir  = "${path.module}/mesh_aws_client"
   output_path = "${path.module}/mesh_aws_client.zip"
+
+  depends_on = [
+    null_resource.mesh_aws_client
+  ]
 }
 
 resource "null_resource" "mesh_aws_client_dependencies" {

@@ -9,7 +9,8 @@ htmlcov/
 coverage-all.txt
 *.zip
 
-# ignore extracted lambda deps
+# ignore packaging and lambda deps
+terraform/mesh_aws/mesh_aws_client/*
 terraform/mesh_aws/mesh_aws_client_dependencies/*
 
 ### Terraform ###

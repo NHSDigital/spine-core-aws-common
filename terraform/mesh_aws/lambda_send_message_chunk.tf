@@ -1,7 +1,7 @@
 resource "aws_lambda_function" "send_message_chunk" {
   function_name    = "${local.name}-send-message-chunk"
   filename         = data.archive_file.mesh_aws_client.output_path
-  handler          = "mesh_send_message_chunk_application.lambda_handler"
+  handler          = "mesh_aws_client.mesh_send_message_chunk_application.lambda_handler"
   runtime          = local.python_runtime
   timeout          = 15 * 60 // 15 minutes
   source_code_hash = data.archive_file.mesh_aws_client.output_base64sha256

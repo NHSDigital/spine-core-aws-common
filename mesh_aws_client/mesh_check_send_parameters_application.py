@@ -2,13 +2,16 @@
 Module for MESH API functionality for step functions
 """
 from http import HTTPStatus
-import os
 from math import ceil
-import boto3
+import os
+
 from aws_lambda_powertools.utilities.data_classes import EventBridgeEvent
+import boto3
+
 from spine_aws_common import LambdaApplication
 from spine_aws_common.utilities import human_readable_bytes
-from mesh_aws_client.mesh_common import MeshCommon, SingletonCheckFailure
+
+from .mesh_common import MeshCommon, SingletonCheckFailure
 
 
 def calculate_chunks(file_size, chunk_size):

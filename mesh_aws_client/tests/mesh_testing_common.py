@@ -1,7 +1,9 @@
 """Common methods and classes used for testing mesh client"""
 from unittest import TestCase
+
 from botocore.config import Config
-from moto import mock_ssm, mock_s3
+from moto import mock_s3, mock_ssm
+
 from spine_aws_common.tests.utils.log_helper import LogHelper
 
 FILE_CONTENT = "123456789012345678901234567890123"

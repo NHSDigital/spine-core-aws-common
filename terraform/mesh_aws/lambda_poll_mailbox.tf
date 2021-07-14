@@ -1,7 +1,7 @@
 resource "aws_lambda_function" "poll_mailbox" {
   function_name    = "${local.name}-poll-mailbox"
   filename         = data.archive_file.mesh_aws_client.output_path
-  handler          = "mesh_poll_mailbox_application.lambda_handler"
+  handler          = "mesh_aws_client.mesh_poll_mailbox_application.lambda_handler"
   runtime          = local.python_runtime
   timeout          = local.lambda_timeout
   source_code_hash = data.archive_file.mesh_aws_client.output_base64sha256

@@ -1,7 +1,7 @@
 resource "aws_lambda_function" "check_send_parameters" {
   function_name    = "${local.name}-check-send-parameters"
   filename         = data.archive_file.mesh_aws_client.output_path
-  handler          = "mesh_check_send_parameters_application.lambda_handler"
+  handler          = "mesh_aws_client.mesh_check_send_parameters_application.lambda_handler"
   runtime          = local.python_runtime
   timeout          = 60
   source_code_hash = data.archive_file.mesh_aws_client.output_base64sha256

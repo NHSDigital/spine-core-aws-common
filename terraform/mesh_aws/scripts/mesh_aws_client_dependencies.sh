@@ -6,15 +6,15 @@ set -u
 set -x
 set -o pipefail
 
-# Deterministic dir
-SCRIPT_DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)"
-cd ${SCRIPT_DIR}
 DEPS_DIR="../mesh_aws_client_dependencies/python"
 PYTHON_BIN="python3.8"
 
-# Check for python and zip
+# Deterministic dir
+SCRIPT_DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)"
+cd ${SCRIPT_DIR}
+
+# Check for python
 which ${PYTHON_BIN}
-which zip
 
 # Create deps dir
 mkdir -p ${DEPS_DIR}

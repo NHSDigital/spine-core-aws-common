@@ -1,19 +1,14 @@
 """Mailbox class that handles all the complexity of talking to MESH API"""
-from collections import namedtuple
-import os
-import hmac
-from mesh_aws_client.mesh_common import MeshCommon
-import uuid
-import datetime
 from hashlib import sha256
-import tempfile
 import atexit
+import datetime
+import hmac
+import tempfile
+import uuid
 
-# from http import HTTPStatus
-import requests
-from urllib3.exceptions import InsecureRequestWarning
-import boto3
 from spine_aws_common.logger import Logger
+
+from .mesh_common import MeshCommon
 
 
 class MeshMailbox:  # pylint: disable=too-many-instance-attributes

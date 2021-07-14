@@ -1,14 +1,18 @@
 """ Testing MeshPollMailbox application """
-from unittest import mock
 from http import HTTPStatus
-import boto3
+from unittest import mock
+
 from moto import mock_s3, mock_ssm, mock_stepfunctions
-from mesh_aws_client.tests.mesh_testing_common import (
-    MeshTestingCommon,
-    MeshTestCase,
+import boto3
+
+from mesh_aws_client.mesh_check_send_parameters_application import (
+    MeshCheckSendParametersApplication,
 )
-from mesh_aws_client import MeshCheckSendParametersApplication
 from mesh_aws_client.mesh_common import SingletonCheckFailure
+from mesh_aws_client.tests.mesh_testing_common import (
+    MeshTestCase,
+    MeshTestingCommon,
+)
 
 
 class TestMeshCheckSendParametersApplication(MeshTestCase):
