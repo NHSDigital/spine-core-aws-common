@@ -1,5 +1,9 @@
+locals {
+  fetch_message_chunk_name = "${local.name}-fetch-message-chunk"
+}
+
 resource "aws_lambda_function" "fetch_message_chunk" {
-  function_name    = "${local.name}-fetch-message-chunk"
+  function_name    = local.fetch_message_chunk_name
   filename         = data.archive_file.mesh_aws_client.output_path
   handler          = "mesh_aws_client.mesh_fetch_message_chunk_application.lambda_handler"
   runtime          = local.python_runtime
@@ -18,13 +22,13 @@ resource "aws_lambda_function" "fetch_message_chunk" {
 }
 
 resource "aws_cloudwatch_log_group" "fetch_message_chunk" {
-  name              = "/aws/lambda/${local.name}-fetch-message-chunk"
+  name              = "/aws/lambda/${local.fetch_message_chunk_name}"
   retention_in_days = var.cloudwatch_retention_in_days
 }
 
 resource "aws_iam_role" "fetch_message_chunk" {
-  name               = "${local.name}-fetch_message_chunk"
-  description        = "${local.name}-fetch_message_chunk"
+  name               = local.fetch_message_chunk_name
+  description        = local.fetch_message_chunk_name
   assume_role_policy = data.aws_iam_policy_document.fetch_message_chunk_assume.json
 }
 
@@ -48,8 +52,8 @@ resource "aws_iam_role_policy_attachment" "fetch_message_chunk" {
 }
 
 resource "aws_iam_policy" "fetch_message_chunk" {
-  name        = "${local.name}-fetch_message_chunk"
-  description = "${local.name}-fetch_message_chunk"
+  name        = local.fetch_message_chunk_name
+  description = local.fetch_message_chunk_name
   policy      = data.aws_iam_policy_document.fetch_message_chunk.json
 }
 

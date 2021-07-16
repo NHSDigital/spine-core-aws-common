@@ -1,5 +1,9 @@
+locals {
+  check_send_parameters_name = "${local.name}-check-send-parameters"
+}
+
 resource "aws_lambda_function" "check_send_parameters" {
-  function_name    = "${local.name}-check-send-parameters"
+  function_name    = local.check_send_parameters_name
   filename         = data.archive_file.mesh_aws_client.output_path
   handler          = "mesh_aws_client.mesh_check_send_parameters_application.lambda_handler"
   runtime          = local.python_runtime
@@ -18,13 +22,13 @@ resource "aws_lambda_function" "check_send_parameters" {
 }
 
 resource "aws_cloudwatch_log_group" "check_send_parameters" {
-  name              = "/aws/lambda/${local.name}-check-send-parameters"
+  name              = "/aws/lambda/${local.check_send_parameters_name}"
   retention_in_days = var.cloudwatch_retention_in_days
 }
 
 resource "aws_iam_role" "check_send_parameters" {
-  name               = "${local.name}-check_send_parameters"
-  description        = "${local.name}-check_send_parameters"
+  name               = local.check_send_parameters_name
+  description        = local.check_send_parameters_name
   assume_role_policy = data.aws_iam_policy_document.check_send_parameters_assume.json
 }
 
@@ -48,8 +52,8 @@ resource "aws_iam_role_policy_attachment" "check_send_parameters" {
 }
 
 resource "aws_iam_policy" "check_send_parameters" {
-  name        = "${local.name}-check_send_parameters"
-  description = "${local.name}-check_send_parameters"
+  name        = local.check_send_parameters_name
+  description = local.check_send_parameters_name
   policy      = data.aws_iam_policy_document.check_send_parameters.json
 }
 

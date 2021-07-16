@@ -1,5 +1,9 @@
+locals {
+  poll_mailbox_name = "${local.name}-poll-mailbox"
+}
+
 resource "aws_lambda_function" "poll_mailbox" {
-  function_name    = "${local.name}-poll-mailbox"
+  function_name    = local.poll_mailbox_name
   filename         = data.archive_file.mesh_aws_client.output_path
   handler          = "mesh_aws_client.mesh_poll_mailbox_application.lambda_handler"
   runtime          = local.python_runtime
@@ -18,13 +22,13 @@ resource "aws_lambda_function" "poll_mailbox" {
 }
 
 resource "aws_cloudwatch_log_group" "poll_mailbox" {
-  name              = "/aws/lambda/${local.name}-poll-mailbox"
+  name              = "/aws/lambda/${local.poll_mailbox_name}"
   retention_in_days = var.cloudwatch_retention_in_days
 }
 
 resource "aws_iam_role" "poll_mailbox" {
-  name               = "${local.name}-poll_mailbox"
-  description        = "${local.name}-poll_mailbox"
+  name               = local.poll_mailbox_name
+  description        = local.poll_mailbox_name
   assume_role_policy = data.aws_iam_policy_document.poll_mailbox_assume.json
 }
 
@@ -48,8 +52,8 @@ resource "aws_iam_role_policy_attachment" "poll_mailbox" {
 }
 
 resource "aws_iam_policy" "poll_mailbox" {
-  name        = "${local.name}-poll_mailbox"
-  description = "${local.name}-poll_mailbox"
+  name        = local.poll_mailbox_name
+  description = local.poll_mailbox_name
   policy      = data.aws_iam_policy_document.poll_mailbox.json
 }
 

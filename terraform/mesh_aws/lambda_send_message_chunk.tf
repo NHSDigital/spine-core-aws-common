@@ -1,5 +1,9 @@
+locals {
+  send_message_chunk_name = "${local.name}-send-message-chunk"
+}
+
 resource "aws_lambda_function" "send_message_chunk" {
-  function_name    = "${local.name}-send-message-chunk"
+  function_name    = local.send_message_chunk_name
   filename         = data.archive_file.mesh_aws_client.output_path
   handler          = "mesh_aws_client.mesh_send_message_chunk_application.lambda_handler"
   runtime          = local.python_runtime
@@ -18,13 +22,13 @@ resource "aws_lambda_function" "send_message_chunk" {
 }
 
 resource "aws_cloudwatch_log_group" "send_message_chunk" {
-  name              = "/aws/lambda/${local.name}-send-message-chunk"
+  name              = "/aws/lambda/${local.send_message_chunk_name}"
   retention_in_days = var.cloudwatch_retention_in_days
 }
 
 resource "aws_iam_role" "send_message_chunk" {
-  name               = "${local.name}-send_message_chunk"
-  description        = "${local.name}-send_message_chunk"
+  name               = local.send_message_chunk_name
+  description        = local.send_message_chunk_name
   assume_role_policy = data.aws_iam_policy_document.send_message_chunk_assume.json
 }
 
@@ -48,8 +52,8 @@ resource "aws_iam_role_policy_attachment" "send_message_chunk" {
 }
 
 resource "aws_iam_policy" "send_message_chunk" {
-  name        = "${local.name}-send_message_chunk"
-  description = "${local.name}-send_message_chunk"
+  name        = local.send_message_chunk_name
+  description = local.send_message_chunk_name
   policy      = data.aws_iam_policy_document.send_message_chunk.json
 }
 
