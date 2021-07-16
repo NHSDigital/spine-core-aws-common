@@ -122,7 +122,7 @@ resource "aws_sfn_state_machine" "get_messages" {
 
 resource "aws_cloudwatch_log_group" "get_messages" {
   name              = "/aws/states/${local.name}-get-messages"
-  retention_in_days = 365
+  retention_in_days = var.cloudwatch_retention_in_days
 }
 
 resource "aws_iam_role" "get_messages" {

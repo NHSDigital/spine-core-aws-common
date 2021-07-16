@@ -19,7 +19,7 @@ resource "aws_lambda_function" "fetch_message_chunk" {
 
 resource "aws_cloudwatch_log_group" "fetch_message_chunk" {
   name              = "/aws/lambda/${local.name}-fetch-message-chunk"
-  retention_in_days = 365
+  retention_in_days = var.cloudwatch_retention_in_days
 }
 
 resource "aws_iam_role" "fetch_message_chunk" {

@@ -91,7 +91,7 @@ resource "aws_sfn_state_machine" "send_message" {
 
 resource "aws_cloudwatch_log_group" "send_message" {
   name              = "/aws/states/${local.name}-send-message"
-  retention_in_days = 365
+  retention_in_days = var.cloudwatch_retention_in_days
 }
 
 resource "aws_iam_role" "send_message" {

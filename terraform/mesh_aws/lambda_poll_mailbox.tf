@@ -19,7 +19,7 @@ resource "aws_lambda_function" "poll_mailbox" {
 
 resource "aws_cloudwatch_log_group" "poll_mailbox" {
   name              = "/aws/lambda/${local.name}-poll-mailbox"
-  retention_in_days = 365
+  retention_in_days = var.cloudwatch_retention_in_days
 }
 
 resource "aws_iam_role" "poll_mailbox" {

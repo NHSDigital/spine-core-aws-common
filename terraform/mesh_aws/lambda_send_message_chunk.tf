@@ -19,7 +19,7 @@ resource "aws_lambda_function" "send_message_chunk" {
 
 resource "aws_cloudwatch_log_group" "send_message_chunk" {
   name              = "/aws/lambda/${local.name}-send-message-chunk"
-  retention_in_days = 365
+  retention_in_days = var.cloudwatch_retention_in_days
 }
 
 resource "aws_iam_role" "send_message_chunk" {

@@ -41,6 +41,12 @@ variable "mailboxes" {
 
 variable "account_admin_role" {
   description = "Administrative Account Role used for policies that require owners, like KMS"
-  type = string
-  default = "NHSDAdminRole"
+  type        = string
+  default     = "NHSDAdminRole"
+}
+
+variable "cloudwatch_retention_in_days" {
+  description = "How many days to retain CloudWatch logs for"
+  type        = int
+  default     = 365
 }

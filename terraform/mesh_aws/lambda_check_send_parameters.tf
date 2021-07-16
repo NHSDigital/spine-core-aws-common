@@ -19,7 +19,7 @@ resource "aws_lambda_function" "check_send_parameters" {
 
 resource "aws_cloudwatch_log_group" "check_send_parameters" {
   name              = "/aws/lambda/${local.name}-check-send-parameters"
-  retention_in_days = 365
+  retention_in_days = var.cloudwatch_retention_in_days
 }
 
 resource "aws_iam_role" "check_send_parameters" {
