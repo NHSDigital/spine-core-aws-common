@@ -10,6 +10,16 @@ resource "aws_s3_bucket" "s3logs" {
       }
     }
   }
+
+  lifecycle_rule {
+    id      = "AWSLogs"
+    enabled = true
+    prefix  = "AWSLogs/"
+
+    expiration {
+      days = var.s3logs_retention_in_days
+    }
+  }
 }
 
 resource "aws_s3_bucket_public_access_block" "s3logs" {

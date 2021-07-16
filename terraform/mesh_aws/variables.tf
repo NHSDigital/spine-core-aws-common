@@ -47,6 +47,17 @@ variable "account_admin_role" {
 
 variable "cloudwatch_retention_in_days" {
   description = "How many days to retain CloudWatch logs for"
-  type        = int
+  type        = number
   default     = 365
+}
+
+variable "s3logs_retention_in_days" {
+  description = "How many days to retain S3 object logs for"
+  type        = number
+  default     = 7
+
+  validation {
+    condition     = var.s3logs_retention_in_days >= 1
+    error_message = "The s3logs_retention_in_days value must be greater than or equal to 1."
+  }
 }

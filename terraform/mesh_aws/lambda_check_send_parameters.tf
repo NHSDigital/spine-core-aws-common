@@ -14,7 +14,8 @@ resource "aws_lambda_function" "check_send_parameters" {
 
   environment {
     variables = {
-      Environment = local.name
+      Environment                     = local.name
+      SEND_MESSAGE_STEP_FUNCTION_NAME = local.send_message_name
     }
   }
 

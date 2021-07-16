@@ -14,7 +14,8 @@ resource "aws_lambda_function" "poll_mailbox" {
 
   environment {
     variables = {
-      Environment = local.name
+      Environment                     = local.name
+      GET_MESSAGES_STEP_FUNCTION_NAME = local.get_messages_name
     }
   }
 
