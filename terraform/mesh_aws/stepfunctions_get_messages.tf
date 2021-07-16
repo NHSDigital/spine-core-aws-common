@@ -1,5 +1,9 @@
+locals {
+  get_messages_name = "${local.name}-get-messages"
+}
+
 resource "aws_sfn_state_machine" "get_messages" {
-  name     = "${local.name}-get-messages"
+  name     = local.get_messages_name
   type     = "STANDARD"
   role_arn = aws_iam_role.get_messages.arn
 
@@ -10,7 +14,7 @@ resource "aws_sfn_state_machine" "get_messages" {
   }
 
   definition = jsonencode({
-    Comment = "${local.name}-get-messages"
+    Comment = local.get_messages_name
     StartAt = "Poll for messages"
     States = {
       Fail = {
@@ -121,13 +125,13 @@ resource "aws_sfn_state_machine" "get_messages" {
 }
 
 resource "aws_cloudwatch_log_group" "get_messages" {
-  name              = "/aws/states/${local.name}-get-messages"
+  name              = "/aws/states/${local.get_messages_name}"
   retention_in_days = var.cloudwatch_retention_in_days
 }
 
 resource "aws_iam_role" "get_messages" {
-  name               = "${local.name}-get-messages"
-  description        = "${local.name}-get-messages"
+  name               = local.get_messages_name
+  description        = local.get_messages_name
   assume_role_policy = data.aws_iam_policy_document.get_messages_assume.json
 }
 
@@ -153,8 +157,8 @@ resource "aws_iam_role_policy_attachment" "get_messages" {
 }
 
 resource "aws_iam_policy" "get_messages" {
-  name        = "${local.name}-get-messages"
-  description = "${local.name}-get-messages"
+  name        = local.get_messages_name
+  description = local.get_messages_name
   policy      = data.aws_iam_policy_document.get_messages.json
 }
 

@@ -21,8 +21,9 @@ class MeshPollMailboxApplication(LambdaApplication):
         super().__init__(additional_log_config, load_ssm_params)
         self.mailbox_name = None
         self.environment = os.environ.get("Environment", "default")
-        # TODO figure out better way to do this:
-        self.my_step_function_name = f"{self.environment}-get-messages"
+        self.get_messages_step_function_name = self.system_config.get(
+            "GET_MESSAGES_STEP_FUNCTION_NAME", "default-get-messages"
+        )
 
     def initialise(self):
         # initialise
@@ -34,7 +35,9 @@ class MeshPollMailboxApplication(LambdaApplication):
         mailbox = MeshMailbox(self.log_object, self.mailbox_name, self.environment)
 
         try:
-            MeshCommon.singleton_check(self.mailbox_name, self.my_step_function_name)
+            MeshCommon.singleton_check(
+                self.mailbox_name, self.get_messages_step_function_name
+            )
         except SingletonCheckFailure as e:
             self.response = MeshCommon.return_failure(
                 self.log_object,

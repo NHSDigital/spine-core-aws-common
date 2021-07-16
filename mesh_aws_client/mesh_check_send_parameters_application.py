@@ -29,7 +29,9 @@ class MeshCheckSendParametersApplication(LambdaApplication):
         super().__init__(additional_log_config, load_ssm_params)
         self.environment = self.system_config.get("Environment", "default")
         self.chunk_size = None
-        self.my_step_function_name = None
+        self.send_message_step_function_name = self.system_config.get(
+            "SEND_MESSAGE_STEP_FUNCTION_NAME", "default-send-message"
+        )
 
     def _get_internal_id(self):
         """Override to stop crashing when getting from non-dict event"""
@@ -42,8 +44,6 @@ class MeshCheckSendParametersApplication(LambdaApplication):
         self.chunk_size = int(
             self.system_config.get("CHUNK_SIZE", MeshCommon.DEFAULT_CHUNK_SIZE)
         )
-        # TODO figure out better way to do this:
-        self.my_step_function_name = f"{self.environment}-send-message"
 
     def start(self):
         # in case of crash, set to internal server error so next stage fails
@@ -59,7 +59,9 @@ class MeshCheckSendParametersApplication(LambdaApplication):
 
         self.log_object.write_log("MESHSEND0002", None, {"mailbox": src_mailbox})
         try:
-            MeshCommon.singleton_check(src_mailbox, self.my_step_function_name)
+            MeshCommon.singleton_check(
+                src_mailbox, self.send_message_step_function_name
+            )
         except SingletonCheckFailure as e:
             self.response = MeshCommon.return_failure(
                 self.log_object,

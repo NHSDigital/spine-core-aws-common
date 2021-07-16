@@ -1,5 +1,9 @@
+locals {
+  send_message_name = "${local.name}-send-message"
+}
+
 resource "aws_sfn_state_machine" "send_message" {
-  name     = "${local.name}-send-message"
+  name     = local.send_message_name
   type     = "STANDARD"
   role_arn = aws_iam_role.send_message.arn
 
@@ -10,7 +14,7 @@ resource "aws_sfn_state_machine" "send_message" {
   }
 
   definition = jsonencode({
-    Comment = "${local.name}-send-message"
+    Comment = local.send_message_name
     StartAt = "Check send parameters"
     States = {
       "Check send parameters" = {
@@ -90,13 +94,13 @@ resource "aws_sfn_state_machine" "send_message" {
 }
 
 resource "aws_cloudwatch_log_group" "send_message" {
-  name              = "/aws/states/${local.name}-send-message"
+  name              = "/aws/states/${local.send_message_name}"
   retention_in_days = var.cloudwatch_retention_in_days
 }
 
 resource "aws_iam_role" "send_message" {
-  name               = "${local.name}-send-message"
-  description        = "${local.name}-send-message"
+  name               = local.send_message_name
+  description        = local.send_message_name
   assume_role_policy = data.aws_iam_policy_document.send_message_assume.json
 }
 
@@ -122,8 +126,8 @@ resource "aws_iam_role_policy_attachment" "send_message" {
 }
 
 resource "aws_iam_policy" "send_message" {
-  name        = "${local.name}-send-message"
-  description = "${local.name}-send-message"
+  name        = local.send_message_name
+  description = local.send_message_name
   policy      = data.aws_iam_policy_document.send_message.json
 }
 
