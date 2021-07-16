@@ -43,8 +43,4 @@ resource "aws_lambda_layer_version" "mesh_aws_client_dependencies" {
   layer_name          = "mesh_aws_client_dependencies"
   source_code_hash    = data.archive_file.mesh_aws_client_dependencies.output_base64sha256
   compatible_runtimes = [local.python_runtime]
-
-  depends_on = [
-    null_resource.mesh_aws_client_dependencies
-  ]
 }
