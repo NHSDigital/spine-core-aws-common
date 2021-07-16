@@ -27,8 +27,8 @@ resource "aws_cloudwatch_log_group" "fetch_message_chunk" {
 }
 
 resource "aws_iam_role" "fetch_message_chunk" {
-  name               = local.fetch_message_chunk_name
-  description        = local.fetch_message_chunk_name
+  name               = "${local.fetch_message_chunk_name}-role"
+  description        = "${local.fetch_message_chunk_name}-role"
   assume_role_policy = data.aws_iam_policy_document.fetch_message_chunk_assume.json
 }
 
@@ -52,8 +52,8 @@ resource "aws_iam_role_policy_attachment" "fetch_message_chunk" {
 }
 
 resource "aws_iam_policy" "fetch_message_chunk" {
-  name        = local.fetch_message_chunk_name
-  description = local.fetch_message_chunk_name
+  name        = "${local.fetch_message_chunk_name}-policy"
+  description = "${local.fetch_message_chunk_name}-policy"
   policy      = data.aws_iam_policy_document.fetch_message_chunk.json
 }
 

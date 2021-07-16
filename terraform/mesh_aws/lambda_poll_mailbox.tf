@@ -27,8 +27,8 @@ resource "aws_cloudwatch_log_group" "poll_mailbox" {
 }
 
 resource "aws_iam_role" "poll_mailbox" {
-  name               = local.poll_mailbox_name
-  description        = local.poll_mailbox_name
+  name               = "${local.poll_mailbox_name}-role"
+  description        = "${local.poll_mailbox_name}-role"
   assume_role_policy = data.aws_iam_policy_document.poll_mailbox_assume.json
 }
 
@@ -52,8 +52,8 @@ resource "aws_iam_role_policy_attachment" "poll_mailbox" {
 }
 
 resource "aws_iam_policy" "poll_mailbox" {
-  name        = local.poll_mailbox_name
-  description = local.poll_mailbox_name
+  name        = "${local.poll_mailbox_name}-policy"
+  description = "${local.poll_mailbox_name}-policy"
   policy      = data.aws_iam_policy_document.poll_mailbox.json
 }
 
