@@ -38,3 +38,9 @@ variable "mailboxes" {
 
   default = []
 }
+
+variable "account_admin_role" {
+  description = "Administrative Account Role used for policies that require owners, like KMS"
+  type = string
+  default = "NHSDAdminRole"
+}
