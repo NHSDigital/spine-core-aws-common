@@ -1,15 +1,16 @@
 """Common methods and classes used for mesh client"""
-# from io import BytesIO
-import os
-import json
-import tempfile
-import atexit
-from http import HTTPStatus
 from collections import namedtuple
-import requests
+from http import HTTPStatus
+import atexit
+import json
+import os
+import tempfile
+
+from mesh_client import MeshClient
 from urllib3.exceptions import InsecureRequestWarning
 import boto3
-from mesh_client import MeshClient
+import requests
+
 from spine_aws_common.logger import Logger
 
 

@@ -1,10 +1,12 @@
 """Tests for MeshMailbox class (mesh_client wrapper)"""
-from unittest import mock, TestCase
-import os
+from unittest import TestCase, mock
 import json
+import os
+
+from moto import mock_ssm
 import boto3
 import requests_mock
-from moto import mock_ssm
+
 from mesh_aws_client.mesh_common import MeshMailbox
 from mesh_aws_client.tests.mesh_testing_common import MeshTestingCommon
 from spine_aws_common.tests.utils.log_helper import LogHelper

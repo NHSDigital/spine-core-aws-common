@@ -1,15 +1,14 @@
 """
 Module for MESH API functionality for step functions
 """
-import os
 from http import HTTPStatus
+import os
+
 import boto3
+
 from spine_aws_common import LambdaApplication
-from mesh_aws_client.mesh_common import (
-    MeshMailbox,
-    MeshCommon,
-    AwsFailedToPerformError,
-)
+
+from .mesh_common import AwsFailedToPerformError, MeshCommon, MeshMailbox
 
 
 class MeshFetchMessageChunkApplication(LambdaApplication):
