@@ -128,7 +128,9 @@ class LambdaApplication:
             env = os.environ.copy()
             process_name = env.get("AWS_LAMBDA_FUNCTION_NAME", "None")
             if load_ssm_params:
-                config = parameters.get_parameters(f"/{process_name}", force_fetch=True)
+                config = parameters.get_parameters(
+                    f"/{process_name}", force_fetch=True, decrypt=True
+                )
                 config.update(env)
                 return config
             return env
