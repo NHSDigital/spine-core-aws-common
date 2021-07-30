@@ -9,19 +9,19 @@ Simply add the pre-built package to your python environment.
 ### PIP
 
 ```
-pip install https://github.com/NHSDigital/spine-core-aws-common/releases/download/v0.0.6/spine_aws_common-0.0.6-py3-none-any.whl
+pip install https://github.com/NHSDigital/spine-core-aws-common/releases/download/v0.0.7/spine_aws_common-0.0.7-py3-none-any.whl
 ```
 
 ### requirements.txt
 
 ```
-https://github.com/NHSDigital/spine-core-aws-common/releases/download/v0.0.6/spine_aws_common-0.0.6-py3-none-any.whl
+https://github.com/NHSDigital/spine-core-aws-common/releases/download/v0.0.7/spine_aws_common-0.0.7-py3-none-any.whl
 ```
 
 ### Poetry
 
 ```
-poetry add https://github.com/NHSDigital/spine-core-aws-common/releases/download/v0.0.6/spine_aws_common-0.0.6-py3-none-any.whl
+poetry add https://github.com/NHSDigital/spine-core-aws-common/releases/download/v0.0.7/spine_aws_common-0.0.7-py3-none-any.whl
 ```
 
 ## Usage
