@@ -62,14 +62,15 @@ class LambdaApplication:
                 print(e)
             else:
                 self.log_object.write_log("LAMBDAINIT001", None, {"message": e})
+            raise e
         except Exception as e:  # pylint:disable=broad-except
             if self.log_object is None:
                 print(e)
-                sys.exit(1)
             else:
                 self.log_object.write_log(
                     "LAMBDA9999", sys.exc_info(), {"error": str(e)}
                 )
+            raise e
 
         return self.response
 
