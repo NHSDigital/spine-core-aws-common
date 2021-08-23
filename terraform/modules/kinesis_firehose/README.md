@@ -24,7 +24,7 @@ Usage
 ============
 ```hcl
 module "kinesis_firehose" {
-    source = "git::https://github.com/NHSDigital/spine-core-aws-common.git//terraform/modules/kinesis_firehose?ref=v0.0.8"
+    source = "git::https://github.com/NHSDigital/spine-core-aws-common.git//terraform/modules/kinesis_firehose?ref=v0.1.1"
     environment = local.environment
     project = "gp-reg"
     splunk_hec_endpoint = local.splunk_hec_endpoint[terraform.workspace]
