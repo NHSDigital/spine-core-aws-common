@@ -36,12 +36,13 @@ class LambdaApplication:
 
         self._log_coldstart()
 
-        self.response = {"message": "Lambda application stopped"}
+        self.response = None
 
     def main(self, event, context):
         """
         Common entry point behaviour
         """
+        self.response = {"message": "Lambda application stopped"}
         try:
             self.sync_timer = StopWatch()
             self.sync_timer.start_the_clock()
