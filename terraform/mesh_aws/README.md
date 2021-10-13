@@ -1,14 +1,14 @@
-# Mesh Lambdas
+# MESH AWS Terraform Module
 
-A terraform module to provide AWS infrastructure capable of sending and recieving Mesh messages
+A terraform module to provide AWS infrastructure capable of sending and receiving Mesh messages
 
 ## Configuration
 
 Example configuration required to use this module:
 
-```
+```hcl
 module "mesh" {
-  source = "git::https://github.com/nhsdigital/spine-core-aws-common.git//terraform/mesh_aws?ref=mesh-v0.0.1"
+  source = "git::https://github.com/nhsdigital/spine-core-aws-common.git//terraform/mesh_aws?ref=v0.0.1"
 
   name_prefix = "example-project"
 
@@ -35,15 +35,15 @@ module "mesh" {
 }
 ```
 
-Release versions will be pushed to Github as git tags, with the format `mesh-v<major>.<minor>.<patch>` such as `mesh-v0.0.1`
+Release versions will be pushed to Github as git tags, with the format `v<major>.<minor>.<patch>` such as `v0.0.1`
 
 ## Tagging
 
 We do not tag any resources created by this module, to configure tags across all supported resources, use the provider level default tags
 
-Below is an example passing in Spines prefferred tags:
+Below is an example passing in Spine's preferred tags:
 
-```
+```hcl
 provider "aws" {
   region  = "eu-west-2"
   profile = "default"
