@@ -31,7 +31,7 @@ def write_to_file(log_preamble, log_text, substitution_dict, log_type, error_lis
     """
     log_line = create_log_line(log_preamble, log_text, substitution_dict)
     if error_list:
-        log_line = "{} - {}".format(log_line, error_list[0:])
+        log_line = f"{log_line} - {error_list[0:]}"
 
     logging_func = _get_logging_function(log_type)
     if logging_func:

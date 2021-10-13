@@ -45,9 +45,7 @@ def add_default_keys(log_row_dict):
 
 def create_log_preamble(log_level, process_name, log_reference):
     """Creates the string to form the initial part of any log message"""
-    return "Log_Level={} Process={} logReference={}".format(
-        log_level, process_name, log_reference
-    )
+    return f"Log_Level={log_level} Process={process_name} logReference={log_reference}"
 
 
 def can_encode_string(value):
