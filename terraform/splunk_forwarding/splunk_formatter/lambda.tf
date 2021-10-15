@@ -11,7 +11,8 @@ resource "aws_lambda_function" "splunk_formatter" {
 
   environment {
     variables = {
-      SPLUNK_INDEX = var.splunk_index
+      SPLUNK_SOURCE_TYPE_PREFIX     = var.splunk_source_type_prefix
+      SPLUNK_INDEXES_TO_LOGS_LEVELS = base64encode(jsonencode(var.splunk_indexes_to_logs_levels))
     }
   }
 

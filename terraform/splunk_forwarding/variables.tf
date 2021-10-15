@@ -26,23 +26,23 @@ variable "s3logs_retention_in_days" {
   }
 }
 
-variable "splunk_source_type" {
-  description = "TODO"
-  type        = string
-}
-
 variable "splunk_hec_endpoint" {
-  description = "TODO"
+  description = "The Splunk HTTPS endpoint URL to send logs to"
   type        = string
 }
 
 variable "splunk_hec_token" {
-  description = "TODO"
+  description = "The Splunk Endpoint token to authenticate with"
   type        = string
   sensitive   = true
 }
 
-variable "splunk_index" {
-  description = "TODO need to create a mapping of log levels to indexes"
+variable "splunk_source_type_prefix" {
+  description = "A prefix to apply to all Splunk source types"
   type        = string
+}
+
+variable "splunk_indexes_to_logs_levels" {
+  description = "A mapping of log levels to Splunk Indexes"
+  type        = object({})
 }

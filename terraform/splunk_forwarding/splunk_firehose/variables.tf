@@ -4,12 +4,14 @@ variable "name_prefix" {
 }
 
 variable "splunk_hec_endpoint" {
-  type = string
+  description = "The Splunk HTTPS endpoint URL to send logs to"
+  type        = string
 }
 
 variable "splunk_hec_token" {
-  type      = string
-  sensitive = true
+  description = "The Splunk Endpoint token to authenticate with"
+  type        = string
+  sensitive   = true
 }
 
 variable "splunk_formatter" {

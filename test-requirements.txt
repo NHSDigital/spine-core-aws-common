@@ -1,7 +1,7 @@
 six
 boto3
 aws-lambda-powertools
-moto[s3,ssm,stepfunctions]
+moto[s3,ssm,stepfunctions,firehose] >= 2.2.10
 requests
 requests_mock
 mesh_client

@@ -3,14 +3,14 @@ variable "name_prefix" {
   type        = string
 }
 
-variable "splunk_source_type" {
-  description = "TODO"
+variable "splunk_source_type_prefix" {
+  description = "A prefix to apply to all Splunk source types"
   type        = string
 }
 
-variable "splunk_index" {
-  description = "TODO"
-  type        = string
+variable "splunk_indexes_to_logs_levels" {
+  description = "A mapping of log levels to Splunk Indexes"
+  type        = object({})
 }
 
 variable "splunk_firehose" {

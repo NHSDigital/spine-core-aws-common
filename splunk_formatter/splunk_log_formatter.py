@@ -1,9 +1,10 @@
 """ Splunk Log Formatter """
-
 import base64
 import gzip
 import io
 import json
+from base64 import b64decode
+from typing import Optional
 
 import boto3
 from spine_aws_common import LambdaApplication
@@ -13,18 +14,16 @@ class SplunkLogFormatter(LambdaApplication):
     def __init__(self, additional_log_config=None, load_ssm_params=False):
         super().__init__(additional_log_config, load_ssm_params)
         self.firehose = boto3.client("firehose")
-        self.index_mapping = {}
-        self.default_source_type = None
-        self.splunk_index = None
+        self.splunk_source_type_prefix = ""
+        self.splunk_indexes_to_logs_levels = {}
 
     def initialise(self):
-        self.index_mapping = json.loads(
-            str(self.system_config.get("INDEX_MAPPING", {}))
+        self.splunk_source_type_prefix = str(
+            self.system_config.get("SPLUNK_SOURCE_TYPE_PREFIX")
         )
-        self.default_source_type = str(
-            self.system_config.get("DEFAULT_SOURCE_TYPE", "aws:cloudwatch")
+        self.splunk_indexes_to_logs_levels = self.get_splunk_indexes_to_logs_levels(
+            str(self.system_config.get("SPLUNK_INDEXES_TO_LOGS_LEVELS"))
         )
-        self.splunk_index = str(self.system_config.get("SPLUNK_INDEX"))
 
     def start(self):
         stream_arn = self.event["deliveryStreamArn"]
@@ -75,9 +74,62 @@ class SplunkLogFormatter(LambdaApplication):
             print("No records to be reingested")
 
         print(f"Processed records count: {len(records)}")
-        self.response = {
-            "records": records,
-        }
+        self.response = {"records": records}
+
+    @staticmethod
+    def get_source_type(log_group: str, prefix: Optional[str]) -> str:
+        """returns the Splunk log source type, or the default"""
+        if prefix is not None:
+            prefix = f"{prefix}:"
+        else:
+            prefix = ""
+
+        if "CloudTrail" in log_group:
+            return f"{prefix}aws:cloudtrail"
+
+        if "VPC" in log_group:
+            return f"{prefix}aws:cloudwatch_logs:vpcflow"
+
+        return f"{prefix}aws:cloudwatch_logs"
+
+    @staticmethod
+    def get_splunk_indexes_to_logs_levels(index_mappings: str) -> "dict[str, str]":
+        """base64 decode and then json decode the index mappings"""
+        if index_mappings:
+            return json.loads(b64decode(index_mappings))
+        else:
+            raise ValueError("Atleast a 'default' index mapping should be provided")
+
+    @staticmethod
+    def get_index(log_level: str, splunk_indexes_to_logs_levels: dict) -> str:
+        """returns the Splunk Index for a given log level or the default"""
+        try:
+            return splunk_indexes_to_logs_levels[log_level.lower()]
+        except KeyError:
+            return splunk_indexes_to_logs_levels["default"]
+
+    @staticmethod
+    def get_level_of_log(log: str) -> str:
+        """returns the log level of a log or unknown"""
+        for level in ["INFO", "WARNING", "CRITICAL", "AUDIT"]:
+            if f"Log_Level={level}" in log:
+                return level
+
+        # this will pick up some Lambda logs, identifying log types to indexes needs
+        # more thought and understanding of requirements
+        for level in ["START", "END", "REPORT"]:
+            if level in log:
+                return "AWS"
+
+        return "UNKNOWN"
+
+    @staticmethod
+    def create_reingestion_record(original_record: dict) -> dict:
+        return {"data": base64.b64decode(original_record["data"])}
+
+    @staticmethod
+    def get_reingestion_record(reingestion_record: dict) -> dict:
+        return {"Data": reingestion_record["data"]}
 
     def transform_log_event(self, log_event, arn, log_group, filter_name):
         """Transform each log self.event.
@@ -101,39 +153,19 @@ class SplunkLogFormatter(LambdaApplication):
         """
         return json.dumps(
             {
-                "event": json.dumps(log_event["message"]),
+                "event": log_event["message"],
                 "host": arn,
-                # TODO handle mapping of log level to indexes
-                "index": self.splunk_index,
-                # "index": self.get_index(
-                #     log_event["message"], self.index_mapping, self.splunk_index
-                # ),
+                "index": self.get_index(
+                    self.get_level_of_log(log_event["message"]),
+                    self.splunk_indexes_to_logs_levels,
+                ),
                 "source": f"{filter_name}:{log_group}",
-                "sourcetype": self.get_source_type(log_group, self.default_source_type),
+                "sourcetype": self.get_source_type(
+                    log_group, self.splunk_source_type_prefix
+                ),
                 "time": str(log_event["timestamp"]),
             }
         )
-
-    @staticmethod
-    def get_source_type(log_group: str, default_source_type: str) -> str:
-        """returns the Splunk log source type, or the default"""
-        if "CloudTrail" in log_group:
-            return "aws:cloudtrail"
-
-        if "VPC" in log_group:
-            return "aws:cloudwatchlogs:vpcflow"
-
-        return default_source_type
-
-    @staticmethod
-    def get_index(
-        log_level: str, splunk_index_mapping: dict, default_index: str
-    ) -> str:
-        """returns the Splunk Index for a given log level, or the default"""
-        try:
-            return splunk_index_mapping[log_level]
-        except KeyError:
-            return default_index
 
     def process_records(self, records, arn):
         for r in records:
@@ -206,14 +238,6 @@ class SplunkLogFormatter(LambdaApplication):
                 raise RuntimeError(
                     f"Could not put records after {str(max_attempts)} attempts: {error}"
                 )
-
-    @staticmethod
-    def create_reingestion_record(original_record):
-        return {"data": base64.b64decode(original_record["data"])}
-
-    @staticmethod
-    def get_reingestion_record(reingestion_record):
-        return {"Data": reingestion_record["data"]}
 
 
 # create instance of class in global space

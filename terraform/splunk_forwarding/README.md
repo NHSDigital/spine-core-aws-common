@@ -4,9 +4,9 @@ A terraform module to provide the ability to forward a Cloudwatch Log group to S
 
 Using the main resources:
 
-- Kinesis Firehose Stream, to stream the logs
-- Lambda Function, that processes the logs to convert Cloudwatch Logs to a Splunk ingestible format
-- S3 Bucket, intended to store logs that failed to be sent to be processed
+- Kinesis Firehose Stream, to take Cloudwatch logs, transform them and deliver them to Splunk
+- Lambda Function, that transforms the Cloudwatch Logs to a Splunk ingestible format
+- S3 Bucket, stores any logs that failed to be delivered to Splunk
 
 ## Configuration
 
@@ -15,8 +15,8 @@ Example configuration required to use this module:
 - `name_prefix`: Name to prefix created resources
 - `splunk_hec_endpoint`: Endpoint URL for the logs to be forwarded to
 - `splunk_hec_token`: Authentication token for the Endpoint
-- `splunk_source_type`: the default source type to apply to forwarded logs
-- `splunk_index`: the Splunk index for logs to be stored in
+- `splunk_source_type_prefix`: a prefix to apply to the standard source types
+- `splunk_indexes_to_logs_levels`: mapping of Splunk Index to log levels for specific logs to be stored into
 - `cloudwatch_log_groups_to_forward`: a list of log group names that will be forwarded
 
 ```hcl
@@ -25,10 +25,14 @@ module "splunk_forwarding" {
 
   name_prefix = "example-project"
 
-  splunk_hec_endpoint = "https://example.endpoint.splunk.com/services/collector"
-  splunk_hec_token    = "00000000-0000-0000-0000-000000000000"
-  splunk_source_type  = "example:aws:cloudwatch_logs"
-  splunk_index        = "example"
+  splunk_hec_endpoint       = "https://example.endpoint.splunk.com/services/collector"
+  splunk_hec_token          = "00000000-0000-0000-0000-000000000000"
+  splunk_source_type_prefix = "example"
+  splunk_indexes_to_logs_levels = {
+    "aws"     = "aws_example"
+    "audit"   = "audit_example"
+    "default" = "app_example"
+  }
 
   cloudwatch_log_groups_to_forward = [
     "/aws/lambda/first_example",
