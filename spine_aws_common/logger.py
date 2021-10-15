@@ -95,11 +95,11 @@ class Logger:
         Create an audit version of the log_row_dict containing sensitive data, and
         determine if an Audit entry is required
         """
-        if log_row_dict is None:
-            log_row_dict = {}
-
         if process_name is None:
             process_name = self.process_name
+
+        if log_row_dict is None:
+            log_row_dict = {}
 
         if not self._log_base_dict:
             self._print_output(process_name, log_reference, log_row_dict, error_list)

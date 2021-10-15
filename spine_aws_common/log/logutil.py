@@ -42,11 +42,11 @@ def write_log(
     Create an audit version of the log_row_dict containing sensitive data, and
     determine if an Audit entry is required.
     """
-    if log_row_dict is None:
-        log_row_dict = {}
-
     if process_name is None:
         process_name = SpineLogger.get_process_name()
+
+    if log_row_dict is None:
+        log_row_dict = {}
 
     log_details = get_log_details(
         log_reference, SpineLogger.get_log_base_dict(), SpineLogger.get_log_base_cache()
