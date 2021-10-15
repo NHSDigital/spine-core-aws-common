@@ -222,18 +222,21 @@ class Logger:
         Writes the log out to the standard out for Cloudwatch logging
         """
         log_line = create_log_line(log_preamble, log_text, substitution_dict)
-
         if error_list is not None:
             log_line = log_line + " - " + str(error_list[0:])
-        log_line = log_line + "\r\n"
-
         print(log_line)
+
         if (
             log_type == LoggingConstants.LFR_CRASHDUMP
             and error_list
             and len(error_list) >= 3
         ):
-            traceback.print_exception(error_list[0], error_list[1], error_list[2], None)
+            exception, value, trace = error_list
+            formatted_exception = " ".join(
+                traceback.format_exception(exception, value, trace)
+            )
+            exception_line = create_log_line(log_preamble, formatted_exception, {})
+            print(exception_line)
 
 
 def configure_logging_adapter(log_object):

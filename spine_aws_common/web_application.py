@@ -60,7 +60,7 @@ class WebApplication(LambdaApplication):
     def _compile_regex(rule: str):
         """Precompile regex pattern"""
         rule_regex: str = re.sub(r"(<\w+>)", r"(?P\1.+)", rule)
-        return re.compile("^{}$".format(rule_regex))
+        return re.compile(f"^{rule_regex}$")
 
     def _resolve(self) -> ResponseBuilder:
         """Resolve response"""
