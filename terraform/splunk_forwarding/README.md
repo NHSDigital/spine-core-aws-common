@@ -15,9 +15,9 @@ Example configuration required to use this module:
 - `name_prefix`: Name to prefix created resources
 - `splunk_hec_endpoint`: Endpoint URL for the logs to be forwarded to
 - `splunk_hec_token`: Authentication token for the Endpoint
-- `splunk_source_type_prefix`: a prefix to apply to the standard source types
-- `splunk_indexes_to_logs_levels`: mapping of Splunk Index to log levels for specific logs to be stored into
-- `cloudwatch_log_groups_to_forward`: a list of log group names that will be forwarded
+- `splunk_source_type_prefix`: A prefix to apply to the standard source types
+- `splunk_indexes_to_logs_levels`: Mapping of Splunk Index to log levels to override the default Splunk Receiver Index
+- `cloudwatch_log_groups_to_forward`: A list of log group names that will be forwarded
 
 ```hcl
 module "splunk_forwarding" {
@@ -31,7 +31,6 @@ module "splunk_forwarding" {
   splunk_indexes_to_logs_levels = {
     "aws"     = "aws_example"
     "audit"   = "audit_example"
-    "default" = "app_example"
   }
 
   cloudwatch_log_groups_to_forward = [

@@ -11,13 +11,13 @@ from spine_aws_common import LambdaApplication
 
 
 class SplunkLogFormatter(LambdaApplication):
-    def __init__(self, additional_log_config=None, load_ssm_params=False):
+    def __init__(self, additional_log_config=None, load_ssm_params=False) -> None:
         super().__init__(additional_log_config, load_ssm_params)
         self.firehose = boto3.client("firehose")
         self.splunk_source_type_prefix = ""
-        self.splunk_indexes_to_logs_levels = {}
+        self.splunk_indexes_to_logs_levels = ""
 
-    def initialise(self):
+    def initialise(self) -> None:
         self.splunk_source_type_prefix = str(
             self.system_config.get("SPLUNK_SOURCE_TYPE_PREFIX")
         )
@@ -25,7 +25,7 @@ class SplunkLogFormatter(LambdaApplication):
             str(self.system_config.get("SPLUNK_INDEXES_TO_LOGS_LEVELS"))
         )
 
-    def start(self):
+    def start(self) -> None:
         stream_arn = self.event["deliveryStreamArn"]
         stream_name = stream_arn.split("/")[1]
 
@@ -79,7 +79,7 @@ class SplunkLogFormatter(LambdaApplication):
     @staticmethod
     def get_source_type(log_group: str, prefix: Optional[str]) -> str:
         """returns the Splunk log source type, or the default"""
-        if prefix is not None:
+        if prefix:
             prefix = f"{prefix}:"
         else:
             prefix = ""
@@ -98,20 +98,24 @@ class SplunkLogFormatter(LambdaApplication):
         if index_mappings:
             return json.loads(b64decode(index_mappings))
         else:
-            raise ValueError("Atleast a 'default' index mapping should be provided")
+            print("No Splunk Index to Log Level Mappings found")
+            return {}
 
     @staticmethod
-    def get_index(log_level: str, splunk_indexes_to_logs_levels: dict) -> str:
-        """returns the Splunk Index for a given log level or the default"""
+    def get_index(log_level: str, splunk_indexes_to_logs_levels: dict) -> Optional[str]:
+        """returns the Splunk Index for a given log level or None, which means the
+        reciever configured index will be used"""
         try:
-            return splunk_indexes_to_logs_levels[log_level.lower()]
+            if splunk_indexes_to_logs_levels:
+                return splunk_indexes_to_logs_levels[log_level.lower()]
         except KeyError:
-            return splunk_indexes_to_logs_levels["default"]
+            return None
+        return None
 
     @staticmethod
     def get_level_of_log(log: str) -> str:
         """returns the log level of a log or unknown"""
-        for level in ["INFO", "WARNING", "CRITICAL", "AUDIT"]:
+        for level in ["INFO", "WARNING", "ERROR", "CRITICAL", "AUDIT"]:
             if f"Log_Level={level}" in log:
                 return level
 
@@ -131,7 +135,9 @@ class SplunkLogFormatter(LambdaApplication):
     def get_reingestion_record(reingestion_record: dict) -> dict:
         return {"Data": reingestion_record["data"]}
 
-    def transform_log_event(self, log_event, arn, log_group, filter_name):
+    def transform_log_event(
+        self, log_event: dict, arn: str, log_group: str, filter_name: str
+    ) -> str:
         """Transform each log self.event.
         The default implementation below just extracts the message and appends a newline to it.
 
@@ -151,23 +157,28 @@ class SplunkLogFormatter(LambdaApplication):
                     sourcetype = Splunk source type of the event
                     time = time of the Cloudwatch Log
         """
-        return json.dumps(
-            {
-                "event": log_event["message"],
-                "host": arn,
-                "index": self.get_index(
-                    self.get_level_of_log(log_event["message"]),
-                    self.splunk_indexes_to_logs_levels,
-                ),
-                "source": f"{filter_name}:{log_group}",
-                "sourcetype": self.get_source_type(
-                    log_group, self.splunk_source_type_prefix
-                ),
-                "time": str(log_event["timestamp"]),
-            }
-        )
+        output = {
+            "event": log_event["message"],
+            "host": arn,
+            "source": f"{filter_name}:{log_group}",
+            "sourcetype": self.get_source_type(
+                log_group, self.splunk_source_type_prefix
+            ),
+            "time": str(log_event["timestamp"]),
+        }
 
-    def process_records(self, records, arn):
+        # if we manage to lookup a specific index, add it to the output
+        #   otherwise the Splunk Reciever configured default index will recieve the log
+        index = self.get_index(
+            self.get_level_of_log(log_event["message"]),
+            self.splunk_indexes_to_logs_levels,
+        )
+        if index:
+            output["index"] = index
+
+        return json.dumps(output)
+
+    def process_records(self, records: list, arn: str) -> dict:
         for r in records:
             data = base64.b64decode(r["data"])
             striodata = io.BytesIO(data)
@@ -197,8 +208,8 @@ class SplunkLogFormatter(LambdaApplication):
                 yield {"result": "ProcessingFailed", "recordId": recId}
 
     def put_records_to_firehose_stream(
-        self, stream_name, records, attempts_made, max_attempts
-    ):
+        self, stream_name: str, records: list, attempts_made: int, max_attempts: int
+    ) -> None:
         failed_records = []
         codes = []
         error = ""
