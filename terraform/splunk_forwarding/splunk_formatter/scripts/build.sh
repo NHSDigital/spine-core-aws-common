@@ -22,6 +22,7 @@ rm -rf ${CODE_DIR}/*
 
 # Copy code
 cp -r ../../../../splunk_formatter/*.py ${CODE_DIR}/
+cp -r ../../../../splunk_formatter/*.cfg ${CODE_DIR}/
 
 # This will then be zipped by terraform
 exit 0

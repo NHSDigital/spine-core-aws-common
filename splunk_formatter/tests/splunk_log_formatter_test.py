@@ -1,3 +1,6 @@
+"""Splunk Log Formatter Test"""
+# flake8: noqa: E501
+# pylint: disable=line-too-long
 import json
 import os
 
@@ -18,11 +21,13 @@ from splunk_formatter.tests.conftest import (
     ),
 )
 def test_get_source_type(app, given_log_group, given_prefix, expected):
+    """Test get_source_type"""
     source_type = app.get_source_type(given_log_group, given_prefix)
     assert source_type == expected
 
 
 def test_get_splunk_indexes_to_logs_levels(app):
+    """Test get_splunk_indexes_to_logs_levels"""
     given = os.environ["SPLUNK_INDEXES_TO_LOGS_LEVELS"]
     expected = {"aws": "aws_test", "audit": "audit_test", "default": "app_test"}
 
@@ -50,6 +55,7 @@ def test_get_splunk_indexes_to_logs_levels(app):
     ),
 )
 def test_get_index(app, given_log_level, given_index_mappings, expected):
+    """Test get_index"""
     index = app.get_index(given_log_level, given_index_mappings)
     assert index == expected
 
@@ -92,35 +98,36 @@ def test_get_index(app, given_log_level, given_index_mappings, expected):
     ),
 )
 def test_get_level_of_log(app, given, expected):
+    """Test get_level_of_log"""
     level = app.get_level_of_log(given)
     assert level == expected
 
 
-def test_process_records_log_message(app_initialised):
+def test_process_records_log_message(app):
     """Testing the processing of incoming records with actual data message which gets accepted"""
     expected_record = {
-        "data": "eyJldmVudCI6ICJDV0wgQ09OVFJPTCBNRVNTQUdFOiBDaGVja2luZyBoZWFsdGggb2YgZGVzdGluYXRpb24gRmlyZWhvc2UuIiwgImhvc3QiOiAiYXJuOmF3czpmaXJlaG9zZTpldS13ZXN0LTI6MDkyNDIwMTU2ODAxOmRlbGl2ZXJ5c3RyZWFtL3Rlc3QtZmlyZWhvc2Utc3RyZWFtIiwgInNvdXJjZSI6ICJEZXN0aW5hdGlvbjoiLCAic291cmNldHlwZSI6ICJ0ZXN0OmF3czpjbG91ZHdhdGNoX2xvZ3MiLCAidGltZSI6ICIxNjI4NzU5MjQ0NzQxIn0=",
+        "data": "eyJldmVudCI6ICJDV0wgQ09OVFJPTCBNRVNTQUdFOiBDaGVja2luZyBoZWFsdGggb2YgZGVzdGluYXRpb24gRmlyZWhvc2UuIiwgImhvc3QiOiAiYXJuOmF3czpmaXJlaG9zZTpldS13ZXN0LTI6MDkyNDIwMTU2ODAxOmRlbGl2ZXJ5c3RyZWFtL3Rlc3QtZmlyZWhvc2Utc3RyZWFtIiwgInNvdXJjZSI6ICJEZXN0aW5hdGlvbjoiLCAic291cmNldHlwZSI6ICJhd3M6Y2xvdWR3YXRjaF9sb2dzIiwgInRpbWUiOiAiMTYyODc1OTI0NDc0MSJ9",
         "result": "Ok",
         "recordId": "49621017460761483038448697917559884585397934887094190082000001",
     }
 
     incoming_data_event = generate_data_message()
     actual_data = list(
-        app_initialised.process_records(
+        app.process_records(
             incoming_data_event["records"], incoming_data_event["deliveryStreamArn"]
         )
     )
     assert expected_record == actual_data[0]
 
 
-def test_process_records_control_message(app_initialised):
+def test_process_records_control_message(app):
     """Testing the processing of incoming records with control(test) message which gets dropped"""
     expected_data = {
         "result": "Dropped",
         "recordId": "49621017460761483038448697917559884585397934887094190082000000",
     }
     actual_data = list(
-        app_initialised.process_records(
+        app.process_records(
             INCOMING_CONTROL_EVENT["records"],
             INCOMING_CONTROL_EVENT["deliveryStreamArn"],
         )
@@ -163,6 +170,7 @@ def test_transformation_event(app):
 
 
 def test_create_reingestion_record(app):
+    """Test create_reingestion_record"""
     actual_record = app.create_reingestion_record(generate_data_message()["records"][0])
     # "data" is a big blob of base64 encoded data, so just check it's there
     assert actual_record["data"] is not None
@@ -179,13 +187,15 @@ def test_get_reingestion_record(app):
 @pytest.mark.filterwarnings(
     "ignore:A Splunk destination delivery stream is not yet implemented"
 )
-def test_record_to_stream(app, firehose, firehose_create):
+def test_record_to_stream(
+    app, firehose, firehose_create
+):  # pylint: disable=unused-argument
     """Testing the putting of records into kinesis firehose stream"""
     test_data = [{"Data": "test"}]
     app.put_records_to_firehose_stream("test-stream", test_data, 4, 20)
 
 
-def test_record_to_stream_fail(app, firehose):
+def test_record_to_stream_fail(app, firehose):  # pylint: disable=unused-argument
     """Testing the failure behaviour of putting of record in firehose stream"""
     test_data = "INVLAID TEST DATA WHICH WILL CAUSE AN ERROR"
     with pytest.raises(RuntimeError) as context:

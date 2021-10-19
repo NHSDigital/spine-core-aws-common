@@ -11,25 +11,35 @@ from spine_aws_common import LambdaApplication
 
 
 class SplunkLogFormatter(LambdaApplication):
-    def __init__(self, additional_log_config=None, load_ssm_params=False) -> None:
+    """Application to transform Cloudwatch Logs to Splunk Ingestible Format"""
+
+    def __init__(
+        self, additional_log_config="./cloudlogbase.cfg", load_ssm_params=False
+    ) -> None:
         super().__init__(additional_log_config, load_ssm_params)
         self.firehose = boto3.client("firehose")
         self.splunk_source_type_prefix = ""
         self.splunk_indexes_to_logs_levels = ""
 
-    def initialise(self) -> None:
-        self.splunk_source_type_prefix = str(
-            self.system_config.get("SPLUNK_SOURCE_TYPE_PREFIX")
-        )
-        self.splunk_indexes_to_logs_levels = self.get_splunk_indexes_to_logs_levels(
-            str(self.system_config.get("SPLUNK_INDEXES_TO_LOGS_LEVELS"))
-        )
-
     def start(self) -> None:
         stream_arn = self.event["deliveryStreamArn"]
         stream_name = stream_arn.split("/")[1]
 
-        print(f"Records to process count: {len(self.event['records'])}")
+        self.splunk_source_type_prefix = str(
+            self.system_config.get("SPLUNK_SOURCE_TYPE_PREFIX")
+        )
+        splunk_indexes_to_logs_levels = str(
+            self.system_config.get("SPLUNK_INDEXES_TO_LOGS_LEVELS")
+        )
+        self.splunk_indexes_to_logs_levels = self.get_splunk_indexes_to_logs_levels(
+            splunk_indexes_to_logs_levels
+        )
+        if not self.splunk_indexes_to_logs_levels:
+            self.log_object.write_log("SPLKFMTW01")
+
+        self.log_object.write_log(
+            "SPLKFMTI01", log_row_dict={"record_count": len(self.event["records"])}
+        )
         records = list(self.process_records(self.event["records"], stream_arn))
 
         data_by_record_id = {
@@ -38,22 +48,24 @@ class SplunkLogFormatter(LambdaApplication):
         }
         put_record_batches = []
         records_to_reingest = []
-        total_records_to_be_reingested = 0
+        total_to_reingest_count = 0
         projected_size = 0
         for idx, rec in enumerate(records):
             if rec["result"] != "Ok":
                 continue
             projected_size += len(rec["data"]) + len(rec["recordId"])
-            # 6000000 instead of 6291456 to leave ample headroom for the stuff we didn't account for
+            # 6000000 instead of 6291456 to leave ample headroom for the stuff we
+            #   didn't account for
             if projected_size > 6000000:
-                total_records_to_be_reingested += 1
+                total_to_reingest_count += 1
                 records_to_reingest.append(
                     self.get_reingestion_record(data_by_record_id[rec["recordId"]])
                 )
                 records[idx]["result"] = "Dropped"
                 del records[idx]["data"]
 
-            # split out the record batches into multiple groups, 500 records at max per group
+            # split out the record batches into multiple groups, 500 records at
+            #   max per group
             if len(records_to_reingest) == 500:
                 put_record_batches.append(records_to_reingest)
                 records_to_reingest = []
@@ -62,18 +74,25 @@ class SplunkLogFormatter(LambdaApplication):
             # add the last batch
             put_record_batches.append(records_to_reingest)
 
-        records_reingested_so_far = 0
+        records_reingested_count = 0
         if len(put_record_batches) > 0:
             for record_batch in put_record_batches:
                 self.put_records_to_firehose_stream(stream_name, record_batch, 0, 20)
-                records_reingested_so_far += len(record_batch)
-                print(
-                    f"Reingested {records_reingested_so_far}/{total_records_to_be_reingested} records out of {len(self.event['records'])}"
+                records_reingested_count += len(record_batch)
+                self.log_object.write_log(
+                    "SPLKFMTI02",
+                    log_row_dict={
+                        "record_count": len(self.event["records"]),
+                        "records_reingested_count": records_reingested_count,
+                        "total_to_reingest_count": total_to_reingest_count,
+                    },
                 )
         else:
-            print("No records to be reingested")
+            self.log_object.write_log("SPLKFMTI03")
 
-        print(f"Processed records count: {len(records)}")
+        self.log_object.write_log(
+            "SPLKFMTI04", log_row_dict={"record_count": len(records)}
+        )
         self.response = {"records": records}
 
     @staticmethod
@@ -97,9 +116,7 @@ class SplunkLogFormatter(LambdaApplication):
         """base64 decode and then json decode the index mappings"""
         if index_mappings:
             return json.loads(b64decode(index_mappings))
-        else:
-            print("No Splunk Index to Log Level Mappings found")
-            return {}
+        return {}
 
     @staticmethod
     def get_index(log_level: str, splunk_indexes_to_logs_levels: dict) -> Optional[str]:
@@ -115,7 +132,15 @@ class SplunkLogFormatter(LambdaApplication):
     @staticmethod
     def get_level_of_log(log: str) -> str:
         """returns the log level of a log or unknown"""
-        for level in ["INFO", "WARNING", "ERROR", "CRITICAL", "AUDIT"]:
+        for level in [
+            "INFO",
+            "WARNING",
+            "ERROR",
+            "CRITICAL",
+            "DEBUG",
+            "TRACE",
+            "AUDIT",
+        ]:
             if f"Log_Level={level}" in log:
                 return level
 
@@ -129,20 +154,24 @@ class SplunkLogFormatter(LambdaApplication):
 
     @staticmethod
     def create_reingestion_record(original_record: dict) -> dict:
+        """Creates a record to be reingested from an original"""
         return {"data": base64.b64decode(original_record["data"])}
 
     @staticmethod
     def get_reingestion_record(reingestion_record: dict) -> dict:
+        """Gets a record to be reingested from a reingestible record"""
         return {"Data": reingestion_record["data"]}
 
     def transform_log_event(
         self, log_event: dict, arn: str, log_group: str, filter_name: str
     ) -> str:
         """Transform each log self.event.
-        The default implementation below just extracts the message and appends a newline to it.
+        The default implementation below just extracts the message and appends a
+        newline to it.
 
         Args:
-            log_event (dict): The original log self.event. Structure is {"id": str, "timestamp": long, "message": str}
+            log_event (dict): The original log self.event.
+              Structure is {"id": str, "timestamp": long, "message": str}
             arn: The ARN of the Kinesis Stream
             log_group: The Cloudwatch log group name
             filter_name: The Cloudwatch Subscription filter for the Stream
@@ -153,7 +182,7 @@ class SplunkLogFormatter(LambdaApplication):
                     event = the log message
                     host = ARN of Firehose
                     index = the Splunk Index to be stored in
-                    source = filter_name (of cloudwatch Log) contatinated with LogGroup Name
+                    source = filter_name (of cloudwatch Log) joined with LogGroup Name
                     sourcetype = Splunk source type of the event
                     time = time of the Cloudwatch Log
         """
@@ -179,37 +208,36 @@ class SplunkLogFormatter(LambdaApplication):
         return json.dumps(output)
 
     def process_records(self, records: list, arn: str) -> dict:
-        for r in records:
-            data = base64.b64decode(r["data"])
+        """Transforms a list of records"""
+        for record in records:
+            data = base64.b64decode(record["data"])
             striodata = io.BytesIO(data)
-            with gzip.GzipFile(fileobj=striodata, mode="r") as f:
-                data = json.loads(f.read())
+            with gzip.GzipFile(fileobj=striodata, mode="r") as file:
+                data = json.loads(file.read())
 
-            recId = r["recordId"]
+            record_id = record["recordId"]
             if data["messageType"] == "CONTROL_MESSAGE":
-                # CONTROL_MESSAGE are sent by CWL to check if the subscription is reachable.
-                # They do not contain actual data.
-                yield {"result": "Dropped", "recordId": recId}
+                # CONTROL_MESSAGE are sent by CWL to check if the subscription is
+                # reachable. They do not contain actual data.
+                yield {"result": "Dropped", "recordId": record_id}
             elif data["messageType"] == "DATA_MESSAGE":
                 data = "".join(
                     [
                         self.transform_log_event(
-                            event,
-                            arn,
-                            data["logGroup"],
-                            data["subscriptionFilters"][0],
+                            event, arn, data["logGroup"], data["subscriptionFilters"][0]
                         )
                         for event in data["logEvents"]
                     ]
                 )
                 data = base64.b64encode(data.encode("utf-8")).decode()
-                yield {"data": data, "result": "Ok", "recordId": recId}
+                yield {"data": data, "result": "Ok", "recordId": record_id}
             else:
-                yield {"result": "ProcessingFailed", "recordId": recId}
+                yield {"result": "ProcessingFailed", "recordId": record_id}
 
     def put_records_to_firehose_stream(
         self, stream_name: str, records: list, attempts_made: int, max_attempts: int
     ) -> None:
+        """Puts records on to an AWS Kenesis Firehose Stream"""
         failed_records = []
         codes = []
         error = ""
@@ -220,7 +248,7 @@ class SplunkLogFormatter(LambdaApplication):
             response = self.firehose.put_record_batch(
                 DeliveryStreamName=stream_name, Records=records
             )
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             failed_records = records
             error = str(e)
 
@@ -228,7 +256,8 @@ class SplunkLogFormatter(LambdaApplication):
         # response to gather results
         if not failed_records and response and response["FailedPutCount"] > 0:
             for idx, res in enumerate(response["RequestResponses"]):
-                # (if the result does not have a key 'ErrorCode' OR if it does and is empty) => we do not need to re-ingest
+                # (if the result does not have a key 'ErrorCode'
+                #   OR if it does and is empty) => we do not need to re-ingest
                 if "ErrorCode" not in res or not res["ErrorCode"]:
                     continue
 
@@ -239,8 +268,9 @@ class SplunkLogFormatter(LambdaApplication):
 
         if len(failed_records) > 0:
             if attempts_made + 1 < max_attempts:
-                print(
-                    f"Some records failed while calling PutRecordBatch to Firehose stream, retrying: {error}"
+                self.log_object.write_log(
+                    "SPLKFMTW02",
+                    log_row_dict={"error": error},
                 )
                 self.put_records_to_firehose_stream(
                     stream_name, failed_records, attempts_made + 1, max_attempts

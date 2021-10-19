@@ -1,6 +1,8 @@
+"""Splunk Log Formatter Test Config"""
+# flake8: noqa: E501
+# pylint: disable=line-too-long
 import base64
 import gzip
-import json
 import io
 import os
 
@@ -42,12 +44,14 @@ def env_vars():
 
 @pytest.fixture(scope="function")
 def firehose():
+    """A mocked Firehose client"""
     with mock_firehose():
         yield boto3.client("firehose", region_name="eu-west-2")
 
 
 @pytest.fixture(scope="function")
-def firehose_create(firehose):
+def firehose_create(firehose):  # pylint: disable=redefined-outer-name
+    """A mocked Firehose stream"""
     firehose.create_delivery_stream(
         DeliveryStreamName="test-stream",
         SplunkDestinationConfiguration={
@@ -63,25 +67,19 @@ def firehose_create(firehose):
 
 
 @pytest.fixture(scope="function")
-def app(firehose):
+def app(firehose):  # pylint: disable=unused-argument,redefined-outer-name
+    """A mocked Splunk Log Formatter class"""
     formatter = SplunkLogFormatter()
-    return formatter
-
-
-@pytest.fixture(scope="function")
-def app_initialised(firehose):
-    formatter = SplunkLogFormatter()
-    formatter.initialise()
     return formatter
 
 
 def generate_data_message():
     """Generates the input event for data message which gets zipped and base64 encoded just like real-time"""
-    st = b'{"messageType":"DATA_MESSAGE","owner":"CloudwatchLogs","logGroup":"","logStream":"","subscriptionFilters":[ "Destination" ],"logEvents":[{"id":"","timestamp":1628759244741,"message":"CWL CONTROL MESSAGE: Checking health of destination Firehose."}]}'
-    fo = io.BytesIO()
-    with gzip.GzipFile(fileobj=fo, mode="wb") as f:
-        f.write(st)
-    enc_data = base64.encodebytes(fo.getvalue())
+    log = b'{"messageType":"DATA_MESSAGE","owner":"CloudwatchLogs","logGroup":"","logStream":"","subscriptionFilters":[ "Destination" ],"logEvents":[{"id":"","timestamp":1628759244741,"message":"CWL CONTROL MESSAGE: Checking health of destination Firehose."}]}'
+    file = io.BytesIO()
+    with gzip.GzipFile(fileobj=file, mode="wb") as gzip_file:
+        gzip_file.write(log)
+    enc_data = base64.encodebytes(file.getvalue())
 
     return {
         "invocationId": "dcf4d11b-8d57-4b54-b40a-d66eb19fe197",
