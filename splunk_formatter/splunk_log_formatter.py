@@ -17,25 +17,23 @@ class SplunkLogFormatter(LambdaApplication):
         self, additional_log_config="./cloudlogbase.cfg", load_ssm_params=False
     ) -> None:
         super().__init__(additional_log_config, load_ssm_params)
-        self.firehose = boto3.client("firehose")
-        self.splunk_source_type_prefix = ""
+        self.firehose = boto3.client("firehose", region_name="eu-west-2")
+        self.splunk_sourcetype = ""
         self.splunk_indexes_to_logs_levels = ""
+
+    def initialise(self):
+        self.splunk_sourcetype = str(
+            self.system_config.get("SPLUNK_SOURCETYPE", "aws:cloudwatchlogs")
+        )
+        self.splunk_indexes_to_logs_levels = self.decode_config(
+            str(self.system_config.get("SPLUNK_INDEXES_TO_LOGS_LEVELS"))
+        )
+        if not self.splunk_indexes_to_logs_levels:
+            self.log_object.write_log("SPLKFMTW01")
 
     def start(self) -> None:
         stream_arn = self.event["deliveryStreamArn"]
         stream_name = stream_arn.split("/")[1]
-
-        self.splunk_source_type_prefix = str(
-            self.system_config.get("SPLUNK_SOURCE_TYPE_PREFIX")
-        )
-        splunk_indexes_to_logs_levels = str(
-            self.system_config.get("SPLUNK_INDEXES_TO_LOGS_LEVELS")
-        )
-        self.splunk_indexes_to_logs_levels = self.get_splunk_indexes_to_logs_levels(
-            splunk_indexes_to_logs_levels
-        )
-        if not self.splunk_indexes_to_logs_levels:
-            self.log_object.write_log("SPLKFMTW01")
 
         self.log_object.write_log(
             "SPLKFMTI01", log_row_dict={"record_count": len(self.event["records"])}
@@ -96,32 +94,14 @@ class SplunkLogFormatter(LambdaApplication):
         self.response = {"records": records}
 
     @staticmethod
-    def get_source_type(log_group: str, prefix: Optional[str]) -> str:
-        """returns the Splunk log source type, or the default"""
-        if prefix:
-            prefix = f"{prefix}:"
-        else:
-            prefix = ""
-
-        if "CloudTrail" in log_group:
-            return f"{prefix}aws:cloudtrail"
-
-        if "VPC" in log_group:
-            return f"{prefix}aws:cloudwatch_logs:vpcflow"
-
-        return f"{prefix}aws:cloudwatch_logs"
-
-    @staticmethod
-    def get_splunk_indexes_to_logs_levels(index_mappings: str) -> "dict[str, str]":
-        """base64 decode and then json decode the index mappings"""
-        if index_mappings:
-            return json.loads(b64decode(index_mappings))
-        return {}
+    def decode_config(config: str) -> "dict[str, str]":
+        """base64 decode, gunzip and then json decode the given config"""
+        return json.loads(gzip.decompress(b64decode(config)))
 
     @staticmethod
     def get_index(log_level: str, splunk_indexes_to_logs_levels: dict) -> Optional[str]:
         """returns the Splunk Index for a given log level or None, which means the
-        reciever configured index will be used"""
+        receiver configured index will be used"""
         try:
             if splunk_indexes_to_logs_levels:
                 return splunk_indexes_to_logs_levels[log_level.lower()]
@@ -190,14 +170,12 @@ class SplunkLogFormatter(LambdaApplication):
             "event": log_event["message"],
             "host": arn,
             "source": f"{filter_name}:{log_group}",
-            "sourcetype": self.get_source_type(
-                log_group, self.splunk_source_type_prefix
-            ),
+            "sourcetype": self.splunk_sourcetype,
             "time": str(log_event["timestamp"]),
         }
 
         # if we manage to lookup a specific index, add it to the output
-        #   otherwise the Splunk Reciever configured default index will recieve the log
+        #   otherwise the configured default index will receive the log
         index = self.get_index(
             self.get_level_of_log(log_event["message"]),
             self.splunk_indexes_to_logs_levels,

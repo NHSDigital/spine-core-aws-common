@@ -36,10 +36,10 @@ def env_vars():
 
     os.environ["SPLUNK_SOURCE_TYPE_PREFIX"] = "test"
     # base64 data created in terraform from:
-    #   base64encode(jsonencode({"aws"="aws_test","audit"="audit_test","default"="app_test"}))
+    #   base64gzip(jsonencode({"aws"="aws_test","audit"="audit_test","default"="app_test"}))
     os.environ[
         "SPLUNK_INDEXES_TO_LOGS_LEVELS"
-    ] = "eyJhdWRpdCI6ImF1ZGl0X3Rlc3QiLCJhd3MiOiJhd3NfdGVzdCIsImRlZmF1bHQiOiJhcHBfdGVzdCJ9"
+    ] = "H4sIAPrJe2EAA6tWSixNySxRsoLQ8SWpxSVKOkqJ5cUgofJimEBKalpiaQ5YXUEBRLAWAOs/OcI8AAAA"
 
 
 @pytest.fixture(scope="function")
@@ -70,6 +70,7 @@ def firehose_create(firehose):  # pylint: disable=redefined-outer-name
 def app(firehose):  # pylint: disable=unused-argument,redefined-outer-name
     """A mocked Splunk Log Formatter class"""
     formatter = SplunkLogFormatter()
+    formatter.initialise()
     return formatter
 
 

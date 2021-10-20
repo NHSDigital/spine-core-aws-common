@@ -11,27 +11,12 @@ from splunk_formatter.tests.conftest import (
 )
 
 
-@pytest.mark.parametrize(
-    "given_log_group,given_prefix,expected",
-    (
-        ("UploaderLambdaLogs", "test", "test:aws:cloudwatch_logs"),
-        ("UploaderLambdaLogs", None, "aws:cloudwatch_logs"),
-        ("MainCloudTrailLogs", "test", "test:aws:cloudtrail"),
-        ("MainVPCLogs", "test", "test:aws:cloudwatch_logs:vpcflow"),
-    ),
-)
-def test_get_source_type(app, given_log_group, given_prefix, expected):
-    """Test get_source_type"""
-    source_type = app.get_source_type(given_log_group, given_prefix)
-    assert source_type == expected
-
-
-def test_get_splunk_indexes_to_logs_levels(app):
-    """Test get_splunk_indexes_to_logs_levels"""
+def test_decode_config(app):
+    """Test decode_config"""
     given = os.environ["SPLUNK_INDEXES_TO_LOGS_LEVELS"]
     expected = {"aws": "aws_test", "audit": "audit_test", "default": "app_test"}
 
-    mappings = app.get_splunk_indexes_to_logs_levels(given)
+    mappings = app.decode_config(given)
     assert mappings == expected
 
 
@@ -106,7 +91,7 @@ def test_get_level_of_log(app, given, expected):
 def test_process_records_log_message(app):
     """Testing the processing of incoming records with actual data message which gets accepted"""
     expected_record = {
-        "data": "eyJldmVudCI6ICJDV0wgQ09OVFJPTCBNRVNTQUdFOiBDaGVja2luZyBoZWFsdGggb2YgZGVzdGluYXRpb24gRmlyZWhvc2UuIiwgImhvc3QiOiAiYXJuOmF3czpmaXJlaG9zZTpldS13ZXN0LTI6MDkyNDIwMTU2ODAxOmRlbGl2ZXJ5c3RyZWFtL3Rlc3QtZmlyZWhvc2Utc3RyZWFtIiwgInNvdXJjZSI6ICJEZXN0aW5hdGlvbjoiLCAic291cmNldHlwZSI6ICJhd3M6Y2xvdWR3YXRjaF9sb2dzIiwgInRpbWUiOiAiMTYyODc1OTI0NDc0MSJ9",
+        "data": "eyJldmVudCI6ICJDV0wgQ09OVFJPTCBNRVNTQUdFOiBDaGVja2luZyBoZWFsdGggb2YgZGVzdGluYXRpb24gRmlyZWhvc2UuIiwgImhvc3QiOiAiYXJuOmF3czpmaXJlaG9zZTpldS13ZXN0LTI6MDkyNDIwMTU2ODAxOmRlbGl2ZXJ5c3RyZWFtL3Rlc3QtZmlyZWhvc2Utc3RyZWFtIiwgInNvdXJjZSI6ICJEZXN0aW5hdGlvbjoiLCAic291cmNldHlwZSI6ICJhd3M6Y2xvdWR3YXRjaGxvZ3MiLCAidGltZSI6ICIxNjI4NzU5MjQ0NzQxIn0=",
         "result": "Ok",
         "recordId": "49621017460761483038448697917559884585397934887094190082000001",
     }
@@ -162,7 +147,7 @@ def test_transformation_event(app):
         json.loads(actual_data)["host"]
         == "arn:aws:firehose:eu-west-2:092420156801:deliverystream/test-firehose-stream"
     )
-    assert json.loads(actual_data)["sourcetype"] == "aws:cloudwatch_logs"
+    assert json.loads(actual_data)["sourcetype"] == "aws:cloudwatchlogs"
     assert (
         json.loads(actual_data)["event"]
         == "CWL CONTROL MESSAGE: Checking health of destination Firehose."

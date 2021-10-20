@@ -15,7 +15,7 @@ Example configuration required to use this module:
 - `name_prefix`: Name to prefix created resources
 - `splunk_hec_endpoint`: Endpoint URL for the logs to be forwarded to
 - `splunk_hec_token`: Authentication token for the Endpoint
-- `splunk_source_type_prefix`: A prefix to apply to the standard source types
+- `splunk_sourcetype`: A Splunk `sourcetype` to apply to all logs (default: "`aws:cloudwatchlogs`")
 - `splunk_indexes_to_logs_levels`: Mapping of Splunk Index to log levels to override the default Splunk Receiver Index
 - `cloudwatch_log_groups_to_forward`: A list of log group names that will be forwarded
 
@@ -27,10 +27,16 @@ module "splunk_forwarding" {
 
   splunk_hec_endpoint       = "https://example.endpoint.splunk.com/services/collector"
   splunk_hec_token          = "00000000-0000-0000-0000-000000000000"
-  splunk_source_type_prefix = "example"
+  splunk_sourcetype         = "example"
   splunk_indexes_to_logs_levels = {
     "aws"     = "aws_example"
     "audit"   = "audit_example"
+    "critical" = "app_example"
+    "debug"    = "app_example"
+    "error"    = "app_example"
+    "info"     = "app_example"
+    "trace"    = "app_example"
+    "warning"  = "app_example"
   }
 
   cloudwatch_log_groups_to_forward = [
