@@ -63,6 +63,23 @@ data "aws_iam_policy_document" "splunk_firehose" {
   }
 
   statement {
+    sid    = "KMSAllow"
+    effect = "Allow"
+
+    actions = [
+      "kms:Decrypt",
+      "kms:Encrypt",
+      "kms:GenerateDataKey*",
+      "kms:ReEncrypt*",
+    ]
+
+    resources = [
+      var.kms_s3_key_arn,
+      var.kms_cloudwatch_key_arn
+    ]
+  }
+
+  statement {
     sid    = "LambdaAllow"
     effect = "Allow"
 

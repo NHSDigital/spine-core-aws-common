@@ -39,5 +39,6 @@ resource "aws_kinesis_firehose_delivery_stream" "splunk_firehose" {
     buffer_size        = 5
     buffer_interval    = 300
     compression_format = "GZIP"
+    kms_key_arn        = var.kms_s3_key_arn
   }
 }

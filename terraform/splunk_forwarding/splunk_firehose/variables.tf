@@ -17,3 +17,13 @@ variable "splunk_hec_token" {
 variable "splunk_formatter" {
   description = "Splunk Formatter Lambda Output"
 }
+
+variable "kms_s3_key_arn" {
+  description = "KMS Key for S3 encryption"
+  type        = string
+}
+
+variable "kms_cloudwatch_key_arn" {
+  description = "KMS Key for Cloudwatch log encryption"
+  type        = string
+}

@@ -16,3 +16,8 @@ variable "splunk_indexes_to_logs_levels" {
 variable "splunk_firehose" {
   description = "Splunk Firehose Output"
 }
+
+variable "kms_cloudwatch_key_arn" {
+  description = "KMS Key for Cloudwatch log encryption"
+  type        = string
+}
