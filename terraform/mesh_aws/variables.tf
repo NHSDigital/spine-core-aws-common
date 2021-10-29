@@ -1,5 +1,6 @@
 variable "name_prefix" {
   description = "Name to prefix on to the resources"
+  type        = string
 }
 
 variable "config" {

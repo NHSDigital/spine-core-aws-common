@@ -1,12 +1,12 @@
 #!/bin/bash
-# mesh_aws_client.sh
+# build.sh
 
 set -e
 set -u
 set -x
 set -o pipefail
 
-CODE_DIR="../mesh_aws_client/mesh_aws_client"
+CODE_DIR="../build/splunk_formatter"
 PYTHON_BIN="python3"
 
 # Deterministic dir
@@ -21,7 +21,8 @@ mkdir -p ${CODE_DIR}
 rm -rf ${CODE_DIR}/*
 
 # Copy code
-cp -r ../../../mesh_aws_client/*.py ${CODE_DIR}/
+cp -r ../../../../splunk_formatter/*.py ${CODE_DIR}/
+cp -r ../../../../splunk_formatter/*.cfg ${CODE_DIR}/
 
 # This will then be zipped by terraform
 exit 0

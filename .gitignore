@@ -12,6 +12,7 @@ coverage-all.txt
 # ignore packaging and lambda deps
 terraform/mesh_aws/mesh_aws_client/*
 terraform/mesh_aws/mesh_aws_client_dependencies/*
+terraform/**/build/*
 
 ### Terraform ###
 # Local .terraform directories
