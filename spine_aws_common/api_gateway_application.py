@@ -16,4 +16,11 @@ class APIGatewayApplication(WebApplication):
         """
         Get internalID from the event
         """
-        return self.event.headers.get("x-internal-id", self._create_new_internal_id())
+        return self._get_header("x-internal-id", self._create_new_internal_id())
+
+    def _get_header(self, header, default=None):
+        """
+        Lower all the headers so they will be picked up if asked for regardless of case
+        """
+        headers = {k.lower(): v for k, v in self.event.headers.items()}
+        return headers.get(header.lower(), default)
