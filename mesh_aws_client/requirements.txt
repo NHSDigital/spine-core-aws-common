@@ -1,4 +1,5 @@
 aws_lambda_powertools
+importlib_metadata
 mesh_client
 requests
 urllib3

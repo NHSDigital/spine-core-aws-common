@@ -1,18 +1,30 @@
 """Mailbox class that handles all the complexity of talking to MESH API"""
+import platform
+from typing import NamedTuple
 from hashlib import sha256
 import atexit
 import datetime
 import hmac
 import tempfile
 import uuid
+import requests
+from botocore.response import StreamingBody
 
 from spine_aws_common.logger import Logger
-
 from .mesh_common import MeshCommon
+
+class MeshMessage(NamedTuple):
+    """ Named tuple for holding Mesh Message info """
+    data_stream: StreamingBody = None
+    data_str: str = None
+    src_mailbox: str = None
+    dest_mailbox: str = None
+    workflow_id: str = None
+    message_id: str = None
 
 
 class MeshMailbox:  # pylint: disable=too-many-instance-attributes
-    """Mailbox class that handles all the complexity of talking to MESH API"""
+    """ Mailbox class that handles all the complexity of talking to MESH API """
 
     AUTH_SCHEMA_NAME = "NHSMESH"
 
@@ -29,7 +41,9 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
     ALLOWED_RECIPIENTS = "ALLOWED_RECIPIENTS"
     ALLOWED_WORKFLOW_IDS = "ALLOWED_WORKFLOW_IDS"
 
-    def __init__(self, log_object: Logger, environment: str, mailbox):
+    VERSION = "0.0.2"
+
+    def __init__(self, log_object: Logger, environment: str, mailbox: str):
         self.mailbox = mailbox
         self.environment = environment
         self.temp_dir_object = None
@@ -38,10 +52,14 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         self.client_cert_file = None
         self.client_key_file = None
         self.ca_cert_file = None
+        self.maybe_verify_ssl = True
+        self.dest_mailbox = None
+        self.workflow_id = None
+
         self._setup()
         atexit.register(self._clean_up)
 
-    def _setup(self):
+    def _setup(self) -> None:
         """Get mailbox config from SSM paramater store"""
         self.log_object.write_log(
             "MESH0001", None, {"mailbox": self.mailbox, "environment": self.environment}
@@ -54,38 +72,25 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         self.params = {**common_params, **mailbox_params}
         # self._write_certs_to_files()
 
-        # maybe_verify = bool(
-        #     self.mailbox_params.get("MESH_VERIFY_SSL", "True") == "True"
-        # )
+        self.maybe_verify_ssl = (
+            self.params.get(MeshMailbox.MESH_VERIFY_SSL, False) == "True"
+        )
+        self._write_certs_to_files()
 
-        # if not maybe_verify:
-        #     requests.urllib3.disable_warnings(InsecureRequestWarning)
-
-        # # rewrite MeshClient
-        # self.mesh_client = ExtendedMeshClient(
-        #     common_params["MESH_URL"],
-        #     self.mailbox,
-        #     mailbox_params["MAILBOX_PASSWORD"],
-        #     shared_key=common_params["MESH_SHARED_KEY"].encode("utf8"),
-        #     cert=(self.client_cert_file.name, self.client_key_file.name),
-        #     verify=self.ca_cert_file.name if maybe_verify else None,
-        #     max_chunk_size=MeshCommon.DEFAULT_CHUNK_SIZE,
-        # )
-
-    def _clean_up(self):
+    def _clean_up(self) -> None:
         """Clear up after use"""
 
-    def get_param(self, param):
+    def get_param(self, param) -> str:
         """Shortcut to get a parameter"""
         return self.params.get(param, None)
 
-    def _write_certs_to_files(self):
+    def _write_certs_to_files(self) -> None:
         """Write the certificates to a local file"""
         # pylint: disable=consider-using-with
         self.temp_dir_object = tempfile.TemporaryDirectory()
         temp_dir = self.temp_dir_object.name
 
-        # store as temporary files for the mesh client
+        # store as temporary files for the mesh client / requests library
         self.client_cert_file = tempfile.NamedTemporaryFile(dir=temp_dir, delete=False)
         client_cert = self.params[MeshMailbox.MESH_CLIENT_CERT]
         self.client_cert_file.write(client_cert.encode("utf-8"))
@@ -97,7 +102,7 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         self.client_key_file.seek(0)
 
         self.ca_cert_file = None
-        if self.params.get("MESH_VERIFY_SSL", False) == "True":
+        if self.maybe_verify_ssl:
             self.ca_cert_file = tempfile.NamedTemporaryFile(dir=temp_dir, delete=False)
             ca_cert = self.params[MeshMailbox.MESH_CA_CERT]
             self.ca_cert_file.write(ca_cert.encode("utf-8"))
@@ -105,11 +110,9 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         # pylint: enable=consider-using-with
 
     def _build_mesh_authorization_header(
-        self,
-        nonce: str = None,
-        noncecount: int = 0,
-    ):
-        """Generate MESH Authorization header for mailboxid."""
+        self, nonce: str = None, noncecount: int = 0
+    ) -> str:
+        """Generate MESH Authorization header for mailbox"""
         if not nonce:
             nonce = str(uuid.uuid4())
         timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M")
@@ -129,3 +132,67 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
             f"{self.AUTH_SCHEMA_NAME} {self.mailbox}:{nonce}:{str(noncecount)}:"
             + f"{timestamp}:{hash_code}"
         )
+
+    def _default_headers(self) -> dict(str):
+        """
+        Build standard headers including authorization
+        """
+        return {
+            "Authorization": self._build_mesh_authorization_header(),
+            "Mex-ClientVersion": f"AWS Serverless MESH Client={MeshMailbox.VERSION}",
+            "Mex-OSArchitecture": platform.machine(),
+            "Mex-OSName": platform.system(),
+            "Mex-OSVersion": platform.release(),
+        }
+
+    def _setup_session(self) -> requests.Session:
+        session = requests.Session()
+        session.headers = self._default_headers()
+        if self.maybe_verify_ssl:
+            session.verify = self.ca_cert_file.name
+        else:
+            session.verify = False
+        session.cert = (self.client_cert_file.name, self.client_key_file.name)
+        return session
+
+    def set_destination_and_workflow(self, dest_mailbox, workflow_id) -> None:
+        """Set destination mailbox and workflow_id"""
+        self.dest_mailbox = dest_mailbox
+        self.workflow_id = workflow_id
+
+    def handshake(self) -> int:
+        """
+        Do an authenticated handshake with the MESH server
+        """
+        session = self._setup_session()
+        mesh_url = self.params[MeshMailbox.MESH_URL]
+        url = f"{mesh_url}/messageexchange/{self.mailbox}"
+        response = session.get(url)
+
+        print(response.request.headers)
+        print("-------------------------------")
+        print(response.headers)
+        print(response.text)
+        print(response.status_code)
+        return response.status_code
+
+    def authenticate(self) -> int:
+        """
+        Povided for compatibility
+        """
+        return self.handshake()
+
+    def send_chunk(
+        self,
+        mesh_message_object: MeshMessage,
+        chunk: bool = False,
+        chunk_size: int = MeshCommon.DEFAULT_CHUNK_SIZE,
+        chunk_num: int = 1,
+    ):
+        """Send a chunk"""
+        # override mailbox dest_mailbox if provided in message_object
+        pass
+
+    def get_chunk(
+
+    )
