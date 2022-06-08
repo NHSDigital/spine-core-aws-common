@@ -1,5 +1,6 @@
 """Mailbox class that handles all the complexity of talking to MESH API"""
 import platform
+from http import HTTPStatus
 from typing import NamedTuple
 from hashlib import sha256
 import atexit
@@ -13,8 +14,10 @@ from botocore.response import StreamingBody
 from spine_aws_common.logger import Logger
 from .mesh_common import MeshCommon
 
+
 class MeshMessage(NamedTuple):
-    """ Named tuple for holding Mesh Message info """
+    """Named tuple for holding Mesh Message info"""
+
     data_stream: StreamingBody = None
     data_str: str = None
     src_mailbox: str = None
@@ -24,7 +27,7 @@ class MeshMessage(NamedTuple):
 
 
 class MeshMailbox:  # pylint: disable=too-many-instance-attributes
-    """ Mailbox class that handles all the complexity of talking to MESH API """
+    """Mailbox class that handles all the complexity of talking to MESH API"""
 
     AUTH_SCHEMA_NAME = "NHSMESH"
 
@@ -133,7 +136,7 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
             + f"{timestamp}:{hash_code}"
         )
 
-    def _default_headers(self) -> dict(str):
+    def _default_headers(self):
         """
         Build standard headers including authorization
         """
@@ -169,11 +172,6 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         url = f"{mesh_url}/messageexchange/{self.mailbox}"
         response = session.get(url)
 
-        print(response.request.headers)
-        print("-------------------------------")
-        print(response.headers)
-        print(response.text)
-        print(response.status_code)
         return response.status_code
 
     def authenticate(self) -> int:
@@ -191,8 +189,14 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
     ):
         """Send a chunk"""
         # override mailbox dest_mailbox if provided in message_object
-        pass
+        return HTTPStatus.NOT_IMPLEMENTED.value
 
     def get_chunk(
-
-    )
+        self,
+        message_id,
+        chunk=False,
+        chunk_size=MeshCommon.DEFAULT_CHUNK_SIZE,
+        chunk_num=1,
+    ):
+        """Get a chunk"""
+        return HTTPStatus.NOT_IMPLEMENTED.value
