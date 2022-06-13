@@ -1,4 +1,5 @@
 """Mailbox class that handles all the complexity of talking to MESH API"""
+from io import BytesIO
 import platform
 from http import HTTPStatus
 from typing import NamedTuple
@@ -9,7 +10,6 @@ import hmac
 import tempfile
 import uuid
 import requests
-from botocore.response import StreamingBody
 
 from spine_aws_common.logger import Logger
 from .mesh_common import MeshCommon
@@ -18,8 +18,7 @@ from .mesh_common import MeshCommon
 class MeshMessage(NamedTuple):
     """Named tuple for holding Mesh Message info"""
 
-    data_stream: StreamingBody = None
-    data_str: str = None
+    data_stream: BytesIO = None
     src_mailbox: str = None
     dest_mailbox: str = None
     workflow_id: str = None
@@ -180,23 +179,35 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         """
         return self.handshake()
 
-    def send_chunk(
+    def send_chunk_stream(
         self,
         mesh_message_object: MeshMessage,
         chunk: bool = False,
         chunk_size: int = MeshCommon.DEFAULT_CHUNK_SIZE,
         chunk_num: int = 1,
     ):
-        """Send a chunk"""
+        """Send a chunk from a stream"""
         # override mailbox dest_mailbox if provided in message_object
         return HTTPStatus.NOT_IMPLEMENTED.value
 
-    def get_chunk(
-        self,
-        message_id,
-        chunk=False,
-        chunk_size=MeshCommon.DEFAULT_CHUNK_SIZE,
-        chunk_num=1,
-    ):
-        """Get a chunk"""
-        return HTTPStatus.NOT_IMPLEMENTED.value
+    def get_chunk(self, message_id, chunk_num=1):
+        """Return a response object for a MESH chunk"""
+        session = self._setup_session()
+        mesh_url = self.params[MeshMailbox.MESH_URL]
+
+        # if chunk number = 1, get first part
+        url = f"{mesh_url}/messageexchange/{self.mailbox}/inbox/{message_id}"
+        # otherwise get nth part
+
+        response = session.get(url, stream=True)
+        response.raw.decode_content = True
+        return response
+
+    def list_messages(self):
+        """PCRM-6130 Return a list of messages in the mailbox in the form:
+        {"messages": [
+            '20220610195418651944_2202CC',
+            '20220613142621549393_6430C9'
+        ]}
+        """
+        pass

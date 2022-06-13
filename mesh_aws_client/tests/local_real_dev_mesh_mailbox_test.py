@@ -5,7 +5,10 @@ import boto3
 from spine_aws_common.logger import Logger
 
 from mesh_aws_client.tests.mesh_testing_common import MeshTestCase, MeshTestingCommon
-from mesh_aws_client import MeshMailbox, OldMeshMailbox  # MeshMessage, OldMeshMessage
+from mesh_aws_client import (
+    MeshMailbox,
+    OldMeshMailbox,
+)  # , OldMeshMessage  # MeshMessage
 
 from mesh_aws_client.mesh_fetch_message_chunk_application import (
     MeshFetchMessageChunkApplication,
@@ -73,6 +76,7 @@ t0SjhVECgYEAuARrac84TmK8RxnYNfVvUwyJsa+NiVLjHGagYS3Nz1OF2ZXUB7wv
 qEr8MsnIg3XZiBTvczG+4VJ8By/AeEkeI8GmOO2Xlqc2WbE3nG5Rg+r4kxivGE88
 j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
 -----END RSA PRIVATE KEY-----"""
+    BUFFER_SIZE = 5 * 1024 * 1024
 
     @mock.patch.dict("os.environ", MeshTestingCommon.os_environ_values)
     def setUp(self):
@@ -105,18 +109,18 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
             Overwrite=True,
         )
         ssm_client.put_parameter(
-            Name=f"/{self.environment}/mesh/mailboxes/TEST-PCRM-1/MAILBOX_PASSWORD",
-            Value="password",
+            Name=f"/{self.environment}/mesh/mailboxes/MESH-UI-02/MAILBOX_PASSWORD",
+            Value="pwd123456",
             Overwrite=True,
         )
         ssm_client.put_parameter(
-            Name=f"/{self.environment}/mesh/mailboxes/TEST-PCRM-1/INBOUND_BUCKET",
+            Name=f"/{self.environment}/mesh/mailboxes/MESH-UI-02/INBOUND_BUCKET",
             Value=f"{self.environment}-mesh",
             Overwrite=True,
         )
         ssm_client.put_parameter(
-            Name=f"/{self.environment}/mesh/mailboxes/TEST-PCRM-1/INBOUND_FOLDER",
-            Value="inbound-test-pcrm-1",
+            Name=f"/{self.environment}/mesh/mailboxes/MESH-UI-02/INBOUND_FOLDER",
+            Value="inbound-MESH-UI-02",
             Overwrite=True,
         )
         ssm_client.put_parameter(
@@ -145,19 +149,19 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
             Overwrite=True,
         )
 
-    # @mock_ssm
-    # @mock_s3
-    # def test_handshake(self):
-    #     """Test handshake against real MESH server"""
-    #     s3_client = boto3.client("s3", region_name="eu-west-2")
-    #     ssm_client = boto3.client("ssm", region_name="eu-west-2")
-    #     self.setup_mock_aws_environment(s3_client, ssm_client)
-    #     logger = Logger()
-    #     mailbox = MeshMailbox(
-    #         logger, mailbox="TEST-PCRM-1", environment=f"{self.environment}"
-    #     )
-    #     response = mailbox.handshake()
-    #     self.assertEqual(response, 200)
+    @mock_ssm
+    @mock_s3
+    def test_handshake(self):
+        """Test handshake against real MESH server"""
+        s3_client = boto3.client("s3", region_name="eu-west-2")
+        ssm_client = boto3.client("ssm", region_name="eu-west-2")
+        self.setup_mock_aws_environment(s3_client, ssm_client)
+        logger = Logger()
+        mailbox = MeshMailbox(
+            logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
+        )
+        response = mailbox.handshake()
+        self.assertEqual(response, 200)
 
     @mock_ssm
     @mock_s3
@@ -168,27 +172,81 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
         self.setup_mock_aws_environment(s3_client, ssm_client)
         logger = Logger()
         mailbox = MeshMailbox(
-            logger, mailbox="TEST-PCRM-1", environment=f"{self.environment}"
+            logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
         )
         # setup old mailboxes
         old_mailbox1 = OldMeshMailbox(
-            logger, mailbox="TEST-PCRM-1", environment=f"{self.environment}"
+            logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
         )
         # old_mailbox2 = OldMeshMailbox(
-        #    logger, mailbox="TEST-PCRM-2", environment=f"{self.environment}"
+        #     logger, mailbox="TEST-PCRM-2", environment=f"{self.environment}"
         # )
 
         # Send a test file to the mailbox using old method
         # msg = OldMeshMessage(
-        #    "test.dat", b"12345", "TEST-PCRM-2", "TEST-PCRM-1", "TEST", None
+        #     "test.dat", b"12345", "TEST-PCRM-2", "MESH-UI-02", "TEST", None
         # )
         # old_mailbox2.send_chunk(msg)
 
         # poll for message ID using old method
         message_list = old_mailbox1.mesh_client.list_messages()
         self.assertGreaterEqual(len(message_list), 1)
-        print(message_list[0])
-
+        print(message_list)
+        message_id = message_list[0]
         # get message chunk and stream to S3
-        response = mailbox.get_chunk(message_list[0])
-        self.assertEqual(response, 200)
+        response = mailbox.get_chunk(message_id)
+        self.assertEqual(response.status_code, 200)
+        response.raise_for_status()
+
+        print(response.headers)
+        print(response.apparent_encoding)
+        print(response.encoding)
+
+        print(mailbox.params)
+        s3_bucket = mailbox.get_param(MeshMailbox.INBOUND_BUCKET)
+        s3_folder = mailbox.get_param(MeshMailbox.INBOUND_FOLDER)
+        s3_key = s3_folder + "/" if len(s3_folder) > 0 else ""
+        file_name = response.headers["Mex-Filename"]
+        s3_key += file_name if len(file_name) > 0 else message_id + ".dat"
+        print(s3_bucket)
+        print(s3_key)
+
+        multipart_upload = s3_client.create_multipart_upload(
+            Bucket=s3_bucket, Key=s3_key
+        )
+
+        upload_id = multipart_upload["UploadId"]
+        part_number = 1
+        etags = []
+        for buffer in response.iter_content(chunk_size=self.BUFFER_SIZE):
+            # print(buffer)
+            response = s3_client.upload_part(
+                Body=buffer,
+                Bucket=s3_bucket,
+                Key=s3_key,
+                PartNumber=part_number,
+                ContentLength=len(buffer),
+                UploadId=upload_id,
+            )
+            print(response["ETag"])
+            etags.append(
+                {
+                    "ETag": response["ETag"],
+                    "PartNumber": part_number,
+                }
+            )
+            part_number += 1
+
+        response = s3_client.complete_multipart_upload(
+            Bucket=s3_bucket,
+            Key=s3_key,
+            UploadId=upload_id,
+            MultipartUpload={"Parts": etags},
+        )
+
+        # Check S3 uploaded message
+        response = s3_client.head_object(
+            Bucket=s3_bucket, Key=s3_key, ChecksumMode="ENABLED"
+        )
+
+        print(response)
