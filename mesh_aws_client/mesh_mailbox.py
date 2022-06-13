@@ -205,9 +205,9 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
 
     def list_messages(self):
         """PCRM-6130 Return a list of messages in the mailbox in the form:
-        {"messages": [
+        [
             '20220610195418651944_2202CC',
             '20220613142621549393_6430C9'
-        ]}
+        ]
         """
         pass
