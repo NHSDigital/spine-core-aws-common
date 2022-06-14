@@ -7,6 +7,7 @@ __pycache__
 .coverage
 htmlcov/
 coverage-all.txt
+.idea/
 *.zip
 
 # ignore packaging and lambda deps
