@@ -21,7 +21,7 @@ class LocalRealDevMeshMailboxTest(MeshTestCase):
     for developing locally with a local Spine VM
     """
 
-    MESH_URL = "https://192.168.224.128"
+    MESH_URL = "https://192.168.247.130"
 
     CLIENT_CERT = """-----BEGIN CERTIFICATE-----
 MIIEUDCCAjgCAQIwDQYJKoZIhvcNAQELBQAwbDELMAkGA1UEBhMCVUsxFzAVBgNV
@@ -250,3 +250,18 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
         )
 
         print(response)
+
+
+    @mock_ssm
+    @mock_s3
+    def test_poll_messages(self):
+        """Test sending a chunk"""
+        s3_client = boto3.client("s3", region_name="eu-west-2")
+        ssm_client = boto3.client("ssm", region_name="eu-west-2")
+        self.setup_mock_aws_environment(s3_client, ssm_client)
+        logger = Logger()
+        mailbox = MeshMailbox(
+            logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
+        )
+        messageList = mailbox.list_messages()
+        self.assertEqual("Flash Gordon", messageList)

@@ -210,4 +210,10 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
             '20220613142621549393_6430C9'
         ]
         """
-        pass
+        session = self._setup_session()
+        mesh_url = self.params[MeshMailbox.MESH_URL]
+        url = f"{mesh_url}/messageexchange/{self.mailbox}"
+        response = session.get(url)
+        spam = response.content
+
+        return response.status_code
