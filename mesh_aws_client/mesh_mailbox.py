@@ -215,12 +215,8 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         mesh_url = self.params[MeshMailbox.MESH_URL]
         url = f"{mesh_url}/messageexchange/{self.mailbox}/inbox"
         response = session.get(url)
-        eggs = response.content[2]
-        spam = response.content
-        textList = response.text
-        # json object is string in json format
-        pythonDict = json.loads(textList)
-        jsonList = json.dumps(textList)
 
-        pythonList = pythonDict['messages']
-        return pythonList
+        textList = response.text
+        python_dict = json.loads(textList)
+        python_list = python_dict['messages']
+        return python_list
