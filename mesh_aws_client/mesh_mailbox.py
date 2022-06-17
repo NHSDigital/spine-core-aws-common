@@ -10,6 +10,7 @@ import hmac
 import tempfile
 import uuid
 import requests
+import json
 
 from spine_aws_common.logger import Logger
 from .mesh_common import MeshCommon
@@ -212,8 +213,14 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         """
         session = self._setup_session()
         mesh_url = self.params[MeshMailbox.MESH_URL]
-        url = f"{mesh_url}/messageexchange/{self.mailbox}"
+        url = f"{mesh_url}/messageexchange/{self.mailbox}/inbox"
         response = session.get(url)
+        eggs = response.content[2]
         spam = response.content
+        textList = response.text
+        # json object is string in json format
+        pythonDict = json.loads(textList)
+        jsonList = json.dumps(textList)
 
-        return response.status_code
+        pythonList = pythonDict['messages']
+        return pythonList
