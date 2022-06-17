@@ -263,5 +263,9 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
         mailbox = MeshMailbox(
             logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
         )
-        messageList = mailbox.list_messages()
-        self.assertEqual("Flash Gordon", messageList)
+        message_list = mailbox.list_messages()
+        old_mailbox1 = OldMeshMailbox(
+            logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
+        )
+        old_message_list = old_mailbox1.mesh_client.list_messages()
+        self.assertEqual(old_message_list, message_list)
