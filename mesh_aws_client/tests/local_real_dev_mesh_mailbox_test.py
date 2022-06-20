@@ -1,6 +1,7 @@
 """ Testing the mailbox functionality, including chunking and streaming """
 from unittest import mock
 from moto import mock_s3, mock_ssm
+import gzip
 import boto3
 from spine_aws_common.logger import Logger
 
@@ -85,7 +86,6 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
         super().setUp()
         self.app = MeshFetchMessageChunkApplication()
         self.environment = self.app.system_config["Environment"]
-        print(f"ENV:{self.environment}")
 
     def setup_mock_aws_environment(self, s3_client, ssm_client):
         """Setup standard environment for tests"""
@@ -158,6 +158,7 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
         ssm_client = boto3.client("ssm", region_name="eu-west-2")
         self.setup_mock_aws_environment(s3_client, ssm_client)
         logger = Logger()
+        logger.process_name = f"{self.environment}_test_handshake"
         mailbox = MeshMailbox(
             logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
         )
@@ -167,11 +168,13 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
     @mock_ssm
     @mock_s3
     def test_fetch_chunk(self):
-        """Test sending a chunk"""
+        """Test fetching a chunk"""
+
         s3_client = boto3.client("s3", region_name="eu-west-2")
         ssm_client = boto3.client("ssm", region_name="eu-west-2")
         self.setup_mock_aws_environment(s3_client, ssm_client)
         logger = Logger()
+        logger.process_name = f"{self.environment}_test_fetch_chunk"
         mailbox = MeshMailbox(
             logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
         )
@@ -194,23 +197,23 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
         self.assertGreaterEqual(len(message_list), 1)
         print(message_list)
         message_id = message_list[0]
+
         # get message chunk and stream to S3
         response = mailbox.get_chunk(message_id)
         self.assertEqual(response.status_code, 200)
         response.raise_for_status()
 
-        print(response.headers)
-        print(response.apparent_encoding)
-        print(response.encoding)
+        # print(response.headers)
+        # print(response.encoding)
 
-        print(mailbox.params)
+        # print(mailbox.params)
         s3_bucket = mailbox.get_param(MeshMailbox.INBOUND_BUCKET)
         s3_folder = mailbox.get_param(MeshMailbox.INBOUND_FOLDER)
         s3_key = s3_folder + "/" if len(s3_folder) > 0 else ""
         file_name = response.headers["Mex-Filename"]
         s3_key += file_name if len(file_name) > 0 else message_id + ".dat"
-        print(s3_bucket)
-        print(s3_key)
+        # print(s3_bucket)
+        # print(s3_key)
 
         multipart_upload = s3_client.create_multipart_upload(
             Bucket=s3_bucket, Key=s3_key
@@ -219,8 +222,17 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
         upload_id = multipart_upload["UploadId"]
         part_number = 1
         etags = []
+
+        # decompressor = zlib.compressobj(9, zlib.DEFLATED, zlib.MAX_WBITS | 16)
         for buffer in response.iter_content(chunk_size=self.BUFFER_SIZE):
             # print(buffer)
+
+            # if encoding is gzip:
+            #     # Note potential 10:1/20:1 size increase here. 5MB -> 50MB/100MB
+            #     # Ensure lambda memory limit is set appropriately
+            #     sendbuffer = decompressor.uncompress(buffer)
+            # else:
+            #     sendbuffer = buffer]
             response = s3_client.upload_part(
                 Body=buffer,
                 Bucket=s3_bucket,
@@ -229,7 +241,7 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
                 ContentLength=len(buffer),
                 UploadId=upload_id,
             )
-            print(response["ETag"])
+            # print(response["ETag"])
             etags.append(
                 {
                     "ETag": response["ETag"],
@@ -249,8 +261,7 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
         response = s3_client.head_object(
             Bucket=s3_bucket, Key=s3_key, ChecksumMode="ENABLED"
         )
-
-        print(response)
+        # print(response)
 
 
     @mock_ssm
@@ -312,3 +323,14 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
         # old_message_list = old_mailbox1.mesh_client.list_messages()
 
 
+## compression example
+# with requests.get(url, stream=True, verify=False) as r:
+#     if save_file_path.endswith('gz'):
+#         compressor = zlib.compressobj(9, zlib.DEFLATED, zlib.MAX_WBITS | 16)
+#         with open(save_file_path, 'wb') as f:
+#             for chunk in r.iter_content(chunk_size=1024*1024):
+#                 f.write(compressor.compress(chunk))
+#             f.write(compressor.flush())
+#     else:
+#         with open(save_file_path, 'wb') as f:
+#             shutil.copyfileobj(r.raw, f)
