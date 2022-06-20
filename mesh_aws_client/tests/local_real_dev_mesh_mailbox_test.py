@@ -8,7 +8,8 @@ from mesh_aws_client.tests.mesh_testing_common import MeshTestCase, MeshTestingC
 from mesh_aws_client import (
     MeshMailbox,
     OldMeshMailbox,
-)  # , OldMeshMessage  # MeshMessage
+    OldMeshMessage
+)
 
 from mesh_aws_client.mesh_fetch_message_chunk_application import (
     MeshFetchMessageChunkApplication,
@@ -269,3 +270,45 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
         )
         old_message_list = old_mailbox1.mesh_client.list_messages()
         self.assertEqual(old_message_list, message_list)
+
+    @mock_ssm
+    @mock_s3
+    def test_acknowledge_message(self):
+        """Test sending a chunk"""
+        s3_client = boto3.client("s3", region_name="eu-west-2")
+        ssm_client = boto3.client("ssm", region_name="eu-west-2")
+        self.setup_mock_aws_environment(s3_client, ssm_client)
+        logger = Logger()
+        mailbox = MeshMailbox(
+            logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
+        )
+        old_mailbox2 = OldMeshMailbox(
+            logger, mailbox="TEST-PCRM-2", environment=f"{self.environment}"
+        )
+
+        # Send a test file to the mailbox using old method
+        msg1 = OldMeshMessage(
+            "test.dat", b"12345", "TEST-PCRM-2", "MESH-UI-02", "TEST", None
+        )
+        old_mailbox2.send_chunk(msg1)
+        msg2 = OldMeshMessage(
+            "test.dat", b"67891", "TEST-PCRM-2", "MESH-UI-02", "TEST", None
+        )
+        old_mailbox2.send_chunk(msg2)
+
+        message_list_pre_acknowledge = mailbox.list_messages()
+        first_message_id = message_list_pre_acknowledge[0]
+
+        self.assertIn(first_message_id, message_list_pre_acknowledge)
+
+        mailbox.acknowledge_message(first_message_id)
+
+        message_list_post_acknowledge = mailbox.list_messages()
+        self.assertNotIn(first_message_id, message_list_post_acknowledge)
+
+        # old_mailbox1 = OldMeshMailbox(
+        #     logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
+        # )
+        # old_message_list = old_mailbox1.mesh_client.list_messages()
+
+

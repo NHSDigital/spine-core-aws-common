@@ -216,7 +216,17 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         url = f"{mesh_url}/messageexchange/{self.mailbox}/inbox"
         response = session.get(url)
 
-        textList = response.text
-        python_dict = json.loads(textList)
+        text_dict = response.text
+        python_dict = json.loads(text_dict)
         python_list = python_dict['messages']
         return python_list
+
+    def acknowledge_message(self, message_id):
+        """
+        PCRM-6130 Acknowledge receipt of the last message from the mailbox.
+        """
+        session = self._setup_session()
+        mesh_url = self.params[MeshMailbox.MESH_URL]
+        url = f"{mesh_url}/messageexchange/{self.mailbox}/inbox/{message_id}/status/bc"
+        response = session.put(url)
+        return response.status_code
