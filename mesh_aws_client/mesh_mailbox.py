@@ -64,7 +64,9 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
     def _setup(self) -> None:
         """Get mailbox config from SSM paramater store"""
         self.log_object.write_log(
-            "MESH0001", None, {"mailbox": self.mailbox, "environment": self.environment}
+            "MESHMBOX0001",
+            None,
+            {"mailbox": self.mailbox, "environment": self.environment},
         )
 
         common_params = MeshCommon.get_ssm_params(f"/{self.environment}/mesh")
@@ -88,6 +90,8 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
 
     def _write_certs_to_files(self) -> None:
         """Write the certificates to a local file"""
+        self.log_object.write_log("MESHMBOX0002", None, None)
+
         # pylint: disable=consider-using-with
         self.temp_dir_object = tempfile.TemporaryDirectory()
         temp_dir = self.temp_dir_object.name
@@ -130,10 +134,12 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
             hmac_msg.encode(),
             sha256,
         ).hexdigest()
-        return (
+        header = (
             f"{self.AUTH_SCHEMA_NAME} {self.mailbox}:{nonce}:{str(noncecount)}:"
             + f"{timestamp}:{hash_code}"
         )
+        self.log_object.write_log("MESHMBOX0003", None, {"header": header})
+        return header
 
     def _default_headers(self):
         """
@@ -170,7 +176,9 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         mesh_url = self.params[MeshMailbox.MESH_URL]
         url = f"{mesh_url}/messageexchange/{self.mailbox}"
         response = session.get(url)
-
+        self.log_object.write_log(
+            "MESHMBOX0004", None, {"http_status": response.status_code}
+        )
         return response.status_code
 
     def authenticate(self) -> int:
@@ -210,4 +218,3 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
             '20220613142621549393_6430C9'
         ]
         """
-        pass
