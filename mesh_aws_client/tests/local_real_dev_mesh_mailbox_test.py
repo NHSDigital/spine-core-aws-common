@@ -275,7 +275,7 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
         mailbox = MeshMailbox(
             logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
         )
-        message_list = mailbox.list_messages()
+        response, message_list = mailbox.list_messages()
         old_mailbox1 = OldMeshMailbox(
             logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
         )
@@ -307,14 +307,13 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
         )
         old_mailbox2.send_chunk(msg2)
 
-        message_list_pre_acknowledge = mailbox.list_messages()
+        response_pre_acknowledge, message_list_pre_acknowledge = mailbox.list_messages()
         first_message_id = message_list_pre_acknowledge[0]
 
         self.assertIn(first_message_id, message_list_pre_acknowledge)
 
         mailbox.acknowledge_message(first_message_id)
-
-        message_list_post_acknowledge = mailbox.list_messages()
+        response_post_acknowledge, message_list_post_acknowledge = mailbox.list_messages()
         self.assertNotIn(first_message_id, message_list_post_acknowledge)
 
         # old_mailbox1 = OldMeshMailbox(
