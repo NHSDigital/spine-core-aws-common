@@ -46,7 +46,7 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
 
     VERSION = "0.0.2"
 
-    def __init__(self, log_object: Logger, environment: str, mailbox: str):
+    def __init__(self, log_object: Logger, mailbox: str, environment: str):
         self.mailbox = mailbox
         self.environment = environment
         self.temp_dir_object = None
