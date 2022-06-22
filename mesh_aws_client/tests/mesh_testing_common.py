@@ -83,12 +83,12 @@ class MeshTestingCommon:
         """Setup standard environment for tests"""
         location = {"LocationConstraint": "eu-west-2"}
         s3_client.create_bucket(
-            Bucket=f"{environment}-supplementary-data",
+            Bucket=f"{environment}-mesh",
             CreateBucketConfiguration=location,
         )
         file_content = FILE_CONTENT
         s3_client.put_object(
-            Bucket=f"{environment}-supplementary-data",
+            Bucket=f"{environment}-mesh",
             Key="outbound/testfile.json",
             Body=file_content,
         )

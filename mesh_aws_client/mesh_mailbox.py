@@ -1,5 +1,4 @@
 """Mailbox class that handles all the complexity of talking to MESH API"""
-from io import BytesIO
 import platform
 from http import HTTPStatus
 from typing import NamedTuple
@@ -18,7 +17,7 @@ from .mesh_common import MeshCommon
 class MeshMessage(NamedTuple):
     """Named tuple for holding Mesh Message info"""
 
-    data_stream: BytesIO = None
+    data_stream = None
     src_mailbox: str = None
     dest_mailbox: str = None
     workflow_id: str = None
@@ -43,9 +42,11 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
     ALLOWED_RECIPIENTS = "ALLOWED_RECIPIENTS"
     ALLOWED_WORKFLOW_IDS = "ALLOWED_WORKFLOW_IDS"
 
+    DEFAULT_BUFFER_SIZE = 5 * 1024 * 1024  # 5 MiB
+
     VERSION = "0.0.2"
 
-    def __init__(self, log_object: Logger, environment: str, mailbox: str):
+    def __init__(self, log_object: Logger, mailbox: str, environment: str):
         self.mailbox = mailbox
         self.environment = environment
         self.temp_dir_object = None
@@ -74,8 +75,6 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
             f"/{self.environment}/mesh/mailboxes/{self.mailbox}"
         )
         self.params = {**common_params, **mailbox_params}
-        # self._write_certs_to_files()
-
         self.maybe_verify_ssl = (
             self.params.get(MeshMailbox.MESH_VERIFY_SSL, False) == "True"
         )

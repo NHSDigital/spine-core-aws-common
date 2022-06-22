@@ -72,7 +72,7 @@ class TestMeshFetchMessageChunkApplication(MeshTestCase):
             },
         )
 
-        mock_create_new_internal_id.return_value = MeshTestingCommon.KNOWN_INTERNAL_ID2
+        mock_create_new_internal_id.return_value = MeshTestingCommon.KNOWN_INTERNAL_ID1
         s3_client = boto3.client("s3", region_name="eu-west-2")
         ssm_client = boto3.client("ssm", region_name="eu-west-2")
         MeshTestingCommon.setup_mock_aws_s3_buckets(self.environment, s3_client)
@@ -80,9 +80,10 @@ class TestMeshFetchMessageChunkApplication(MeshTestCase):
             self.environment, ssm_client
         )
         mock_input = self._sample_first_input_event()
-        mock_response = self._sample_second_input_event()
+        mock_response = self._sample_first_output_event()
 
         mock_response["body"].update({"complete": True, "chunk_num": 1})
+
         try:
             response = self.app.main(
                 event=mock_input, context=MeshTestingCommon.CONTEXT
@@ -91,15 +92,36 @@ class TestMeshFetchMessageChunkApplication(MeshTestCase):
             # need to fail happy pass on any exception
             self.fail(f"Invocation crashed with Exception {str(e)}")
 
-        self.assertNotEqual(
-            mock_input.get("internal_id"), response["body"].get("internal_id")
+        # print(response)
+
+        self.assertEqual(
+            mock_input["body"].get("internal_id"), response["body"].get("internal_id")
         )
         self.assertEqual(
             response["body"].get("internal_id"),
             mock_response["body"].get("internal_id"),
         )
-        self.assertDictEqual(mock_response, response)
-        # Check it completed ok
+        # Some checks on the response body
+        self.assertEqual(response["body"].get("complete"), True)
+        self.assertIn("aws_current_part_id", response["body"])
+        self.assertIn("aws_upload_id", response["body"])
+
+        # Should be one etag uploaded to S3
+        self.assertEqual(len(response["body"].get("aws_part_etags")), 1)
+
+        # Check we got the logs we expect
+        self.assertTrue(
+            self.log_helper.was_value_logged("MESHFETCH0001", "Log_Level", "INFO")
+        )
+        self.assertTrue(
+            self.log_helper.was_value_logged("MESHFETCH0002", "Log_Level", "INFO")
+        )
+        self.assertFalse(
+            self.log_helper.was_value_logged("MESHFETCH0003", "Log_Level", "INFO")
+        )
+        self.assertTrue(
+            self.log_helper.was_value_logged("MESHFETCH0004", "Log_Level", "INFO")
+        )
         self.assertTrue(
             self.log_helper.was_value_logged("LAMBDA0003", "Log_Level", "INFO")
         )
@@ -135,16 +157,29 @@ class TestMeshFetchMessageChunkApplication(MeshTestCase):
         }
 
     @staticmethod
-    def _sample_second_input_event():
+    def _sample_first_output_event():
         return {
             "statusCode": HTTPStatus.OK.value,
             "headers": {"Content-Type": "application/json"},
             "body": {
                 "complete": False,
-                "internal_id": MeshTestingCommon.KNOWN_INTERNAL_ID2,
+                "internal_id": MeshTestingCommon.KNOWN_INTERNAL_ID1,
+                "message_id": MeshTestingCommon.KNOWN_MESSAGE_ID1,
+                "dest_mailbox": "MESH-TEST1",
+                "chunk_num": 1,
+            },
+        }
+
+    @staticmethod
+    def _sample_second_output_event():
+        return {
+            "statusCode": HTTPStatus.OK.value,
+            "headers": {"Content-Type": "application/json"},
+            "body": {
+                "complete": True,
+                "internal_id": MeshTestingCommon.KNOWN_INTERNAL_ID1,
                 "message_id": MeshTestingCommon.KNOWN_MESSAGE_ID1,
                 "dest_mailbox": "MESH-TEST1",
                 "chunk_num": 2,
-                "aws_upload_id": None,
             },
         }
