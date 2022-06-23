@@ -6,8 +6,8 @@ import os
 
 from spine_aws_common import LambdaApplication
 
-from .mesh_common import MeshCommon, MeshMailbox, SingletonCheckFailure
-
+from .mesh_common import MeshCommon, SingletonCheckFailure
+from mesh_aws_client.mesh_mailbox import MeshMailbox
 
 class MeshPollMailboxApplication(LambdaApplication):
     """
@@ -48,7 +48,7 @@ class MeshPollMailboxApplication(LambdaApplication):
             )
             return
 
-        message_list = mailbox.mesh_client.list_messages()
+        listResponse, message_list = mailbox.list_messages()
         message_count = len(message_list)
         output_list = []
         if message_count == 0:
