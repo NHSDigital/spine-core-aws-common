@@ -60,7 +60,7 @@ class TestMeshPollMailboxApplication(MeshTestCase):
         response = MeshTestingCommon.setup_step_function(
             sfn_client,
             self.environment,
-            self.app.my_step_function_name,
+            self.app.get_messages_step_function_name,
         )
         try:
             response = self.app.main(

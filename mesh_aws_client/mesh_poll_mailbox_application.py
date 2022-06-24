@@ -6,7 +6,8 @@ import os
 
 from spine_aws_common import LambdaApplication
 
-from .mesh_common import MeshCommon, MeshMailbox, SingletonCheckFailure
+from mesh_aws_client.mesh_common import MeshCommon, SingletonCheckFailure
+from mesh_aws_client.mesh_mailbox import MeshMailbox
 
 
 class MeshPollMailboxApplication(LambdaApplication):
@@ -22,7 +23,7 @@ class MeshPollMailboxApplication(LambdaApplication):
         self.mailbox_name = None
         self.environment = os.environ.get("Environment", "default")
         self.get_messages_step_function_name = self.system_config.get(
-            "GET_MESSAGES_STEP_FUNCTION_NAME", "default-get-messages"
+            "GET_MESSAGES_STEP_FUNCTION_NAME", f"{self.environment}-get-messages"
         )
 
     def initialise(self):
@@ -48,7 +49,8 @@ class MeshPollMailboxApplication(LambdaApplication):
             )
             return
 
-        message_list = mailbox.mesh_client.list_messages()
+        list_response, message_list = mailbox.list_messages()
+        list_response.raise_for_status()
         message_count = len(message_list)
         output_list = []
         if message_count == 0:
