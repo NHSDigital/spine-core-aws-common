@@ -30,7 +30,7 @@ class MeshCheckSendParametersApplication(LambdaApplication):
         self.environment = self.system_config.get("Environment", "default")
         self.chunk_size = None
         self.send_message_step_function_name = self.system_config.get(
-            "SEND_MESSAGE_STEP_FUNCTION_NAME", "default-send-message"
+            "SEND_MESSAGE_STEP_FUNCTION_NAME", f"{self.environment}-send-message"
         )
 
     def _get_internal_id(self):

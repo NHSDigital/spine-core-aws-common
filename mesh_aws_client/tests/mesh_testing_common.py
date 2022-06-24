@@ -83,12 +83,12 @@ class MeshTestingCommon:
         """Setup standard environment for tests"""
         location = {"LocationConstraint": "eu-west-2"}
         s3_client.create_bucket(
-            Bucket=f"{environment}-supplementary-data",
+            Bucket=f"{environment}-mesh",
             CreateBucketConfiguration=location,
         )
         file_content = FILE_CONTENT
         s3_client.put_object(
-            Bucket=f"{environment}-supplementary-data",
+            Bucket=f"{environment}-mesh",
             Key="outbound/testfile.json",
             Body=file_content,
         )
@@ -99,17 +99,17 @@ class MeshTestingCommon:
         # Setup mapping
         ssm_client.put_parameter(
             Name=f"/{environment}/mesh/mapping/"
-            + f"{environment}-supplementary-data/outbound/src_mailbox",
+            + f"{environment}-mesh/outbound/src_mailbox",
             Value="MESH-TEST2",
         )
         ssm_client.put_parameter(
             Name=f"/{environment}/mesh/mapping/"
-            + f"{environment}-supplementary-data/outbound/dest_mailbox",
+            + f"{environment}-mesh/outbound/dest_mailbox",
             Value="MESH-TEST1",
         )
         ssm_client.put_parameter(
             Name=f"/{environment}/mesh/mapping/"
-            + f"{environment}-supplementary-data/outbound/workflow_id",
+            + f"{environment}-mesh/outbound/workflow_id",
             Value="TESTWORKFLOW",
         )
         # Setup secrets
@@ -127,11 +127,11 @@ class MeshTestingCommon:
         )
         ssm_client.put_parameter(
             Name=f"/{environment}/mesh/mailboxes/MESH-TEST1/INBOUND_BUCKET",
-            Value=f"{environment}-supplementary-data",
+            Value=f"{environment}-mesh",
         )
         ssm_client.put_parameter(
             Name=f"/{environment}/mesh/mailboxes/MESH-TEST1/INBOUND_FOLDER",
-            Value="inbound",
+            Value="inbound-mesh-test1",
         )
         ssm_client.put_parameter(
             Name=f"/{environment}/mesh/mailboxes/MESH-TEST2/MAILBOX_PASSWORD",
@@ -139,11 +139,11 @@ class MeshTestingCommon:
         )
         ssm_client.put_parameter(
             Name=f"/{environment}/mesh/mailboxes/MESH-TEST2/INBOUND_BUCKET",
-            Value=f"{environment}-other-data",
+            Value=f"{environment}-mesh",
         )
         ssm_client.put_parameter(
             Name=f"/{environment}/mesh/mailboxes/MESH-TEST2/INBOUND_FOLDER",
-            Value="inbound",
+            Value="inbound-mesh-test2",
         )
         ssm_client.put_parameter(
             Name=f"/{environment}/mesh/MESH_VERIFY_SSL",

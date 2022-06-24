@@ -141,7 +141,12 @@ MeshMessage = namedtuple(
 
 
 class MeshMailbox:  # pylint: disable=too-many-instance-attributes
-    """Mesh mailbox object, gets parameters from SSM Parameter Store"""
+    """
+    Mesh mailbox object, gets parameters from SSM Parameter Store
+    DEPRECATED Version
+    """
+
+    VERSION = "0.0.1"
 
     def __init__(self, log_object: Logger, mailbox, environment="default"):
         self.mailbox = mailbox

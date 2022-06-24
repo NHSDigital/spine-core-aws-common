@@ -29,12 +29,12 @@ class TestMeshCheckSendParametersApplication(MeshTestCase):
         """Setup standard environment for tests"""
         location = {"LocationConstraint": "eu-west-2"}
         s3_client.create_bucket(
-            Bucket=f"{self.environment}-supplementary-data",
+            Bucket=f"{self.environment}-mesh",
             CreateBucketConfiguration=location,
         )
         file_content = "123456789012345678901234567890123"
         s3_client.put_object(
-            Bucket=f"{self.environment}-supplementary-data",
+            Bucket=f"{self.environment}-mesh",
             Key="outbound/testfile.json",
             Body=file_content,
         )
@@ -71,7 +71,7 @@ class TestMeshCheckSendParametersApplication(MeshTestCase):
                 "src_mailbox": "MESH-TEST2",
                 "dest_mailbox": "MESH-TEST1",
                 "workflow_id": "TESTWORKFLOW",
-                "bucket": f"{self.environment}-supplementary-data",
+                "bucket": f"{self.environment}-mesh",
                 "key": "outbound/testfile.json",
                 "chunk": True,
                 "chunk_number": 1,
@@ -262,11 +262,11 @@ def sample_trigger_event():
             "awsRegion": "eu-west-2",
             "requestParameters": {
                 "X-Amz-Date": "20210629T141055Z",
-                "bucketName": "meshtest-supplementary-data",
+                "bucketName": "meshtest-mesh",
                 "X-Amz-Algorithm": "AWS4-HMAC-SHA256",
                 "x-amz-acl": "private",
                 "X-Amz-SignedHeaders": "content-md5;content-type;host;x-amz-acl;x-amz-storage-class",  # noqa pylint: disable=line-too-long
-                "Host": "meshtest-supplementary-data.s3.eu-west-2.amazonaws.com",
+                "Host": "meshtest-mesh.s3.eu-west-2.amazonaws.com",
                 "X-Amz-Expires": "300",
                 "key": "outbound/testfile.json",
                 "x-amz-storage-class": "STANDARD",
@@ -281,12 +281,12 @@ def sample_trigger_event():
             "resources": [
                 {
                     "type": "AWS::S3::Object",
-                    "ARN": "arn:aws:s3:::meshtest-supplementary-data/outbound/testfile.json",  # noqa pylint: disable=line-too-long
+                    "ARN": "arn:aws:s3:::meshtest-mesh/outbound/testfile.json",  # noqa pylint: disable=line-too-long
                 },
                 {
                     "accountId": "123456789012",
                     "type": "AWS::S3::Bucket",
-                    "ARN": "arn:aws:s3:::meshtest-supplementary-data",
+                    "ARN": "arn:aws:s3:::meshtest-mesh",
                 },
             ],
             "eventType": "AwsApiCall",
