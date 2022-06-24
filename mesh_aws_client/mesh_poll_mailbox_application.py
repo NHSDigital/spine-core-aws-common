@@ -48,7 +48,8 @@ class MeshPollMailboxApplication(LambdaApplication):
             )
             return
 
-        listResponse, message_list = mailbox.list_messages()
+        list_response, message_list = mailbox.list_messages()
+        list_response.raise_for_status()
         message_count = len(message_list)
         output_list = []
         if message_count == 0:
