@@ -199,7 +199,7 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         # override mailbox dest_mailbox if provided in message_object
         return HTTPStatus.NOT_IMPLEMENTED.value
 
-    def get_chunk(self, message_id, _chunk_num=1):
+    def get_chunk(self, message_id, chunk_num=1):
         """Return a response object for a MESH chunk"""
         session = self._setup_session()
         mesh_url = self.params[MeshMailbox.MESH_URL]
@@ -226,11 +226,15 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
 
         text_dict = response.text
         python_dict = json.loads(text_dict)
-        python_list = python_dict['messages']
+        python_list = python_dict["messages"]
         self.log_object.write_log(
-            "MESHMBOX0005", None, {"mailbox": self.mailbox,
-                                   "message_count": len(python_list),
-                                   "http_status": response.status_code}
+            "MESHMBOX0005",
+            None,
+            {
+                "mailbox": self.mailbox,
+                "message_count": len(python_list),
+                "http_status": response.status_code,
+            },
         )
         return response, python_list
 
@@ -240,11 +244,14 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         """
         session = self._setup_session()
         mesh_url = self.params[MeshMailbox.MESH_URL]
-        url = f"{mesh_url}/messageexchange/{self.mailbox}/inbox/{message_id}" \
-              f"/status/acknowledged"
+        url = (
+            f"{mesh_url}/messageexchange/{self.mailbox}/inbox/{message_id}"
+            f"/status/acknowledged"
+        )
         response = session.put(url)
         self.log_object.write_log(
-            "MESHMBOX0006", None, {"message_id": message_id,
-                                   "http_status": response.status_code}
+            "MESHMBOX0006",
+            None,
+            {"message_id": message_id, "http_status": response.status_code},
         )
         return response

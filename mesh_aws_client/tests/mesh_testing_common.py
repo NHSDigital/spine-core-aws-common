@@ -89,7 +89,7 @@ class MeshTestingCommon:
         file_content = FILE_CONTENT
         s3_client.put_object(
             Bucket=f"{environment}-mesh",
-            Key="outbound/testfile.json",
+            Key="MESH-TEST2/outbound/testfile.json",
             Body=file_content,
         )
 

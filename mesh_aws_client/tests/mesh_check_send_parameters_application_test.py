@@ -35,7 +35,7 @@ class TestMeshCheckSendParametersApplication(MeshTestCase):
         file_content = "123456789012345678901234567890123"
         s3_client.put_object(
             Bucket=f"{self.environment}-mesh",
-            Key="outbound/testfile.json",
+            Key="MESH-TEST2/outbound/testfile.json",
             Body=file_content,
         )
         MeshTestingCommon.setup_mock_aws_ssm_parameter_store(
@@ -72,7 +72,7 @@ class TestMeshCheckSendParametersApplication(MeshTestCase):
                 "dest_mailbox": "MESH-TEST1",
                 "workflow_id": "TESTWORKFLOW",
                 "bucket": f"{self.environment}-mesh",
-                "key": "outbound/testfile.json",
+                "key": "MESH-TEST2/outbound/testfile.json",
                 "chunk": True,
                 "chunk_number": 1,
                 "total_chunks": 4,
@@ -268,7 +268,7 @@ def sample_trigger_event():
                 "X-Amz-SignedHeaders": "content-md5;content-type;host;x-amz-acl;x-amz-storage-class",  # noqa pylint: disable=line-too-long
                 "Host": "meshtest-mesh.s3.eu-west-2.amazonaws.com",
                 "X-Amz-Expires": "300",
-                "key": "outbound/testfile.json",
+                "key": "MESH-TEST2/outbound/testfile.json",
                 "x-amz-storage-class": "STANDARD",
             },
             "responseElements": {
@@ -281,7 +281,7 @@ def sample_trigger_event():
             "resources": [
                 {
                     "type": "AWS::S3::Object",
-                    "ARN": "arn:aws:s3:::meshtest-mesh/outbound/testfile.json",  # noqa pylint: disable=line-too-long
+                    "ARN": "arn:aws:s3:::meshtest-mesh/MESH-TEST2/outbound/testfile.json",  # noqa pylint: disable=line-too-long
                 },
                 {
                     "accountId": "123456789012",
