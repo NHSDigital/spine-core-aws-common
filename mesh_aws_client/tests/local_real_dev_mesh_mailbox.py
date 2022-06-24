@@ -1,7 +1,6 @@
 """ Testing the mailbox functionality, including chunking and streaming """
 from unittest import mock
 from moto import mock_s3, mock_ssm
-import gzip
 import boto3
 from spine_aws_common.logger import Logger
 
@@ -169,7 +168,7 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
     @mock_s3
     def test_fetch_chunk(self):
         """Test fetching a chunk"""
-
+        # pylint: disable=too-many-locals
         s3_client = boto3.client("s3", region_name="eu-west-2")
         ssm_client = boto3.client("ssm", region_name="eu-west-2")
         self.setup_mock_aws_environment(s3_client, ssm_client)
@@ -263,7 +262,6 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
         )
         # print(response)
 
-
     @mock_ssm
     @mock_s3
     def test_poll_messages(self):
@@ -275,7 +273,7 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
         mailbox = MeshMailbox(
             logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
         )
-        response, message_list = mailbox.list_messages()
+        _, message_list = mailbox.list_messages()
         old_mailbox1 = OldMeshMailbox(
             logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
         )
@@ -307,13 +305,13 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
         )
         old_mailbox2.send_chunk(msg2)
 
-        response_pre_acknowledge, message_list_pre_acknowledge = mailbox.list_messages()
+        _, message_list_pre_acknowledge = mailbox.list_messages()
         first_message_id = message_list_pre_acknowledge[0]
 
         self.assertIn(first_message_id, message_list_pre_acknowledge)
 
         mailbox.acknowledge_message(first_message_id)
-        response_post_acknowledge, message_list_post_acknowledge = mailbox.list_messages()
+        _, message_list_post_acknowledge = mailbox.list_messages()
         self.assertNotIn(first_message_id, message_list_post_acknowledge)
 
         # old_mailbox1 = OldMeshMailbox(
@@ -322,7 +320,7 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
         # old_message_list = old_mailbox1.mesh_client.list_messages()
 
 
-## compression example
+# # compression example
 # with requests.get(url, stream=True, verify=False) as r:
 #     if save_file_path.endswith('gz'):
 #         compressor = zlib.compressobj(9, zlib.DEFLATED, zlib.MAX_WBITS | 16)
