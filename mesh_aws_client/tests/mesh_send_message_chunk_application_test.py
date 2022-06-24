@@ -104,7 +104,7 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
                 "src_mailbox": "MESH-TEST2",
                 "dest_mailbox": "MESH-TEST1",
                 "workflow_id": "TESTWORKFLOW",
-                "bucket": f"{self.environment}-supplementary-data",
+                "bucket": f"{self.environment}-mesh",
                 "key": "outbound/testfile.json",
                 "chunk": False,
                 "chunk_number": 1,
