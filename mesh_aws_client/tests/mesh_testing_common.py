@@ -99,17 +99,17 @@ class MeshTestingCommon:
         # Setup mapping
         ssm_client.put_parameter(
             Name=f"/{environment}/mesh/mapping/"
-            + f"{environment}-supplementary-data/outbound/src_mailbox",
+            + f"{environment}-mesh/MESH-TEST2/outbound/src_mailbox",
             Value="MESH-TEST2",
         )
         ssm_client.put_parameter(
             Name=f"/{environment}/mesh/mapping/"
-            + f"{environment}-supplementary-data/outbound/dest_mailbox",
+            + f"{environment}-mesh/MESH-TEST2/outbound/dest_mailbox",
             Value="MESH-TEST1",
         )
         ssm_client.put_parameter(
             Name=f"/{environment}/mesh/mapping/"
-            + f"{environment}-supplementary-data/outbound/workflow_id",
+            + f"{environment}-mesh/MESH-TEST2/outbound/workflow_id",
             Value="TESTWORKFLOW",
         )
         # Setup secrets

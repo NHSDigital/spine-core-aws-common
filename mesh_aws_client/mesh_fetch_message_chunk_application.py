@@ -77,6 +77,7 @@ class MeshFetchMessageChunkApplication(LambdaApplication):  # pylint:
 
     def _upload_part_to_s3(self, s3_client, buffer, s3_bucket, s3_key):
         """Upload a part to S3 and check response"""
+        # TODO IMPORTANT! need to do part_overflow_{message_id}.tmp to s3 bucket for chunked messages
         response = s3_client.upload_part(
             Body=buffer,
             Bucket=s3_bucket,

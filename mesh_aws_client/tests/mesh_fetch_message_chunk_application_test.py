@@ -88,9 +88,9 @@ class TestMeshFetchMessageChunkApplication(MeshTestCase):
             response = self.app.main(
                 event=mock_input, context=MeshTestingCommon.CONTEXT
             )
-        except Exception as e:  # pylint: disable=broad-except
+        except Exception as exception:  # pylint: disable=broad-except
             # need to fail happy pass on any exception
-            self.fail(f"Invocation crashed with Exception {str(e)}")
+            self.fail(f"Invocation crashed with Exception {str(exception)}")
 
         # print(response)
 

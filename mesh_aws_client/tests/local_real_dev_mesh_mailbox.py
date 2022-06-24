@@ -1,15 +1,13 @@
 """ Testing the mailbox functionality, including chunking and streaming """
+from http import HTTPStatus
+import json
 from unittest import mock
 from moto import mock_s3, mock_ssm
-import gzip
 import boto3
 from spine_aws_common.logger import Logger
 
 from mesh_aws_client.tests.mesh_testing_common import MeshTestCase, MeshTestingCommon
-from mesh_aws_client import (
-    MeshMailbox,
-    OldMeshMailbox,
-)  # , OldMeshMessage  # MeshMessage
+from mesh_aws_client import MeshMailbox, OldMeshMailbox, OldMeshMessage, MeshMessage
 
 from mesh_aws_client.mesh_fetch_message_chunk_application import (
     MeshFetchMessageChunkApplication,
@@ -149,24 +147,96 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
             Overwrite=True,
         )
 
-    @mock_ssm
-    @mock_s3
-    def test_handshake(self):
-        """Test handshake against real MESH server"""
-        s3_client = boto3.client("s3", region_name="eu-west-2")
-        ssm_client = boto3.client("ssm", region_name="eu-west-2")
-        self.setup_mock_aws_environment(s3_client, ssm_client)
-        logger = Logger()
-        logger.process_name = f"{self.environment}_test_handshake"
-        mailbox = MeshMailbox(
-            logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
-        )
-        response = mailbox.handshake()
-        self.assertEqual(response, 200)
+    # @mock_ssm
+    # @mock_s3
+    # def test_handshake(self):
+    #     """Test handshake against real MESH server"""
+    #     s3_client = boto3.client("s3", region_name="eu-west-2")
+    #     ssm_client = boto3.client("ssm", region_name="eu-west-2")
+    #     self.setup_mock_aws_environment(s3_client, ssm_client)
+    #     logger = Logger()
+    #     logger.process_name = f"{self.environment}_test_handshake"
+    #     mailbox = MeshMailbox(
+    #         logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
+    #     )
+    #     response = mailbox.handshake()
+    #     self.assertEqual(response, 200)
 
     @mock_ssm
     @mock_s3
-    def test_fetch_chunk(self):
+    @mock.patch.object(MeshFetchMessageChunkApplication, "_create_new_internal_id")
+    def test_fetch_unchunked_file_using_app(self, mock_create_new_internal_id):
+        """Test fetching a chunk"""
+
+        s3_client = boto3.client("s3", region_name="eu-west-2")
+        ssm_client = boto3.client("ssm", region_name="eu-west-2")
+        mock_create_new_internal_id.return_value = MeshTestingCommon.KNOWN_INTERNAL_ID1
+        self.setup_mock_aws_environment(s3_client, ssm_client)
+        logger = Logger()
+        logger.process_name = f"{self.environment}_test_fetch_chunk"
+
+        old_mailbox1 = OldMeshMailbox(
+            logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
+        )
+        old_mailbox2 = OldMeshMailbox(
+            logger, mailbox="TEST-PCRM-2", environment=f"{self.environment}"
+        )
+
+        # Send a test file to the mailbox using old method
+        data = "12345\n"
+        buffer = data.encode("utf8")
+        msg = OldMeshMessage(
+            "test.dat", buffer, "TEST-PCRM-2", "MESH-UI-02", "TEST", None
+        )
+        (_, msg_object) = old_mailbox2.send_chunk(msg)
+        messages = old_mailbox1.mesh_client.list_messages()
+        message_id = msg_object.message_id
+        print(messages)
+        print(message_id)
+        mock_input = self._sample_first_input_event(message_id)
+
+        try:
+            response = self.app.main(
+                event=mock_input, context=MeshTestingCommon.CONTEXT
+            )
+        except Exception as exception:  # pylint: disable=broad-except
+            # need to fail happy pass on any exception
+            self.fail(f"Invocation crashed with Exception {str(exception)}")
+
+        print(response)
+        # Check S3 uploaded message
+        s3_bucket = self.app.mailbox.get_param(MeshMailbox.INBOUND_BUCKET)
+        s3_folder = self.app.mailbox.get_param(MeshMailbox.INBOUND_FOLDER)
+        s3_key = s3_folder + "/" if len(s3_folder) > 0 else ""
+        file_name = msg.filename
+        s3_key += file_name if len(file_name) > 0 else message_id + ".dat"
+
+        s3_object = s3_client.get_object(
+            Bucket=s3_bucket,
+            Key=s3_key,
+        )
+
+        s3_data = s3_object["Body"].read().decode("utf8")
+        # Test that the sent data to real MESH is the same data as the
+        # downloaded file from real MESH retrieved from S3
+        self.assertEqual(data, s3_data)
+
+    @staticmethod
+    def _sample_first_input_event(message_id):
+        return {
+            "statusCode": HTTPStatus.OK.value,
+            "headers": {"Content-Type": "application/json"},
+            "body": {
+                "complete": False,
+                "internal_id": MeshTestingCommon.KNOWN_INTERNAL_ID1,
+                "message_id": message_id,
+                "dest_mailbox": "MESH-UI-02",
+            },
+        }
+
+    @mock_ssm
+    @mock_s3
+    def test_fetch_chunk_using_mailbox(self):
         """Test fetching a chunk"""
 
         s3_client = boto3.client("s3", region_name="eu-west-2")
@@ -185,9 +255,11 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
         #     logger, mailbox="TEST-PCRM-2", environment=f"{self.environment}"
         # )
 
-        # Send a test file to the mailbox using old method
+        # # Send a test file to the mailbox using old method
+        # data = "12345\n"
+        # buffer = data.encode("utf8")
         # msg = OldMeshMessage(
-        #     "test.dat", b"12345", "TEST-PCRM-2", "MESH-UI-02", "TEST", None
+        #     "test.dat", buffer, "TEST-PCRM-2", "MESH-UI-02", "TEST", None
         # )
         # old_mailbox2.send_chunk(msg)
 
@@ -261,10 +333,10 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
             Bucket=s3_bucket, Key=s3_key, ChecksumMode="ENABLED"
         )
 
-        # print(response)
+        print(response)
 
 
-## compression example
+# # compression example
 # with requests.get(url, stream=True, verify=False) as r:
 #     if save_file_path.endswith('gz'):
 #         compressor = zlib.compressobj(9, zlib.DEFLATED, zlib.MAX_WBITS | 16)

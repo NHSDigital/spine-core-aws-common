@@ -90,6 +90,8 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
             self.environment, ssm_client
         )
 
+        # TODO
+
         response = {"statusCode": 200}
         expected_return_code = {"statusCode": 200}
         self.assertEqual(response, {**response, **expected_return_code})
@@ -104,7 +106,7 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
                 "src_mailbox": "MESH-TEST2",
                 "dest_mailbox": "MESH-TEST1",
                 "workflow_id": "TESTWORKFLOW",
-                "bucket": f"{self.environment}-supplementary-data",
+                "bucket": f"{self.environment}-mesh",
                 "key": "outbound/testfile.json",
                 "chunk": False,
                 "chunk_number": 1,
