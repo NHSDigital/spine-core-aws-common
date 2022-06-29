@@ -51,7 +51,7 @@ class MeshFetchMessageChunkApplication(LambdaApplication):  # pylint:
         self.aws_current_part_id = self.input.get("aws_current_part_id", 1)
         self.aws_part_etags = self.input.get("aws_part_etags", [])
         self.chunked = self.input.get("chunked")
-        self.current_chunk = self.input.get("chunk", 1)
+        self.current_chunk = self.input.get("chunk_num", 1)
         self.message_id = self.input["message_id"]
         self.response = self.event.raw_event
 
@@ -172,7 +172,6 @@ class MeshFetchMessageChunkApplication(LambdaApplication):  # pylint:
         # get s3 bucket and key
         s3_bucket, s3_key = self._get_aws_bucket_and_key()
 
-        chunk_counter = 1
         if self.current_chunk == 1:
             # create multipart upload even if only one chunk
             self._create_multipart_upload(s3_client, s3_bucket, s3_key)
@@ -194,7 +193,7 @@ class MeshFetchMessageChunkApplication(LambdaApplication):  # pylint:
                 },
             )
 
-        is_finished = self.current_chunk >= chunk_counter if self.chunked else True
+        is_finished = not self.chunked
         if is_finished:
             self._finish_multipart_upload(s3_client, s3_bucket, s3_key)
             self.log_object.write_log(
@@ -210,7 +209,7 @@ class MeshFetchMessageChunkApplication(LambdaApplication):  # pylint:
             self.current_chunk += 1
 
         # update event to send as response
-        self.response.update({"statusCode": HTTPStatus.OK.value})
+        self.response.update({"statusCode": self.http_response.status_code})
         self.response["body"].update(
             {
                 "complete": is_finished,
@@ -219,6 +218,7 @@ class MeshFetchMessageChunkApplication(LambdaApplication):  # pylint:
                 "aws_current_part_id": self.aws_current_part_id,
                 "aws_part_etags": self.aws_part_etags,
                 "internal_id": self.internal_id,
+                "file_name": self.http_response.headers["Mex-Filename"],
             }
         )
 

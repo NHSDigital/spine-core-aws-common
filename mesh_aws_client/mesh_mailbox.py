@@ -205,9 +205,13 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         mesh_url = self.params[MeshMailbox.MESH_URL]
 
         # if chunk number = 1, get first part
-        url = f"{mesh_url}/messageexchange/{self.mailbox}/inbox/{message_id}"
-        # otherwise get nth part
-
+        if chunk_num == 1:
+            url = f"{mesh_url}/messageexchange/{self.mailbox}/inbox/{message_id}"
+        else:
+            url = (
+                f"{mesh_url}/messageexchange/{self.mailbox}/inbox/{message_id}"
+                + f"/{chunk_num}"
+            )
         response = session.get(url, stream=True)
         response.raw.decode_content = True
         return response
