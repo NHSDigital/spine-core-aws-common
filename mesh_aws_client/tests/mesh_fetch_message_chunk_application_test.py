@@ -149,7 +149,7 @@ class TestMeshFetchMessageChunkApplication(MeshTestCase):
             data2 += "1234567890"
         data2_length = len(data2)
 
-        # Mock responses from MESH server
+        # Mock responses from MESH server TODO refactor!
         mock_response.get(
             f"/messageexchange/MESH-TEST1/inbox/{MeshTestingCommon.KNOWN_MESSAGE_ID1}",
             text=data1,
