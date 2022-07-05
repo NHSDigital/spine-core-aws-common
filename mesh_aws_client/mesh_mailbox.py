@@ -18,7 +18,8 @@ from .mesh_common import MeshCommon
 class MeshMessage(NamedTuple):
     """Named tuple for holding Mesh Message info"""
 
-    data_stream = None
+    file_name: str = None
+    data: bytearray = None
     src_mailbox: str = None
     dest_mailbox: str = None
     workflow_id: str = None
@@ -187,17 +188,30 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         """
         return self.handshake()
 
-    @staticmethod
-    def send_chunk_stream(
-        # self,
-        # mesh_message_object: MeshMessage,
-        # chunk: bool = False,
-        # chunk_size: int = MeshCommon.DEFAULT_CHUNK_SIZE,
-        # chunk_num: int = 1,
+    def send_chunk(
+        self,
+        mesh_message_object: MeshMessage,
+        message_id: str = None,
+        chunk: bool = False,
+        chunk_size: int = MeshCommon.DEFAULT_CHUNK_SIZE,
+        chunk_num: int = 1,
     ):
         """Send a chunk from a stream"""
         # override mailbox dest_mailbox if provided in message_object
-        return HTTPStatus.NOT_IMPLEMENTED.value
+        session = self._setup_session()
+        session.headers["Mex-From"] = mesh_message_object.src_mailbox
+        session.headers["Mex-To"] = mesh_message_object.dest_mailbox
+        session.headers["Mex-WorkFlowID"] = mesh_message_object.workflow_id
+        session.headers["Mex-FileName"] = mesh_message_object.file_name
+        session.headers["data"] = mesh_message_object.data
+        mesh_url = self.params[MeshMailbox.MESH_URL]
+        if chunk_num == 1:
+            url = f"{mesh_url}/messageexchange/{self.mailbox}/outbox/"
+        else:
+            url = f"{mesh_url}/messageexchange/{self.mailbox}/outbox/{message_id}/{chunk_num}"
+        response  = session.post(mesh_url, data=mesh_message_object.data)
+        # return HTTPStatus.NOT_IMPLEMENTED.value
+        return response
 
     def get_chunk(self, message_id, chunk_num=1):
         """Return a response object for a MESH chunk"""
