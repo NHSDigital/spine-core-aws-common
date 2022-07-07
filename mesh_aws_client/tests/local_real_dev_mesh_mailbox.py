@@ -122,6 +122,21 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
             Overwrite=True,
         )
         ssm_client.put_parameter(
+            Name=f"/{self.environment}/mesh/mailboxes/MESH-UI-01/MAILBOX_PASSWORD",
+            Value="pwd123456",
+            Overwrite=True,
+        )
+        ssm_client.put_parameter(
+            Name=f"/{self.environment}/mesh/mailboxes/MESH-UI-01/INBOUND_BUCKET",
+            Value=f"{self.environment}-mesh",
+            Overwrite=True,
+        )
+        ssm_client.put_parameter(
+            Name=f"/{self.environment}/mesh/mailboxes/MESH-UI-01/INBOUND_FOLDER",
+            Value="inbound-MESH-UI-02",
+            Overwrite=True,
+        )
+        ssm_client.put_parameter(
             Name=f"/{self.environment}/mesh/mailboxes/TEST-PCRM-2/MAILBOX_PASSWORD",
             Value="password",
             Overwrite=True,
@@ -170,35 +185,32 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
         ssm_client = boto3.client("ssm", region_name="eu-west-2")
         self.setup_mock_aws_environment(s3_client, ssm_client)
         logger = Logger()
-        mailbox = MeshMailbox(
+
+        dest_mailbox = MeshMailbox(
+            logger, mailbox="MESH-UI-01", environment=f"{self.environment}"
+        )
+
+        src_mailbox = MeshMailbox(
             logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
         )
-        # old_mailbox2 = OldMeshMailbox(
-        #     logger, mailbox="TEST-PCRM-2", environment=f"{self.environment}"
-        # )
 
-        # Send a test file to the mailbox using old method
         msg1 = MeshMessage(
-            "test.dat", b"12345", "TEST-PCRM-2", "MESH-UI-02", "TEST", None
+            file_name="test.dat", data=b"12345", src_mailbox="MESH-UI-02", dest_mailbox="MESH-UI-01", workflow_id="TEST", message_id=None
         )
-        mailbox.send_chunk(mesh_message_object=msg1)
-        # old_mailbox2.send_chunk(msg1)
-        # msg2 = OldMeshMessage(
-        #     "test.dat", b"67891", "TEST-PCRM-2", "MESH-UI-02", "TEST", None
-        # )
-        # old_mailbox2.send_chunk(msg2)
 
-        _, message_list_pre_acknowledge = mailbox.list_messages()
+        src_mailbox.send_chunk(mesh_message_object=msg1)
+
+        _, message_list_pre_acknowledge = dest_mailbox.list_messages()
         first_message_id = message_list_pre_acknowledge[0]
 
         self.assertIn(first_message_id, message_list_pre_acknowledge)
 
-        mailbox.acknowledge_message(first_message_id)
-        _, message_list_post_acknowledge = mailbox.list_messages()
+        dest_mailbox.acknowledge_message(first_message_id)
+        _, message_list_post_acknowledge = dest_mailbox.list_messages()
         self.assertNotIn(first_message_id, message_list_post_acknowledge)
 
         # old_mailbox1 = OldMeshMailbox(
-        #     logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
+        #     logger, dest_mailbox="MESH-UI-02", environment=f"{self.environment}"
         # )
         # old_message_list = old_mailbox1.mesh_client.list_messages()
 

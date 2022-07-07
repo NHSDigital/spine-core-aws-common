@@ -203,14 +203,12 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         session.headers["Mex-To"] = mesh_message_object.dest_mailbox
         session.headers["Mex-WorkFlowID"] = mesh_message_object.workflow_id
         session.headers["Mex-FileName"] = mesh_message_object.file_name
-        session.headers["data"] = mesh_message_object.data
         mesh_url = self.params[MeshMailbox.MESH_URL]
         if chunk_num == 1:
             url = f"{mesh_url}/messageexchange/{self.mailbox}/outbox/"
         else:
             url = f"{mesh_url}/messageexchange/{self.mailbox}/outbox/{message_id}/{chunk_num}"
-        response  = session.post(mesh_url, data=mesh_message_object.data)
-        # return HTTPStatus.NOT_IMPLEMENTED.value
+        response  = session.post(url, data=mesh_message_object.data)
         return response
 
     def get_chunk(self, message_id, chunk_num=1):
