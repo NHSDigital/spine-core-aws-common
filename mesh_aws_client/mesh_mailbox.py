@@ -201,11 +201,13 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         session = self._setup_session()
         session.headers["Mex-From"] = mesh_message_object.src_mailbox
         session.headers["Mex-To"] = mesh_message_object.dest_mailbox
-        session.headers["Mex-WorkFlowID"] = mesh_message_object.workflow_id
+        session.headers["Mex-WorkflowID"] = mesh_message_object.workflow_id
         session.headers["Mex-FileName"] = mesh_message_object.file_name
+        session.headers["Content-Type"] = "application/octet-stream"
+        session.headers["Mex-MessageType"] = "DATA"
         mesh_url = self.params[MeshMailbox.MESH_URL]
         if chunk_num == 1:
-            url = f"{mesh_url}/messageexchange/{self.mailbox}/outbox/"
+            url = f"{mesh_url}/messageexchange/{self.mailbox}/outbox"
         else:
             url = f"{mesh_url}/messageexchange/{self.mailbox}/outbox/{message_id}/{chunk_num}"
         response  = session.post(url, data=mesh_message_object.data)
