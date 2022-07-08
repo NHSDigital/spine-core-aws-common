@@ -191,9 +191,9 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
     def send_chunk(
         self,
         mesh_message_object: MeshMessage,
-        message_id: str = None,
         chunk: bool = False,
         chunk_size: int = MeshCommon.DEFAULT_CHUNK_SIZE,
+        number_of_chunks: int = 1,
         chunk_num: int = 1,
     ):
         """Send a chunk from a stream"""
@@ -203,13 +203,15 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         session.headers["Mex-To"] = mesh_message_object.dest_mailbox
         session.headers["Mex-WorkflowID"] = mesh_message_object.workflow_id
         session.headers["Mex-FileName"] = mesh_message_object.file_name
+        session.headers["Mex-Chunk-Range"] = f"{chunk_num}:{number_of_chunks}"
         session.headers["Content-Type"] = "application/octet-stream"
-        session.headers["Mex-MessageType"] = "DATA"
+
         mesh_url = self.params[MeshMailbox.MESH_URL]
         if chunk_num == 1:
+            session.headers["Mex-MessageType"] = "DATA"
             url = f"{mesh_url}/messageexchange/{self.mailbox}/outbox"
         else:
-            url = f"{mesh_url}/messageexchange/{self.mailbox}/outbox/{message_id}/{chunk_num}"
+            url = f"{mesh_url}/messageexchange/{self.mailbox}/outbox/{mesh_message_object.message_id}/{chunk_num}"
         response  = session.post(url, data=mesh_message_object.data)
         return response
 

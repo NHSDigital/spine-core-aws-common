@@ -1,4 +1,5 @@
 """ Testing the mailbox functionality, including chunking and streaming """
+import json
 from unittest import mock
 from moto import mock_s3, mock_ssm
 import boto3
@@ -199,6 +200,50 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
         )
 
         src_mailbox.send_chunk(mesh_message_object=msg1)
+
+        _, message_list_pre_acknowledge = dest_mailbox.list_messages()
+        first_message_id = message_list_pre_acknowledge[0]
+
+        self.assertIn(first_message_id, message_list_pre_acknowledge)
+
+        dest_mailbox.acknowledge_message(first_message_id)
+        _, message_list_post_acknowledge = dest_mailbox.list_messages()
+        self.assertNotIn(first_message_id, message_list_post_acknowledge)
+
+    @mock_ssm
+    @mock_s3
+    def test_send_multi_chunk_message(self):
+        """Test sending a single chunk message"""
+        s3_client = boto3.client("s3", region_name="eu-west-2")
+        ssm_client = boto3.client("ssm", region_name="eu-west-2")
+        self.setup_mock_aws_environment(s3_client, ssm_client)
+        logger = Logger()
+
+        dest_mailbox = MeshMailbox(
+            logger, mailbox="MESH-UI-01", environment=f"{self.environment}"
+        )
+
+        src_mailbox = MeshMailbox(
+            logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
+        )
+        # s3_10 = read first 10 bytes
+        # assert s3_10 is 10 bytes long
+
+        msg1_chunk1 = MeshMessage(
+            file_name="test.dat", data=b"1234567891", src_mailbox="MESH-UI-02", dest_mailbox="MESH-UI-01",
+            workflow_id="TEST", message_id=None
+        )
+
+        send_response = src_mailbox.send_chunk(mesh_message_object=msg1_chunk1, number_of_chunks=2)
+
+        sent_text_dict = send_response.text
+        sent_dict = json.loads(sent_text_dict)
+        msg1_id = sent_dict['messageID']
+        msg1_chunk2 = MeshMessage(
+            file_name="test.dat", data=b"123", src_mailbox="MESH-UI-02", dest_mailbox="MESH-UI-01",
+            workflow_id="TEST", message_id=msg1_id
+        )
+        send_response_chunk2 = src_mailbox.send_chunk(mesh_message_object=msg1_chunk2, number_of_chunks=2, chunk_num=2)
 
         _, message_list_pre_acknowledge = dest_mailbox.list_messages()
         first_message_id = message_list_pre_acknowledge[0]
