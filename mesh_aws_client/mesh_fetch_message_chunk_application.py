@@ -17,7 +17,9 @@ from .mesh_common import (
 from .mesh_mailbox import MeshMailbox
 
 
-class MeshFetchMessageChunkApplication(LambdaApplication):  # pylint:
+class MeshFetchMessageChunkApplication(
+    LambdaApplication
+):  # pylint: disable=too-many-instance-attributes
     """
     MESH API Lambda for sending a message
     """
