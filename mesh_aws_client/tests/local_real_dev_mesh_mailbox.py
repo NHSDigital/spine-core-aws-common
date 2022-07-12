@@ -88,18 +88,21 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
     def setup_mock_aws_environment(self, s3_client, ssm_client):
         """Setup standard environment for tests"""
         location = {"LocationConstraint": "eu-west-2"}
-        s3_client.create_bucket(
-            Bucket=f"{self.environment}-mesh",
-            CreateBucketConfiguration=location,
-        )
-        file_content = "123456789012345678901234567890123"
-        s3_client.put_object(
-            Bucket=f"{self.environment}-mesh",
-            Key="inbound/testfile.json",
-            Body=file_content,
-        )
+        # s3_client.create_bucket(
+        #     Bucket=f"{self.environment}-mesh",
+        #     CreateBucketConfiguration=location,
+        # )
+        # file_content = "123456789012345678901234567890123"
+        # s3_client.put_object(
+        #     Bucket=f"{self.environment}-mesh",
+        #     Key="inbound/testfile.json",
+        #     Body=file_content,
+        # )
         MeshTestingCommon.setup_mock_aws_ssm_parameter_store(
             self.environment, ssm_client
+        )
+        MeshTestingCommon.setup_mock_aws_s3_buckets(
+            self.environment, s3_client
         )
         # Override with local dev spine mailboxes
         ssm_client.put_parameter(
@@ -228,22 +231,54 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
         )
         # s3_10 = read first 10 bytes
         # assert s3_10 is 10 bytes long
-
-        msg1_chunk1 = MeshMessage(
-            file_name="test.dat", data=b"1234567891", src_mailbox="MESH-UI-02", dest_mailbox="MESH-UI-01",
+        byte_range_0_10 = f"bytes=0-10"
+        s3_object_0_10 = s3_client.get_object(Bucket=f"{self.environment}-mesh", Key="MESH-TEST2/outbound/testfile.json", Range=byte_range_0_10)
+        s3_data_0_10 = s3_object_0_10["Body"].read().decode("utf8")
+        self.assertEqual("12345678901", s3_data_0_10)
+        # s3_file = s3_bucket.objects[0]
+        msg_chunk_0_10 = MeshMessage(
+            file_name="test.dat", data=s3_data_0_10, src_mailbox="MESH-UI-02", dest_mailbox="MESH-UI-01",
             workflow_id="TEST", message_id=None
         )
+        send_response_0_10 = src_mailbox.send_chunk(mesh_message_object=msg_chunk_0_10, number_of_chunks=4)
 
-        send_response = src_mailbox.send_chunk(mesh_message_object=msg1_chunk1, number_of_chunks=2)
-
-        sent_text_dict = send_response.text
+        sent_text_dict = send_response_0_10.text
         sent_dict = json.loads(sent_text_dict)
         msg1_id = sent_dict['messageID']
-        msg1_chunk2 = MeshMessage(
-            file_name="test.dat", data=b"123", src_mailbox="MESH-UI-02", dest_mailbox="MESH-UI-01",
+
+        byte_range_11_20 = f"bytes=11-20"
+        s3_object_11_20 = s3_client.get_object(Bucket=f"{self.environment}-mesh", Key="MESH-TEST2/outbound/testfile.json", Range=byte_range_11_20)
+        s3_data_11_20 = s3_object_11_20["Body"].read().decode("utf8")
+        self.assertEqual("2345678901", s3_data_11_20)
+        msg_chunk_11_20 = MeshMessage(
+            file_name="test.dat", data=s3_data_11_20, src_mailbox="MESH-UI-02", dest_mailbox="MESH-UI-01",
             workflow_id="TEST", message_id=msg1_id
         )
-        send_response_chunk2 = src_mailbox.send_chunk(mesh_message_object=msg1_chunk2, number_of_chunks=2, chunk_num=2)
+        send_response_11_20 = src_mailbox.send_chunk(mesh_message_object=msg_chunk_11_20, number_of_chunks=4, chunk_num=2)
+
+        byte_range_21_30 = f"bytes=21-30"
+        s3_object_21_30 = s3_client.get_object(Bucket=f"{self.environment}-mesh",
+                                               Key="MESH-TEST2/outbound/testfile.json", Range=byte_range_21_30)
+        s3_data_21_30 = s3_object_21_30["Body"].read().decode("utf8")
+        self.assertEqual("2345678901", s3_data_21_30)
+        msg_chunk_21_30 = MeshMessage(
+            file_name="test.dat", data=s3_data_21_30, src_mailbox="MESH-UI-02", dest_mailbox="MESH-UI-01",
+            workflow_id="TEST", message_id=msg1_id
+        )
+        send_response_21_30 = src_mailbox.send_chunk(mesh_message_object=msg_chunk_21_30, number_of_chunks=4,
+                                                     chunk_num=3)
+
+        byte_range_31_40 = f"bytes=31-32"
+        s3_object_31_40 = s3_client.get_object(Bucket=f"{self.environment}-mesh",
+                                               Key="MESH-TEST2/outbound/testfile.json", Range=byte_range_31_40)
+        s3_data_31_40 = s3_object_31_40["Body"].read().decode("utf8")
+        self.assertEqual("23", s3_data_31_40)
+        msg_chunk_31_40 = MeshMessage(
+            file_name="test.dat", data=s3_data_31_40, src_mailbox="MESH-UI-02", dest_mailbox="MESH-UI-01",
+            workflow_id="TEST", message_id=msg1_id
+        )
+        send_response_21_30 = src_mailbox.send_chunk(mesh_message_object=msg_chunk_31_40, number_of_chunks=4,
+                                                     chunk_num=4)
 
         _, message_list_pre_acknowledge = dest_mailbox.list_messages()
         first_message_id = message_list_pre_acknowledge[0]
