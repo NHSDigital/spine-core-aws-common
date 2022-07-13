@@ -1,5 +1,6 @@
 """ Testing the mailbox functionality, including chunking and streaming """
 import json
+import time
 from unittest import mock
 from moto import mock_s3, mock_ssm
 import boto3
@@ -193,6 +194,7 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
         dest_mailbox = MeshMailbox(
             logger, mailbox="MESH-UI-01", environment=f"{self.environment}"
         )
+        _, message_list_1 = dest_mailbox.list_messages()
 
         src_mailbox = MeshMailbox(
             logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
@@ -203,15 +205,19 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
         )
 
         src_mailbox.send_chunk(mesh_message_object=msg1)
+        _, message_list_2 = dest_mailbox.list_messages()
 
         _, message_list_pre_acknowledge = dest_mailbox.list_messages()
         first_message_id = message_list_pre_acknowledge[0]
 
         self.assertIn(first_message_id, message_list_pre_acknowledge)
 
-        dest_mailbox.acknowledge_message(first_message_id)
+        for id in message_list_pre_acknowledge:
+            acknowledge_response = dest_mailbox.acknowledge_message(id)
         _, message_list_post_acknowledge = dest_mailbox.list_messages()
         self.assertNotIn(first_message_id, message_list_post_acknowledge)
+        _, message_list_3 = dest_mailbox.list_messages()
+        end_length = len(message_list_3)
 
     @mock_ssm
     @mock_s3
@@ -225,35 +231,44 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
         dest_mailbox = MeshMailbox(
             logger, mailbox="MESH-UI-01", environment=f"{self.environment}"
         )
-
+        _, message_list_1 = dest_mailbox.list_messages()
+        _, message_list_start = dest_mailbox.list_messages()
+        for id in message_list_start:
+            acknowledge_response = dest_mailbox.acknowledge_message(id)
+        _, message_list_2 = dest_mailbox.list_messages()
         src_mailbox = MeshMailbox(
             logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
         )
         # s3_10 = read first 10 bytes
         # assert s3_10 is 10 bytes long
+        _, message_list_3 = dest_mailbox.list_messages()
         byte_range_0_10 = f"bytes=0-10"
         s3_object_0_10 = s3_client.get_object(Bucket=f"{self.environment}-mesh", Key="MESH-TEST2/outbound/testfile.json", Range=byte_range_0_10)
         s3_data_0_10 = s3_object_0_10["Body"].read().decode("utf8")
         self.assertEqual("12345678901", s3_data_0_10)
         # s3_file = s3_bucket.objects[0]
+        _, message_list_4 = dest_mailbox.list_messages()
         msg_chunk_0_10 = MeshMessage(
             file_name="test.dat", data=s3_data_0_10, src_mailbox="MESH-UI-02", dest_mailbox="MESH-UI-01",
             workflow_id="TEST", message_id=None
         )
+        _, message_list_5 = dest_mailbox.list_messages()
         send_response_0_10 = src_mailbox.send_chunk(mesh_message_object=msg_chunk_0_10, number_of_chunks=4)
-
+        _, message_list_6 = dest_mailbox.list_messages()
         sent_text_dict = send_response_0_10.text
         sent_dict = json.loads(sent_text_dict)
         msg1_id = sent_dict['messageID']
-
+        _, message_list_7 = dest_mailbox.list_messages()
         byte_range_11_20 = f"bytes=11-20"
         s3_object_11_20 = s3_client.get_object(Bucket=f"{self.environment}-mesh", Key="MESH-TEST2/outbound/testfile.json", Range=byte_range_11_20)
         s3_data_11_20 = s3_object_11_20["Body"].read().decode("utf8")
         self.assertEqual("2345678901", s3_data_11_20)
+        _, message_list_8 = dest_mailbox.list_messages()
         msg_chunk_11_20 = MeshMessage(
             file_name="test.dat", data=s3_data_11_20, src_mailbox="MESH-UI-02", dest_mailbox="MESH-UI-01",
             workflow_id="TEST", message_id=msg1_id
         )
+        _, message_list_9 = dest_mailbox.list_messages()
         send_response_11_20 = src_mailbox.send_chunk(mesh_message_object=msg_chunk_11_20, number_of_chunks=4, chunk_num=2)
 
         byte_range_21_30 = f"bytes=21-30"
@@ -261,12 +276,14 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
                                                Key="MESH-TEST2/outbound/testfile.json", Range=byte_range_21_30)
         s3_data_21_30 = s3_object_21_30["Body"].read().decode("utf8")
         self.assertEqual("2345678901", s3_data_21_30)
+        _, message_list_10 = dest_mailbox.list_messages()
         msg_chunk_21_30 = MeshMessage(
             file_name="test.dat", data=s3_data_21_30, src_mailbox="MESH-UI-02", dest_mailbox="MESH-UI-01",
             workflow_id="TEST", message_id=msg1_id
         )
         send_response_21_30 = src_mailbox.send_chunk(mesh_message_object=msg_chunk_21_30, number_of_chunks=4,
                                                      chunk_num=3)
+        _, message_list_11 = dest_mailbox.list_messages()
 
         byte_range_31_40 = f"bytes=31-32"
         s3_object_31_40 = s3_client.get_object(Bucket=f"{self.environment}-mesh",
@@ -279,22 +296,113 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
         )
         send_response_21_30 = src_mailbox.send_chunk(mesh_message_object=msg_chunk_31_40, number_of_chunks=4,
                                                      chunk_num=4)
+        _, message_list_12 = dest_mailbox.list_messages()
+
+        # msg1 = MeshMessage(
+        #     file_name="test.dat", data=b"12345", src_mailbox="MESH-UI-02", dest_mailbox="MESH-UI-01", workflow_id="TEST", message_id=None
+        # )
+        _, message_list_12a = dest_mailbox.list_messages()
+        # src_mailbox.send_chunk(mesh_message_object=msg1)
+        _, message_list_13 = dest_mailbox.list_messages()
 
         _, message_list_pre_acknowledge = dest_mailbox.list_messages()
+        self.assertEqual(1, len(message_list_pre_acknowledge))
         first_message_id = message_list_pre_acknowledge[0]
+        self.assertEqual(first_message_id, msg1_id)
 
-        self.assertIn(first_message_id, message_list_pre_acknowledge)
-
-        dest_mailbox.acknowledge_message(first_message_id)
+        # self.assertIn(first_message_id, message_list_pre_acknowledge)
+        _, message_list_14 = dest_mailbox.list_messages()
+        for id in message_list_pre_acknowledge:
+            acknowledge_response = dest_mailbox.acknowledge_message(id)
+            self.assertEqual(200, acknowledge_response.status_code)
         _, message_list_post_acknowledge = dest_mailbox.list_messages()
-        self.assertNotIn(first_message_id, message_list_post_acknowledge)
+        self.assertNotIn(msg1_id, message_list_post_acknowledge)
+
+        _, message_list_15 = dest_mailbox.list_messages()
+        final_length = len(message_list_15)
 
         # old_mailbox1 = OldMeshMailbox(
         #     logger, dest_mailbox="MESH-UI-02", environment=f"{self.environment}"
         # )
         # old_message_list = old_mailbox1.mesh_client.list_messages()
 
+    @mock_ssm
+    @mock_s3
+    # @mock.patch.object(MeshFetchMessageChunkApplication, "_create_new_internal_id")
+    def test_send_chunked_file_using_app(self, mock_create_new_internal_id):
+        """Test fetching a chunk"""
 
+        s3_client = boto3.client("s3", region_name="eu-west-2")
+        ssm_client = boto3.client("ssm", region_name="eu-west-2")
+        mock_create_new_internal_id.return_value = MeshTestingCommon.KNOWN_INTERNAL_ID1
+        self.setup_mock_aws_environment(s3_client, ssm_client)
+        logger = Logger()
+        logger.process_name = f"{self.environment}_test_fetch_chunk"
+
+        mailbox = MeshMailbox(
+            logger, mailbox="MESH-UI-01", environment=f"{self.environment}"
+        )
+        # old_mailbox2 = OldMeshMailbox(
+        #     logger, mailbox="TEST-PCRM-2", environment=f"{self.environment}"
+        # )
+
+        # # Send a test file to the mailbox using old method
+        # megabyte = 1000 * 1000
+        # # mebibyte = 1024 * 1024
+        # # Create some test data
+        # data1_length = 122 * megabyte  # 20 MB (not MiB!)
+        # data1 = ""
+        # while len(data1) < data1_length:
+        #     data1 += "1234567890"
+        # data1_length = len(data1)
+        # buffer = data1.encode("utf8")
+        # msg = OldMeshMessage(
+        #     "test.dat", buffer, "TEST-PCRM-2", "MESH-UI-02", "TEST", None
+        # )
+        # (_, msg_object) = old_mailbox2.send_chunk(msg)
+        response, messages = mailbox.list_messages()
+        # print(response)
+        # print(messages)
+        self.assertEqual(response.status_code, HTTPStatus.OK.value)
+        self.assertGreater(len(messages), 0)
+        message_id = messages[0]  # msg_object.message_id
+        # print(message_id)
+        mock_input = self._sample_first_input_event(message_id)
+
+        while not mock_input["body"]["complete"]:
+            chunk_num = mock_input["body"].get("chunk_num", 1)
+            print(f">>>>>>>>>>> Chunk {chunk_num} >>>>>>>>>>>>>>>>>>>>")
+            try:
+                response = self.app.main(
+                    event=mock_input, context=MeshTestingCommon.CONTEXT
+                )
+            except Exception as exception:  # pylint: disable=broad-except
+                # need to fail happy pass on any exception
+                self.fail(f"Invocation crashed with Exception {str(exception)}")
+            mock_input = response
+            print(response)
+
+        # Check S3 uploaded message
+        s3_bucket = self.app.mailbox.get_param(MeshMailbox.INBOUND_BUCKET)
+        s3_folder = self.app.mailbox.get_param(MeshMailbox.INBOUND_FOLDER)
+        s3_key = s3_folder + "/" if len(s3_folder) > 0 else ""
+        s3_filename = response["body"]["file_name"]
+        s3_key += s3_filename
+
+        # only when complete!
+        s3_response = s3_client.get_object(
+            Bucket=s3_bucket,
+            Key=s3_key,
+        )
+        self.assertEqual(
+            s3_response["ResponseMetadata"]["HTTPStatusCode"], HTTPStatus.OK.value
+        )
+        self.assertEqual(s3_response["ContentLength"], 127926272)
+        # s3_data = s3_object["Body"].read().decode("utf8")
+        # self.assertEqual(len(s3_data), )
+        # Test that the sent data to real MESH is the same data as the
+        # downloaded file from real MESH retrieved from S3
+        # self.assertEqual(data, s3_data)
     # @mock_ssm
     # @mock_s3
     # def test_fetch_chunk(self):
