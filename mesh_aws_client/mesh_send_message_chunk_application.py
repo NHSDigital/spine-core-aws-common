@@ -1,14 +1,16 @@
 """
 Module for MESH API functionality for step functions
 """
+import json
 from http import HTTPStatus
 import os
 
 import boto3
 
+from mesh_aws_client.mesh_mailbox import MeshMailbox, MeshMessage
 from spine_aws_common import LambdaApplication
 
-from .mesh_common import MeshCommon, MeshMailbox, MeshMessage
+from mesh_aws_client.mesh_common import MeshCommon
 
 
 class MeshSendMessageChunkApplication(LambdaApplication):
@@ -62,21 +64,29 @@ class MeshSendMessageChunkApplication(LambdaApplication):
         )
         self.body = file_contents  # for testing :-(
         message_object = MeshMessage(
-            filename=os.path.basename(key),
-            body=file_contents,
+            file_name=os.path.basename(key),
+            data=file_contents,
             message_id=message_id,
             dest_mailbox=self.mailbox.dest_mailbox,
             src_mailbox=self.mailbox.mailbox,
             workflow_id=self.mailbox.workflow_id,
         )
         if file_contents:
-            (status_code, message_object) = self.mailbox.send_chunk(
+            response = self.mailbox.send_chunk(
                 mesh_message_object=message_object,
                 chunk=chunked,
                 chunk_size=chunk_size,
+                number_of_chunks=total_chunks,
                 chunk_num=current_chunk,
-            )
-            message_id = message_object.message_id
+                    )
+            status_code = response.status_code
+            # sent_text_dict = send_response_0_10.text
+            # sent_dict = json.loads(sent_text_dict)
+            # msg1_id = sent_dict['messageID']
+            message_id = json.loads(response.text)['messageID']
+
+            # message_object = response.message_object
+            # message_id = message_object.message_id
             status_code = HTTPStatus.OK.value
         else:
             status_code = HTTPStatus.NOT_FOUND.value
@@ -113,8 +123,8 @@ class MeshSendMessageChunkApplication(LambdaApplication):
             response = s3_client.get_object(Bucket=bucket, Key=key)
         else:
             # Read a chunk from file
-            start = current_chunk * chunk_size
-            end = (current_chunk + 1) * chunk_size - 1
+            start = (current_chunk-1) * chunk_size
+            end = current_chunk * chunk_size - 1
             range_spec = f"bytes={start}-{end}"
             response = s3_client.get_object(
                 Bucket=bucket, Key=key, Range=range_spec, PartNumber=current_chunk
