@@ -5,6 +5,7 @@ from http import HTTPStatus
 import os
 
 import boto3
+from botocore.errorfactory import ClientError
 
 from spine_aws_common import LambdaApplication
 
@@ -23,6 +24,10 @@ class MeshFetchMessageChunkApplication(
     """
     MESH API Lambda for sending a message
     """
+
+    MEBIBYTE = 1024 * 1024
+    MEGABYTE = 1000 * 1000
+    DEFAULT_BUFFER_SIZE = 5 * MEGABYTE
 
     def __init__(self, additional_log_config=None, load_ssm_params=False):
         """
@@ -77,10 +82,56 @@ class MeshFetchMessageChunkApplication(
         )
         return s3_bucket, s3_key
 
-    def _upload_part_to_s3(self, s3_client, buffer, s3_bucket, s3_key):
+    def _is_last_part(self, part_num):
+        content_length = int(self.http_response.headers["Content-Length"])
+        last_part = part_num > content_length / self.DEFAULT_BUFFER_SIZE
+        return last_part
+
+    def _is_last_chunk(self, chunk_num):
+        chunk_range = self.http_response.headers.get("Mex-Chunk-Range", 1)
+        number_of_chunks = int(chunk_range[2:])
+        last_chunk = chunk_num == number_of_chunks
+        return last_chunk
+
+    def _upload_part_to_s3(
+        self, s3_client, buffer, s3_bucket, s3_key, last_chunk, last_part
+    ):
         """Upload a part to S3 and check response"""
-        # TODO IMPORTANT! need to do part_overflow_{message_id}.tmp to
-        # s3 bucket for chunked messages
+
+        # check if part_overflow_{message_id}.tmp exists and pre-pend to buffer
+        filename = f"part_overflow_{self.message_id}.tmp"
+        s3_tempfile_key = os.path.basename(s3_key) + filename
+        try:
+            s3_response = s3_client.get_object(Bucket=s3_bucket, Key=s3_tempfile_key)
+            if s3_response["ResponseMetadata"]["HTTPStatusCode"] == HTTPStatus.OK.value:
+                pre_buffer = s3_response["Body"].read()
+                buffer = pre_buffer + buffer
+                self.log_object.write_log(
+                    "MESHFETCH0002b",
+                    None,
+                    {
+                        "aws_part_size": len(pre_buffer),
+                        "aws_upload_id": self.aws_upload_id,
+                    },
+                )
+            s3_client.delete_object(
+                Bucket=s3_bucket, Key=s3_tempfile_key, BypassGovernanceRetention=True
+            )
+        except ClientError:
+            # Not found
+            pass
+
+        if not (last_chunk and last_part):  # not on last chunk
+            if len(buffer) < 5 * self.MEBIBYTE:
+                # write to s3 if buffer is less than 5 MebiBytes and last part of chunk
+                if last_part:
+                    s3_client.put_object(
+                        Bucket=s3_bucket,
+                        Key=s3_tempfile_key,
+                        Body=buffer,
+                    )
+                return None, len(buffer)
+
         response = s3_client.upload_part(
             Body=buffer,
             Bucket=s3_bucket,
@@ -105,7 +156,7 @@ class MeshFetchMessageChunkApplication(
             }
         )
         self.aws_current_part_id += 1
-        return etag
+        return etag, len(buffer)
 
     def _create_multipart_upload(self, s3_client, s3_bucket, s3_key):
         """Create an S3 multipart upload"""
@@ -178,22 +229,46 @@ class MeshFetchMessageChunkApplication(
             # create multipart upload even if only one chunk
             self._create_multipart_upload(s3_client, s3_bucket, s3_key)
 
-        # read buffer bytes
+        parts_read = 0
+        part_buffer = b""
+        # read bytes into buffer
         # TODO(through gzip if gzipped)
         for buffer in self.http_response.iter_content(
-            chunk_size=self.mailbox.DEFAULT_BUFFER_SIZE
+            chunk_size=self.DEFAULT_BUFFER_SIZE
         ):
-            part_id = self.aws_current_part_id
-            etag = self._upload_part_to_s3(s3_client, buffer, s3_bucket, s3_key)
-            self.log_object.write_log(
-                "MESHFETCH0002",
-                None,
-                {
-                    "aws_part_id": part_id,
-                    "aws_upload_id": self.aws_upload_id,
-                    "etag": etag,
-                },
+            parts_read += 1
+            last_part = self._is_last_part(parts_read)
+            last_chunk = self._is_last_chunk(self.current_chunk)
+            etag, bytes_written = self._upload_part_to_s3(
+                s3_client,
+                part_buffer + buffer,
+                s3_bucket,
+                s3_key,
+                last_chunk,
+                last_part,
             )
+            if etag:
+                self.log_object.write_log(
+                    "MESHFETCH0002",
+                    None,
+                    {
+                        "aws_part_id": self.aws_current_part_id,
+                        "aws_part_size": bytes_written,
+                        "aws_upload_id": self.aws_upload_id,
+                        "etag": etag,
+                    },
+                )
+                part_buffer = b""
+            else:
+                part_buffer = buffer
+                self.log_object.write_log(
+                    "MESHFETCH0002a",
+                    None,
+                    {
+                        "aws_part_size": bytes_written,
+                        "aws_upload_id": self.aws_upload_id,
+                    },
+                )
 
         is_finished = not self.chunked
         if is_finished:
