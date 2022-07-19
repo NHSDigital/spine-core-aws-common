@@ -49,6 +49,9 @@ class MeshFetchMessageChunkApplication(
         self.current_chunk = 1
         self.message_id = None
         self.region = os.environ.get("AWS_REGION", "eu-west-2")
+        self.s3_client = None
+        self.s3_bucket = ""
+        self.s3_key = ""
 
     def initialise(self):
         """decode input event"""
@@ -72,15 +75,14 @@ class MeshFetchMessageChunkApplication(
         )
 
     def _get_aws_bucket_and_key(self):
-        s3_bucket = self.mailbox.params["INBOUND_BUCKET"]
+        self.s3_bucket = self.mailbox.params["INBOUND_BUCKET"]
         s3_folder = self.mailbox.params.get("INBOUND_FOLDER", "")
         if len(s3_folder) > 0:
             s3_folder += "/"
         file_name = self.http_response.headers["Mex-Filename"]
-        s3_key = s3_folder + (
+        self.s3_key = s3_folder + (
             file_name if len(file_name) > 0 else self.message_id + ".dat"
         )
-        return s3_bucket, s3_key
 
     def _is_last_part(self, part_num):
         content_length = int(self.http_response.headers["Content-Length"])
@@ -93,16 +95,16 @@ class MeshFetchMessageChunkApplication(
         last_chunk = chunk_num == number_of_chunks
         return last_chunk
 
-    def _upload_part_to_s3(
-        self, s3_client, buffer, s3_bucket, s3_key, last_chunk, last_part
-    ):
+    def _upload_part_to_s3(self, buffer, last_chunk, last_part):
         """Upload a part to S3 and check response"""
 
         # check if part_overflow_{message_id}.tmp exists and pre-pend to buffer
         filename = f"part_overflow_{self.message_id}.tmp"
-        s3_tempfile_key = os.path.basename(s3_key) + filename
+        s3_tempfile_key = os.path.basename(self.s3_key) + filename
         try:
-            s3_response = s3_client.get_object(Bucket=s3_bucket, Key=s3_tempfile_key)
+            s3_response = self.s3_client.get_object(
+                Bucket=self.s3_bucket, Key=s3_tempfile_key
+            )
             if s3_response["ResponseMetadata"]["HTTPStatusCode"] == HTTPStatus.OK.value:
                 pre_buffer = s3_response["Body"].read()
                 buffer = pre_buffer + buffer
@@ -114,8 +116,10 @@ class MeshFetchMessageChunkApplication(
                         "aws_upload_id": self.aws_upload_id,
                     },
                 )
-            s3_client.delete_object(
-                Bucket=s3_bucket, Key=s3_tempfile_key, BypassGovernanceRetention=True
+            self.s3_client.delete_object(
+                Bucket=self.s3_bucket,
+                Key=s3_tempfile_key,
+                BypassGovernanceRetention=True,
             )
         except ClientError:
             # Not found
@@ -125,17 +129,17 @@ class MeshFetchMessageChunkApplication(
             if len(buffer) < 5 * self.MEBIBYTE:
                 # write to s3 if buffer is less than 5 MebiBytes and last part of chunk
                 if last_part:
-                    s3_client.put_object(
-                        Bucket=s3_bucket,
+                    self.s3_client.put_object(
+                        Bucket=self.s3_bucket,
                         Key=s3_tempfile_key,
                         Body=buffer,
                     )
                 return None, len(buffer)
 
-        response = s3_client.upload_part(
+        response = self.s3_client.upload_part(
             Body=buffer,
-            Bucket=s3_bucket,
-            Key=s3_key,
+            Bucket=self.s3_bucket,
+            Key=self.s3_key,
             PartNumber=self.aws_current_part_id,
             ContentLength=len(buffer),
             UploadId=self.aws_upload_id,
@@ -145,7 +149,8 @@ class MeshFetchMessageChunkApplication(
             self.response.update({"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR.value})
             # logpoint
             raise AwsFailedToPerformError(
-                f'Failed to partial upload key="{s3_key}" into bucket="{s3_bucket}"'
+                f'Failed to partial upload key="{self.s3_key}" into'
+                + f' bucket="{self.s3_bucket}"'
                 + f' part_id="{self.aws_current_part_id}" to save from MESH'
             )
         etag = response["ETag"]
@@ -158,11 +163,11 @@ class MeshFetchMessageChunkApplication(
         self.aws_current_part_id += 1
         return etag, len(buffer)
 
-    def _create_multipart_upload(self, s3_client, s3_bucket, s3_key):
+    def _create_multipart_upload(self):
         """Create an S3 multipart upload"""
-        multipart_upload = s3_client.create_multipart_upload(
-            Bucket=s3_bucket,
-            Key=s3_key,
+        multipart_upload = self.s3_client.create_multipart_upload(
+            Bucket=self.s3_bucket,
+            Key=self.s3_key,
         )
         self.aws_upload_id = multipart_upload["UploadId"]
         # check return code
@@ -173,16 +178,16 @@ class MeshFetchMessageChunkApplication(
             self.response.update({"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR.value})
             # logpoint
             raise AwsFailedToPerformError(
-                f'Failed to create multi-part upload key="{s3_key}" into '
-                + f'bucket="{s3_bucket}"'
+                f'Failed to create multi-part upload key="{self.s3_key}" into '
+                + f'bucket="{self.s3_bucket}"'
                 + f' aws_upload_id="{self.aws_upload_id}" to save from MESH'
             )
 
-    def _finish_multipart_upload(self, s3_client, s3_bucket, s3_key):
+    def _finish_multipart_upload(self):
         """Complete the s3 multipart upload"""
-        response = s3_client.complete_multipart_upload(
-            Bucket=s3_bucket,
-            Key=s3_key,
+        response = self.s3_client.complete_multipart_upload(
+            Bucket=self.s3_bucket,
+            Key=self.s3_key,
             UploadId=self.aws_upload_id,
             MultipartUpload={"Parts": self.aws_part_etags},
         )
@@ -191,8 +196,8 @@ class MeshFetchMessageChunkApplication(
             self.response.update({"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR.value})
             # logpoint
             raise AwsFailedToPerformError(
-                f'Failed to complete multi-part upload key="{s3_key}"'
-                + f'into bucket="{s3_bucket}"'
+                f'Failed to complete multi-part upload key="{self.s3_key}"'
+                + f'into bucket="{self.s3_bucket}"'
                 + f' aws_upload_id="{self.aws_upload_id}" to save from MESH'
             )
 
@@ -200,7 +205,7 @@ class MeshFetchMessageChunkApplication(
         """
         Main body of lambda function
         """
-        s3_client = boto3.client("s3", region_name=self.region)
+        self.s3_client = boto3.client("s3", region_name=self.region)
 
         self.log_object.internal_id = self.internal_id
         self._setup_mailbox()
@@ -223,11 +228,11 @@ class MeshFetchMessageChunkApplication(
         )
 
         # get s3 bucket and key
-        s3_bucket, s3_key = self._get_aws_bucket_and_key()
+        self._get_aws_bucket_and_key()
 
         if self.current_chunk == 1:
             # create multipart upload even if only one chunk
-            self._create_multipart_upload(s3_client, s3_bucket, s3_key)
+            self._create_multipart_upload()
 
         parts_read = 0
         part_buffer = b""
@@ -240,10 +245,7 @@ class MeshFetchMessageChunkApplication(
             last_part = self._is_last_part(parts_read)
             last_chunk = self._is_last_chunk(self.current_chunk)
             etag, bytes_written = self._upload_part_to_s3(
-                s3_client,
                 part_buffer + buffer,
-                s3_bucket,
-                s3_key,
                 last_chunk,
                 last_part,
             )
@@ -272,7 +274,7 @@ class MeshFetchMessageChunkApplication(
 
         is_finished = not self.chunked
         if is_finished:
-            self._finish_multipart_upload(s3_client, s3_bucket, s3_key)
+            self._finish_multipart_upload()
             self.log_object.write_log(
                 "MESHFETCH0004", None, {"message_id": self.message_id}
             )
