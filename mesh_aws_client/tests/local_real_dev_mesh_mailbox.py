@@ -347,24 +347,6 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
             logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
         )
         response_1, message_list_1 = dest_mailbox.list_messages()
-
-        # byte_range_0_10 = f"bytes=0-10"
-        # s3_object_0_10 = s3_client.get_object(Bucket=f"{self.environment}-mesh", Key="MESH-TEST2/outbound/testfile.json", Range=byte_range_0_10)
-        # s3_data_0_10 = s3_object_0_10["Body"].read().decode("utf8")
-        # self.assertEqual("12345678901", s3_data_0_10)
-        # s3_file = s3_bucket.objects[0]
-        _, message_list_4 = dest_mailbox.list_messages()
-        # msg_chunk_0_10 = MeshMessage(
-        #     file_name="test.dat", data=s3_data_0_10, src_mailbox="MESH-UI-02", dest_mailbox="MESH-UI-01",
-        #     workflow_id="TEST", message_id=None
-        # )
-        # _, message_list_5 = dest_mailbox.list_messages()
-        # send_response_0_10 = src_mailbox.send_chunk(mesh_message_object=msg_chunk_0_10, number_of_chunks=4)
-        # _, message_list_6 = dest_mailbox.list_messages()
-        # sent_text_dict = send_response_0_10.text
-        # sent_dict = json.loads(sent_text_dict)
-        # msg1_id = sent_dict['messageID']
-
         mock_input = {
             "statusCode": HTTPStatus.OK.value,
             "headers": {"Content-Type": "application/json"},
@@ -375,7 +357,7 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
                 "workflow_id": "test_workflow",
                 "bucket": f"{self.environment}-mesh",
                 "key": "MESH-TEST2/outbound/testfile.json",
-                "chunked": True,
+                "chunked": False,
                 "chunk_number": 1,
                 "total_chunks": 1,
                 "chunk_size": 50,
@@ -384,7 +366,7 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
                 "current_byte_position": 0
             },
         }
-
+        count = 1
         while not mock_input["body"]["complete"]:
             chunk_num = mock_input["body"].get("chunk_num", 1)
             print(f">>>>>>>>>>> Chunk {chunk_num} >>>>>>>>>>>>>>>>>>>>")
@@ -395,8 +377,20 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
             except Exception as exception:  # pylint: disable=broad-except
                 # need to fail happy pass on any exception
                 self.fail(f"Invocation crashed with Exception {str(exception)}")
+            if count == 1:
+                message_id = response['body']['message_id']
+            count = count + 1
             mock_input = response
             print(response)
+
+        _, message_list_5 = dest_mailbox.list_messages()
+        len_5 = len(message_list_5)
+        self.assertIn(message_id, message_list_5)
+        for id in message_list_5:
+            acknowledge_response = dest_mailbox.acknowledge_message(id)
+            self.assertEqual(200, acknowledge_response.status_code)
+        _, message_list_6 = dest_mailbox.list_messages()
+        self.assertEqual(0, len(message_list_6))
 
     @mock_ssm
     @mock_s3
