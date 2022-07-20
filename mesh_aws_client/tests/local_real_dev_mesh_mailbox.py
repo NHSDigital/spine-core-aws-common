@@ -412,24 +412,6 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
             logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
         )
         response_1, message_list_1 = dest_mailbox.list_messages()
-
-        # byte_range_0_10 = f"bytes=0-10"
-        # s3_object_0_10 = s3_client.get_object(Bucket=f"{self.environment}-mesh", Key="MESH-TEST2/outbound/testfile.json", Range=byte_range_0_10)
-        # s3_data_0_10 = s3_object_0_10["Body"].read().decode("utf8")
-        # self.assertEqual("12345678901", s3_data_0_10)
-        # s3_file = s3_bucket.objects[0]
-        _, message_list_4 = dest_mailbox.list_messages()
-        # msg_chunk_0_10 = MeshMessage(
-        #     file_name="test.dat", data=s3_data_0_10, src_mailbox="MESH-UI-02", dest_mailbox="MESH-UI-01",
-        #     workflow_id="TEST", message_id=None
-        # )
-        # _, message_list_5 = dest_mailbox.list_messages()
-        # send_response_0_10 = src_mailbox.send_chunk(mesh_message_object=msg_chunk_0_10, number_of_chunks=4)
-        # _, message_list_6 = dest_mailbox.list_messages()
-        # sent_text_dict = send_response_0_10.text
-        # sent_dict = json.loads(sent_text_dict)
-        # msg1_id = sent_dict['messageID']
-
         mock_input = {
             "statusCode": HTTPStatus.OK.value,
             "headers": {"Content-Type": "application/json"},
@@ -449,7 +431,7 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
                 "current_byte_position": 0
             },
         }
-
+        count = 1
         while not mock_input["body"]["complete"]:
             chunk_num = mock_input["body"].get("chunk_num", 1)
             print(f">>>>>>>>>>> Chunk {chunk_num} >>>>>>>>>>>>>>>>>>>>")
@@ -460,8 +442,94 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
             except Exception as exception:  # pylint: disable=broad-except
                 # need to fail happy pass on any exception
                 self.fail(f"Invocation crashed with Exception {str(exception)}")
+            if count == 1:
+                message_id = response['body']['message_id']
+            count = count + 1
+            current_id = response['body']['message_id']
+            self.assertEqual(message_id, current_id)
             mock_input = response
             print(response)
+
+        time.sleep(1)
+        _, message_list_5 = dest_mailbox.list_messages()
+        len_5 = len(message_list_5)
+        self.assertIn(message_id, message_list_5)
+        for id in message_list_5:
+            acknowledge_response = dest_mailbox.acknowledge_message(id)
+            self.assertEqual(200, acknowledge_response.status_code)
+        _, message_list_6 = dest_mailbox.list_messages()
+        self.assertEqual(0, len(message_list_6))
+
+    # @mock_ssm
+    # @mock_s3
+    # @mock.patch.object(MeshSendMessageChunkApplication, "_create_new_internal_id")
+    # def test_send_chunked_file_using_app(self, mock_create_new_internal_id):
+    #     """Test fetching a chunk"""
+    #
+    #     s3_client = boto3.client("s3", region_name="eu-west-2")
+    #     ssm_client = boto3.client("ssm", region_name="eu-west-2")
+    #     mock_create_new_internal_id.return_value = MeshTestingCommon.KNOWN_INTERNAL_ID1
+    #     self.setup_mock_aws_environment(s3_client, ssm_client)
+    #     logger = Logger()
+    #     logger.process_name = f"{self.environment}_test_fetch_chunk"
+    #
+    #     dest_mailbox = MeshMailbox(
+    #         logger, mailbox="MESH-UI-01", environment=f"{self.environment}"
+    #     )
+    #     src_mailbox = MeshMailbox(
+    #         logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
+    #     )
+    #     response_1, message_list_1 = dest_mailbox.list_messages()
+    #
+    #     # byte_range_0_10 = f"bytes=0-10"
+    #     # s3_object_0_10 = s3_client.get_object(Bucket=f"{self.environment}-mesh", Key="MESH-TEST2/outbound/testfile.json", Range=byte_range_0_10)
+    #     # s3_data_0_10 = s3_object_0_10["Body"].read().decode("utf8")
+    #     # self.assertEqual("12345678901", s3_data_0_10)
+    #     # s3_file = s3_bucket.objects[0]
+    #     _, message_list_4 = dest_mailbox.list_messages()
+    #     # msg_chunk_0_10 = MeshMessage(
+    #     #     file_name="test.dat", data=s3_data_0_10, src_mailbox="MESH-UI-02", dest_mailbox="MESH-UI-01",
+    #     #     workflow_id="TEST", message_id=None
+    #     # )
+    #     # _, message_list_5 = dest_mailbox.list_messages()
+    #     # send_response_0_10 = src_mailbox.send_chunk(mesh_message_object=msg_chunk_0_10, number_of_chunks=4)
+    #     # _, message_list_6 = dest_mailbox.list_messages()
+    #     # sent_text_dict = send_response_0_10.text
+    #     # sent_dict = json.loads(sent_text_dict)
+    #     # msg1_id = sent_dict['messageID']
+    #
+    #     mock_input = {
+    #         "statusCode": HTTPStatus.OK.value,
+    #         "headers": {"Content-Type": "application/json"},
+    #         "body": {
+    #             "internal_id": logger.internal_id,
+    #             "src_mailbox": src_mailbox.mailbox,
+    #             "dest_mailbox": dest_mailbox.mailbox,
+    #             "workflow_id": "test_workflow",
+    #             "bucket": f"{self.environment}-mesh",
+    #             "key": "MESH-TEST2/outbound/testfile.json",
+    #             "chunked": True,
+    #             "chunk_number": 1,
+    #             "total_chunks": 4,
+    #             "chunk_size": 10,
+    #             "complete": False,
+    #             "message_id": None,
+    #             "current_byte_position": 0
+    #         },
+    #     }
+    #
+    #     while not mock_input["body"]["complete"]:
+    #         chunk_num = mock_input["body"].get("chunk_num", 1)
+    #         print(f">>>>>>>>>>> Chunk {chunk_num} >>>>>>>>>>>>>>>>>>>>")
+    #         try:
+    #             response = self.app.main(
+    #                 event=mock_input, context=MeshTestingCommon.CONTEXT
+    #             )
+    #         except Exception as exception:  # pylint: disable=broad-except
+    #             # need to fail happy pass on any exception
+    #             self.fail(f"Invocation crashed with Exception {str(exception)}")
+    #         mock_input = response
+    #         print(response)
 
 
     # @mock_ssm
