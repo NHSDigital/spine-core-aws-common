@@ -1,13 +1,13 @@
 """
 API Gateway Testing
 """
-from os.path import dirname
 import json
-
+from os.path import dirname
 from unittest import mock, TestCase
-from aws_lambda_powertools.event_handler.api_gateway import Response
 
+from aws_lambda_powertools.event_handler.api_gateway import Response
 from spine_aws_common import APIGatewayApplication
+from spine_aws_common.tests.utils.log_helper import LogHelper
 
 
 class MyApp(APIGatewayApplication):
@@ -40,7 +40,11 @@ class TestAPIGatewayApplication(TestCase):
     """Testing Lambda application"""
 
     def setUp(self):
-        pass
+        self.log_helper = LogHelper()
+        self.log_helper.set_stdout_capture()
+
+    def tearDown(self):
+        self.log_helper.clean_up()
 
     # pylint:disable=duplicate-code
     @mock.patch.dict(
@@ -80,3 +84,23 @@ class TestAPIGatewayApplication(TestCase):
             "isBase64Encoded": False,
         }
         self.assertEqual(response, expected_response)
+
+    def test_header_retrieval_case_insensitive(self):
+        """Testing that retrieval of headers is case insensitive"""
+        with open(f"{dirname(__file__)}/testdata/apigateway_hello.json") as _file:
+            event = json.load(_file)
+
+        internal_id = "1234"
+        event["headers"]["X-Internal-Id"] = internal_id
+
+        response = MyApp().main(event, {})
+        expected_response = {
+            "statusCode": 200,
+            "headers": {"Content-Type": "application/json"},
+            "body": '{"hello":"world"}',
+            "isBase64Encoded": False,
+        }
+        self.assertEqual(response, expected_response)
+        self.assertTrue(
+            self.log_helper.was_value_logged("LAMBDA0002", "internalID", internal_id)
+        )
