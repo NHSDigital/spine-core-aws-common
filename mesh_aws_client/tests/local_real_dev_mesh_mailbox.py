@@ -363,7 +363,9 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
                 "chunk_size": 50,
                 "complete": False,
                 "message_id": None,
-                "current_byte_position": 0
+                "current_byte_position": 0,
+                "compress_ratio": 1,
+                "will_compres": False
             },
         }
         count = 1
@@ -428,7 +430,9 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
                 "chunk_size": 10,
                 "complete": False,
                 "message_id": None,
-                "current_byte_position": 0
+                "current_byte_position": 0,
+                "compress_ratio": 1,
+                "will_compres": False
             },
         }
         count = 1
@@ -459,6 +463,75 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
             self.assertEqual(200, acknowledge_response.status_code)
         _, message_list_6 = dest_mailbox.list_messages()
         self.assertEqual(0, len(message_list_6))
+
+
+    @mock_ssm
+    @mock_s3
+    @mock.patch.object(MeshSendMessageChunkApplication, "_create_new_internal_id")
+    def test_send_single_chunk_file_using_app_in_parts(self, mock_create_new_internal_id):
+        """Test fetching a chunk"""
+
+        s3_client = boto3.client("s3", region_name="eu-west-2")
+        ssm_client = boto3.client("ssm", region_name="eu-west-2")
+        mock_create_new_internal_id.return_value = MeshTestingCommon.KNOWN_INTERNAL_ID1
+        self.setup_mock_aws_environment(s3_client, ssm_client)
+        logger = Logger()
+        logger.process_name = f"{self.environment}_test_fetch_chunk"
+
+        dest_mailbox = MeshMailbox(
+            logger, mailbox="MESH-UI-01", environment=f"{self.environment}"
+        )
+        src_mailbox = MeshMailbox(
+            logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
+        )
+        response_1, message_list_1 = dest_mailbox.list_messages()
+        mock_input = {
+            "statusCode": HTTPStatus.OK.value,
+            "headers": {"Content-Type": "application/json"},
+            "body": {
+                "internal_id": logger.internal_id,
+                "src_mailbox": src_mailbox.mailbox,
+                "dest_mailbox": dest_mailbox.mailbox,
+                "workflow_id": "test_workflow",
+                "bucket": f"{self.environment}-mesh",
+                "key": "MESH-TEST2/outbound/testfile.json",
+                "chunked": False,
+                "chunk_number": 1,
+                "total_chunks": 1,
+                "chunk_size": 50,
+                "complete": False,
+                "message_id": None,
+                "current_byte_position": 0,
+                "compress_ratio": 6,
+                "will_compres": True
+            },
+        }
+        count = 1
+        while not mock_input["body"]["complete"]:
+            chunk_num = mock_input["body"].get("chunk_num", 1)
+            print(f">>>>>>>>>>> Chunk {chunk_num} >>>>>>>>>>>>>>>>>>>>")
+            try:
+                response = self.app.main(
+                    event=mock_input, context=MeshTestingCommon.CONTEXT
+                )
+            except Exception as exception:  # pylint: disable=broad-except
+                # need to fail happy pass on any exception
+                self.fail(f"Invocation crashed with Exception {str(exception)}")
+            if count == 1:
+                message_id = response['body']['message_id']
+            count = count + 1
+            mock_input = response
+            print(response)
+
+        _, message_list_5 = dest_mailbox.list_messages()
+        len_5 = len(message_list_5)
+        self.assertIn(message_id, message_list_5)
+        for id in message_list_5:
+            acknowledge_response = dest_mailbox.acknowledge_message(id)
+            self.assertEqual(200, acknowledge_response.status_code)
+        _, message_list_6 = dest_mailbox.list_messages()
+        self.assertEqual(0, len(message_list_6))
+
 
     # @mock_ssm
     # @mock_s3

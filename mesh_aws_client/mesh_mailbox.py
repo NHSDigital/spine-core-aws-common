@@ -19,7 +19,7 @@ class MeshMessage(NamedTuple):
     """Named tuple for holding Mesh Message info"""
 
     file_name: str = None
-    data: bytearray = None
+    data: any = None
     src_mailbox: str = None
     dest_mailbox: str = None
     workflow_id: str = None

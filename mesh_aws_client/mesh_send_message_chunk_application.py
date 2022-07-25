@@ -45,6 +45,9 @@ class MeshSendMessageChunkApplication(LambdaApplication):
         chunk_size = self.input.get("chunk_size", MeshCommon.DEFAULT_CHUNK_SIZE)
         chunked = self.input.get("chunked", False)
         message_id = self.input.get("message_id", None)
+        compress_ratio = self.input.get("compress_ratio", 1)
+        will_compres = self.input.get("will_compres", False)
+        part_size = int(chunk_size / compress_ratio)
 
         self.mailbox = MeshMailbox(
             self.log_object, self.input["src_mailbox"], self.environment

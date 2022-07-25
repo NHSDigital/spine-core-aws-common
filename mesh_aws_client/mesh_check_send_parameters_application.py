@@ -106,7 +106,9 @@ class MeshCheckSendParametersApplication(LambdaApplication):
                 "chunk_size": self.chunk_size,
                 "complete": False,
                 "message_id": None,
-                "current_byte_position": 0
+                "current_byte_position": 0,
+                "compress_ratio": 1,
+                "will_compres": False
             },
         }
 
