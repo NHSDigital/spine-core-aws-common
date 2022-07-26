@@ -27,6 +27,9 @@ class MeshSendMessageChunkApplication(LambdaApplication):
         self.input = {}
         self.body = None
         self.environment = os.environ.get("Environment", "default")
+        self.chunked = False
+        MEBIBYTE = 1024 * 1024
+        DEFAULT_BUFFER_SIZE = 20 * MEBIBYTE
 
     def start(self):
         # TODO refactor
@@ -41,13 +44,19 @@ class MeshSendMessageChunkApplication(LambdaApplication):
             raise SystemError("Already completed upload to MESH")
 
         total_chunks = self.input.get("total_chunks", 1)
-        current_chunk = self.input.get("chunk_number", 1)
-        chunk_size = self.input.get("chunk_size", MeshCommon.DEFAULT_CHUNK_SIZE)
-        chunked = self.input.get("chunked", False)
+        self.current_byte = self.input.get("current_byte_position", 0)
+        self.current_chunk = self.input.get("chunk_number", 1)
+        self.chunk_size = self.input.get("chunk_size", MeshCommon.DEFAULT_CHUNK_SIZE)
+        self.chunked = self.input.get("chunked", False)
         message_id = self.input.get("message_id", None)
-        compress_ratio = self.input.get("compress_ratio", 1)
-        will_compres = self.input.get("will_compres", False)
-        part_size = int(chunk_size / compress_ratio)
+        self.compress_ratio = self.input.get("compress_ratio", 1)
+        will_compress = self.input.get("will_compress", False)
+        self.s3_client = boto3.client("s3")
+        self.bucket = self.input["bucket"]
+        self.key = self.input["key"]
+        file_response = self.s3_client.head_object(Bucket=self.bucket, Key=self.key)
+        self.file_size = file_response['ContentLength']
+        self.buffer_size = 8
 
         self.mailbox = MeshMailbox(
             self.log_object, self.input["src_mailbox"], self.environment
@@ -58,47 +67,41 @@ class MeshSendMessageChunkApplication(LambdaApplication):
         bucket = self.input["bucket"]
         key = self.input["key"]
 
-        file_contents = self._get_file_from_s3(
-            bucket,
-            key,
-            chunked=chunked,
-            current_chunk=current_chunk,
-            chunk_size=chunk_size,
-        )
-        self.body = file_contents  # for testing :-(
+        # file_contents = self._get_file_from_s3(
+        #     bucket,
+        #     key,
+        #     chunked=self.chunked,
+        #     current_chunk=current_chunk,
+        #     chunk_size=chunk_size,
+        # )
+        # self.body = file_contents  # for testing :-(
         message_object = MeshMessage(
             file_name=os.path.basename(key),
-            data=file_contents,
+            data=self._get_file_from_s3(),
             message_id=message_id,
             dest_mailbox=self.mailbox.dest_mailbox,
             src_mailbox=self.mailbox.mailbox,
             workflow_id=self.mailbox.workflow_id,
         )
-        if file_contents:
+        if self.file_size>0:
             response = self.mailbox.send_chunk(
                 mesh_message_object=message_object,
-                chunk=chunked,
-                chunk_size=chunk_size,
+                chunk=self.chunked,
+                chunk_size=self.chunk_size,
                 number_of_chunks=total_chunks,
-                chunk_num=current_chunk,
+                chunk_num=self.current_chunk,
                     )
             status_code = response.status_code
-            # sent_text_dict = send_response_0_10.text
-            # sent_dict = json.loads(sent_text_dict)
-            # msg1_id = sent_dict['messageID']
             message_id = json.loads(response.text)['messageID']
-
-            # message_object = response.message_object
-            # message_id = message_object.message_id
             status_code = HTTPStatus.OK.value
         else:
             status_code = HTTPStatus.NOT_FOUND.value
             self.response.update({"statusCode": status_code})
             raise FileNotFoundError
 
-        is_finished = current_chunk >= total_chunks if chunked else True
-        if chunked and not is_finished:
-            current_chunk += 1
+        is_finished = self.current_chunk >= total_chunks if self.chunked else True
+        if self.chunked and not is_finished:
+            self.current_chunk += 1
 
         # update input event to send as response
         self.response.update({"statusCode": status_code})
@@ -106,42 +109,74 @@ class MeshSendMessageChunkApplication(LambdaApplication):
             {
                 "complete": is_finished,
                 "message_id": message_id,
-                "chunk_number": current_chunk,
+                "chunk_number": self.current_chunk,
             }
         )
 
-    @staticmethod
-    def _get_file_from_s3(
-        bucket,
-        key,
-        chunked=False,
-        current_chunk=1,
-        chunk_size=MeshCommon.DEFAULT_CHUNK_SIZE,
-    ):
+    def _get_file_from_s3(self):
         """Get a file or chunk of a file from S3"""
-        file_content = None
-        s3_client = boto3.client("s3")
-        if not chunked:
-            # Read whole file
-            response = s3_client.get_object(Bucket=bucket, Key=key)
-        else:
-            # Read a chunk from file
-            start = (current_chunk-1) * chunk_size
-            end = current_chunk * chunk_size - 1
-            range_spec = f"bytes={start}-{end}"
-            response = s3_client.get_object(
-                Bucket=bucket, Key=key, Range=range_spec, PartNumber=current_chunk
-            )
-            # TODO sanity check number of parts etc
-        body = response.get("Body", None)
-        if body:
-            # TODO streaming (this reads whole file into memory)
-            file_content = body.read()
-            if len(file_content) == 0:
+        # bucket,
+        # key,
+        # chunked = False,
+        # current_chunk = 1,
+        # chunk_size = MeshCommon.DEFAULT_CHUNK_SIZE,
+        start_byte = (self.current_chunk-1) * self.chunk_size
+        end_byte = start_byte + (self.chunk_size * self.compress_ratio)
+        # bucket = self.input["bucket"]
+        # key = self.input["key"]
+        # file_content = None
+        # s3_connection = boto3.resource('s3')
+        # bucket_object = s3_connection.Bucket(bucket)
+
+        # s3_client = boto3.client("s3")
+        # bucket_object = s3_client.Object
+        # file_response = self.s3_client.head_object(Bucket=self.bucket, Key=self.key)
+        # file_size = file_response['ContentLength']
+        if end_byte > self.file_size:
+            end_byte = self.file_size
+        while self.current_byte < end_byte:
+            bytes_to_end = end_byte - self.current_byte
+            if bytes_to_end > self.buffer_size:
+                range_spec = f"bytes={self.current_byte}-{self.current_byte + self.buffer_size - 1}"
+                self.current_byte = self.current_byte + self.buffer_size
+            else:
+                range_spec = f"bytes={self.current_byte}-{end_byte}"
+                self.current_byte = end_byte
+            response = self.s3_client.get_object(
+                Bucket=self.bucket, Key=self.key, Range=range_spec)
+            body = response.get("Body", None)
+            if body:
+                # TODO streaming (this reads whole file into memory)
+                file_content = body.read()
+                if len(file_content) == 0:
+                    file_content = None
+            else:
                 file_content = None
-        else:
-            file_content = None
-        return file_content
+            yield file_content
+
+
+
+        # if not self.chunked:
+        #     # Read whole file
+        #     response = s3_client.get_object(Bucket=bucket, Key=key)
+        # else:
+        #     # Read a chunk from file
+        #     start = (self.current_chunk-1) * self.chunk_size
+        #     end = self.current_chunk * self.chunk_size - 1
+        #     range_spec = f"bytes={start}-{end}"
+        #     response = s3_client.get_object(
+        #         Bucket=bucket, Key=key, Range=range_spec, PartNumber=self.current_chunk
+        #     )
+        #     # TODO sanity check number of parts etc
+        # body = response.get("Body", None)
+        # if body:
+        #     # TODO streaming (this reads whole file into memory)
+        #     file_content = body.read()
+        #     if len(file_content) == 0:
+        #         file_content = None
+        # else:
+        #     file_content = None
+        # yield file_content
 
 
 # create instance of class in global space

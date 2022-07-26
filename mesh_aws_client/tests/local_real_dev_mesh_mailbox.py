@@ -498,12 +498,12 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
                 "chunked": False,
                 "chunk_number": 1,
                 "total_chunks": 1,
-                "chunk_size": 50,
+                "chunk_size": 100,
                 "complete": False,
                 "message_id": None,
                 "current_byte_position": 0,
-                "compress_ratio": 6,
-                "will_compres": True
+                "compress_ratio": 1,
+                "will_compress": True
             },
         }
         count = 1

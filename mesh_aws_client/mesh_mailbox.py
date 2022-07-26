@@ -24,6 +24,7 @@ class MeshMessage(NamedTuple):
     dest_mailbox: str = None
     workflow_id: str = None
     message_id: str = None
+    will_compress: bool = False
 
 
 class MeshMailbox:  # pylint: disable=too-many-instance-attributes
@@ -212,7 +213,8 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
             url = f"{mesh_url}/messageexchange/{self.mailbox}/outbox"
         else:
             url = f"{mesh_url}/messageexchange/{self.mailbox}/outbox/{mesh_message_object.message_id}/{chunk_num}"
-        response  = session.post(url, data=mesh_message_object.data)
+        response  = session.post(url, data=mesh_message_object.data, stream=True)
+        response.raw.decode_content = True
         return response
 
     def get_chunk(self, message_id, chunk_num=1):
