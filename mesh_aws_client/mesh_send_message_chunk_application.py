@@ -2,6 +2,7 @@
 Module for MESH API functionality for step functions
 """
 import json
+import zlib
 from http import HTTPStatus
 import os
 
@@ -50,7 +51,7 @@ class MeshSendMessageChunkApplication(LambdaApplication):
         self.chunked = self.input.get("chunked", False)
         message_id = self.input.get("message_id", None)
         self.compress_ratio = self.input.get("compress_ratio", 1)
-        will_compress = self.input.get("will_compress", False)
+        self.will_compress = self.input.get("will_compress", False)
         self.s3_client = boto3.client("s3")
         self.bucket = self.input["bucket"]
         self.key = self.input["key"]
@@ -152,6 +153,8 @@ class MeshSendMessageChunkApplication(LambdaApplication):
                     file_content = None
             else:
                 file_content = None
+            if self.will_compress:
+                file_content = zlib.compress(file_content)
             yield file_content
 
 

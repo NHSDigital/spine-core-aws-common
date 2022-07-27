@@ -206,6 +206,8 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         session.headers["Mex-FileName"] = mesh_message_object.file_name
         session.headers["Mex-Chunk-Range"] = f"{chunk_num}:{number_of_chunks}"
         session.headers["Content-Type"] = "application/octet-stream"
+        if mesh_message_object.will_compress:
+            session.headers["content-encoding"] = "gzip"
 
         mesh_url = self.params[MeshMailbox.MESH_URL]
         if chunk_num == 1:
