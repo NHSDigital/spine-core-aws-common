@@ -18,6 +18,8 @@ class MeshSendMessageChunkApplication(LambdaApplication):
     """
     MESH API Lambda for sending a message / message chunk
     """
+    MEBIBYTE = 1024 * 1024
+    DEFAULT_BUFFER_SIZE = 20 * MEBIBYTE
 
     def __init__(self, additional_log_config=None, load_ssm_params=False):
         """
@@ -29,8 +31,7 @@ class MeshSendMessageChunkApplication(LambdaApplication):
         self.body = None
         self.environment = os.environ.get("Environment", "default")
         self.chunked = False
-        MEBIBYTE = 1024 * 1024
-        DEFAULT_BUFFER_SIZE = 20 * MEBIBYTE
+
 
     def start(self):
         # TODO refactor
@@ -57,7 +58,7 @@ class MeshSendMessageChunkApplication(LambdaApplication):
         self.key = self.input["key"]
         file_response = self.s3_client.head_object(Bucket=self.bucket, Key=self.key)
         self.file_size = file_response['ContentLength']
-        self.buffer_size = 8
+        self.buffer_size = self.DEFAULT_BUFFER_SIZE
 
         self.mailbox = MeshMailbox(
             self.log_object, self.input["src_mailbox"], self.environment
@@ -68,14 +69,6 @@ class MeshSendMessageChunkApplication(LambdaApplication):
         bucket = self.input["bucket"]
         key = self.input["key"]
 
-        # file_contents = self._get_file_from_s3(
-        #     bucket,
-        #     key,
-        #     chunked=self.chunked,
-        #     current_chunk=current_chunk,
-        #     chunk_size=chunk_size,
-        # )
-        # self.body = file_contents  # for testing :-(
         message_object = MeshMessage(
             file_name=os.path.basename(key),
             data=self._get_file_from_s3(),
@@ -111,28 +104,14 @@ class MeshSendMessageChunkApplication(LambdaApplication):
                 "complete": is_finished,
                 "message_id": message_id,
                 "chunk_number": self.current_chunk,
+                "current_byte_position": self.current_byte
             }
         )
 
     def _get_file_from_s3(self):
         """Get a file or chunk of a file from S3"""
-        # bucket,
-        # key,
-        # chunked = False,
-        # current_chunk = 1,
-        # chunk_size = MeshCommon.DEFAULT_CHUNK_SIZE,
-        start_byte = (self.current_chunk-1) * self.chunk_size
+        start_byte = self.current_byte
         end_byte = start_byte + (self.chunk_size * self.compress_ratio)
-        # bucket = self.input["bucket"]
-        # key = self.input["key"]
-        # file_content = None
-        # s3_connection = boto3.resource('s3')
-        # bucket_object = s3_connection.Bucket(bucket)
-
-        # s3_client = boto3.client("s3")
-        # bucket_object = s3_client.Object
-        # file_response = self.s3_client.head_object(Bucket=self.bucket, Key=self.key)
-        # file_size = file_response['ContentLength']
         if end_byte > self.file_size:
             end_byte = self.file_size
         while self.current_byte < end_byte:
@@ -156,31 +135,6 @@ class MeshSendMessageChunkApplication(LambdaApplication):
             if self.will_compress:
                 file_content = zlib.compress(file_content)
             yield file_content
-
-
-
-        # if not self.chunked:
-        #     # Read whole file
-        #     response = s3_client.get_object(Bucket=bucket, Key=key)
-        # else:
-        #     # Read a chunk from file
-        #     start = (self.current_chunk-1) * self.chunk_size
-        #     end = self.current_chunk * self.chunk_size - 1
-        #     range_spec = f"bytes={start}-{end}"
-        #     response = s3_client.get_object(
-        #         Bucket=bucket, Key=key, Range=range_spec, PartNumber=self.current_chunk
-        #     )
-        #     # TODO sanity check number of parts etc
-        # body = response.get("Body", None)
-        # if body:
-        #     # TODO streaming (this reads whole file into memory)
-        #     file_content = body.read()
-        #     if len(file_content) == 0:
-        #         file_content = None
-        # else:
-        #     file_content = None
-        # yield file_content
-
 
 # create instance of class in global space
 # this ensures initial setup of logging/config is only done on cold start
