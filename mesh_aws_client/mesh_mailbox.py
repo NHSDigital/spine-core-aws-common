@@ -215,6 +215,16 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
             url = f"{mesh_url}/messageexchange/{self.mailbox}/outbox/{mesh_message_object.message_id}/{chunk_num}"
         response  = session.post(url, data=mesh_message_object.data, stream=True)
         response.raw.decode_content = True
+        message_id = json.loads(response.text)['messageID']
+        self.log_object.write_log(
+            "MESHSEND0007",
+            None,
+            {
+                "file": mesh_message_object.file_name,
+                "http_status": response.status_code,
+                "message_id": message_id
+            }
+        )
         return response
 
     def get_chunk(self, message_id, chunk_num=1):

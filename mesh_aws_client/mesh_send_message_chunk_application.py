@@ -60,6 +60,17 @@ class MeshSendMessageChunkApplication(LambdaApplication):
         self.file_size = file_response['ContentLength']
         self.buffer_size = self.DEFAULT_BUFFER_SIZE
 
+        self.log_object.write_log(
+            "MESHSEND0005",
+            None,
+            {
+                "file": self.key,
+                "bucket": self.bucket,
+                "chunk_num": self.current_chunk,
+                "max_chunk": total_chunks
+            },
+        )
+
         self.mailbox = MeshMailbox(
             self.log_object, self.input["src_mailbox"], self.environment
         )
@@ -120,16 +131,27 @@ class MeshSendMessageChunkApplication(LambdaApplication):
                 range_spec = f"bytes={self.current_byte}-{self.current_byte + self.buffer_size - 1}"
                 self.current_byte = self.current_byte + self.buffer_size
             else:
-                range_spec = f"bytes={self.current_byte}-{end_byte}"
+                range_spec = f"bytes={self.current_byte}-{end_byte-1}"
                 self.current_byte = end_byte
+
             response = self.s3_client.get_object(
                 Bucket=self.bucket, Key=self.key, Range=range_spec)
+
             body = response.get("Body", None)
             if body:
-                # TODO streaming (this reads whole file into memory)
                 file_content = body.read()
                 if len(file_content) == 0:
                     file_content = None
+                self.log_object.write_log(
+                    "MESHSEND0006",
+                    None,
+                    {
+                        "file": self.key,
+                        "bucket": self.bucket,
+                        "num_bytes": len(file_content),
+                        "byte_range": range_spec
+                    },
+                )
             else:
                 file_content = None
             if self.will_compress:

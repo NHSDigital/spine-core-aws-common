@@ -548,7 +548,7 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
             Bucket=f"{self.environment}-mesh-big",
             CreateBucketConfiguration=location,
         )
-        # string alone is 14 bytes
+        # string alone is 15 bytes
         file_content = "012345678901234"*1024*1024*3
         file_size = len(file_content)
         no_chunks = file_size / self.DEFAULT_BUFFER_SIZE
@@ -590,8 +590,8 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
         }
         count = 1
         while not mock_input["body"]["complete"]:
-            chunk_num = mock_input["body"].get("chunk_num", 1)
-            print(f">>>>>>>>>>> Chunk {chunk_num} >>>>>>>>>>>>>>>>>>>>")
+            chunk_number = mock_input["body"].get("chunk_number", 1)
+            print(f">>>>>>>>>>> Chunk {chunk_number} >>>>>>>>>>>>>>>>>>>>")
             try:
                 response = self.app.main(
                     event=mock_input, context=MeshTestingCommon.CONTEXT
