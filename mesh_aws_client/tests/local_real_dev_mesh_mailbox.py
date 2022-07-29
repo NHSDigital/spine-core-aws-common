@@ -22,7 +22,8 @@ class LocalRealDevMeshMailboxTest(MeshTestCase):
     Tests for mailbox functionality against real local dev Spine MESH
     for developing locally with a local Spine VM
     """
-
+    MEBIBYTE = 1024 * 1024
+    DEFAULT_BUFFER_SIZE = 20 * MEBIBYTE
     MESH_URL = "https://192.168.247.130"
 
     CLIENT_CERT = """-----BEGIN CERTIFICATE-----
@@ -538,11 +539,24 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
     @mock.patch.object(MeshSendMessageChunkApplication, "_create_new_internal_id")
     def test_send_multi_chunk_file_using_app_in_parts(self, mock_create_new_internal_id):
         """Test fetching a chunk"""
-
         s3_client = boto3.client("s3", region_name="eu-west-2")
         ssm_client = boto3.client("ssm", region_name="eu-west-2")
         mock_create_new_internal_id.return_value = MeshTestingCommon.KNOWN_INTERNAL_ID1
         self.setup_mock_aws_environment(s3_client, ssm_client)
+        location = {"LocationConstraint": "eu-west-2"}
+        s3_client.create_bucket(
+            Bucket=f"{self.environment}-mesh-big",
+            CreateBucketConfiguration=location,
+        )
+        # string alone is 14 bytes
+        file_content = "012345678901234"*1024*1024*3
+        file_size = len(file_content)
+        no_chunks = file_size / self.DEFAULT_BUFFER_SIZE
+        s3_client.put_object(
+            Bucket=f"{self.environment}-mesh-big",
+            Key="MESH-TEST2/outbound/testfile.json",
+            Body=file_content,
+        )
         logger = Logger()
         logger.process_name = f"{self.environment}_test_fetch_chunk"
 
@@ -561,17 +575,17 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
                 "src_mailbox": src_mailbox.mailbox,
                 "dest_mailbox": dest_mailbox.mailbox,
                 "workflow_id": "test_workflow",
-                "bucket": f"{self.environment}-mesh",
+                "bucket": f"{self.environment}-mesh-big",
                 "key": "MESH-TEST2/outbound/testfile.json",
                 "chunked": True,
                 "chunk_number": 1,
                 "total_chunks": 3,
-                "chunk_size": 12,
+                "chunk_size": self.DEFAULT_BUFFER_SIZE,
                 "complete": False,
                 "message_id": None,
                 "current_byte_position": 0,
                 "compress_ratio": 1,
-                "will_compress": True
+                "will_compress": False
             },
         }
         count = 1
