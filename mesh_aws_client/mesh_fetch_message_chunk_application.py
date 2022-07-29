@@ -8,14 +8,8 @@ import boto3
 from botocore.errorfactory import ClientError
 
 from spine_aws_common import LambdaApplication
-
-from .mesh_common import (
-    AwsFailedToPerformError,
-    MeshCommon,
-    MeshMailbox as OldMeshMailbox,
-)
-
-from .mesh_mailbox import MeshMailbox
+from mesh_aws_client.mesh_common import AwsFailedToPerformError, MeshCommon
+from mesh_aws_client.mesh_mailbox import MeshMailbox
 
 
 class MeshFetchMessageChunkApplication(
@@ -26,8 +20,7 @@ class MeshFetchMessageChunkApplication(
     """
 
     MEBIBYTE = 1024 * 1024
-    MEGABYTE = 1000 * 1000
-    DEFAULT_BUFFER_SIZE = 5 * MEGABYTE
+    DEFAULT_BUFFER_SIZE = 5 * MEBIBYTE
 
     def __init__(self, additional_log_config=None, load_ssm_params=False):
         """
@@ -67,10 +60,6 @@ class MeshFetchMessageChunkApplication(
 
     def _setup_mailbox(self):
         self.mailbox = MeshMailbox(
-            self.log_object, self.input["dest_mailbox"], self.environment
-        )
-        # deprecated mailbox - only required until fully replaced
-        self.old_mailbox = OldMeshMailbox(
             self.log_object, self.input["dest_mailbox"], self.environment
         )
 
@@ -237,7 +226,6 @@ class MeshFetchMessageChunkApplication(
         parts_read = 0
         part_buffer = b""
         # read bytes into buffer
-        # TODO(through gzip if gzipped)
         for buffer in self.http_response.iter_content(
             chunk_size=self.DEFAULT_BUFFER_SIZE
         ):
@@ -278,7 +266,7 @@ class MeshFetchMessageChunkApplication(
             self.log_object.write_log(
                 "MESHFETCH0004", None, {"message_id": self.message_id}
             )
-            self.old_mailbox.mesh_client.acknowledge_message(self.message_id)
+            self.mailbox.acknowledge_message(self.message_id)
         else:
             self.log_object.write_log(
                 "MESHFETCH0003",
