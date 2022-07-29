@@ -1,5 +1,4 @@
 """Mailbox class that handles all the complexity of talking to MESH API"""
-from io import BytesIO
 import platform
 from http import HTTPStatus
 from typing import NamedTuple
@@ -13,13 +12,13 @@ import json
 import requests
 
 from spine_aws_common.logger import Logger
-from .mesh_common import MeshCommon
+from mesh_aws_client.mesh_common import MeshCommon
 
 
 class MeshMessage(NamedTuple):
     """Named tuple for holding Mesh Message info"""
 
-    data_stream: BytesIO = None
+    data_stream = None
     src_mailbox: str = None
     dest_mailbox: str = None
     workflow_id: str = None
@@ -75,8 +74,6 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
             f"/{self.environment}/mesh/mailboxes/{self.mailbox}"
         )
         self.params = {**common_params, **mailbox_params}
-        # self._write_certs_to_files()
-
         self.maybe_verify_ssl = (
             self.params.get(MeshMailbox.MESH_VERIFY_SSL, False) == "True"
         )
@@ -200,15 +197,19 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         # override mailbox dest_mailbox if provided in message_object
         return HTTPStatus.NOT_IMPLEMENTED.value
 
-    def get_chunk(self, message_id, _chunk_num=1):
+    def get_chunk(self, message_id, chunk_num=1):
         """Return a response object for a MESH chunk"""
         session = self._setup_session()
         mesh_url = self.params[MeshMailbox.MESH_URL]
 
         # if chunk number = 1, get first part
-        url = f"{mesh_url}/messageexchange/{self.mailbox}/inbox/{message_id}"
-        # otherwise get nth part
-
+        if chunk_num == 1:
+            url = f"{mesh_url}/messageexchange/{self.mailbox}/inbox/{message_id}"
+        else:
+            url = (
+                f"{mesh_url}/messageexchange/{self.mailbox}/inbox/{message_id}"
+                + f"/{chunk_num}"
+            )
         response = session.get(url, stream=True)
         response.raw.decode_content = True
         return response
@@ -227,11 +228,15 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
 
         text_dict = response.text
         python_dict = json.loads(text_dict)
-        python_list = python_dict['messages']
+        python_list = python_dict["messages"]
         self.log_object.write_log(
-            "MESHMBOX0005", None, {"mailbox": self.mailbox,
-                                   "message_count": len(python_list),
-                                   "http_status": response.status_code}
+            "MESHMBOX0005",
+            None,
+            {
+                "mailbox": self.mailbox,
+                "message_count": len(python_list),
+                "http_status": response.status_code,
+            },
         )
         return response, python_list
 
@@ -241,11 +246,14 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         """
         session = self._setup_session()
         mesh_url = self.params[MeshMailbox.MESH_URL]
-        url = f"{mesh_url}/messageexchange/{self.mailbox}/inbox/{message_id}" \
-              f"/status/acknowledged"
+        url = (
+            f"{mesh_url}/messageexchange/{self.mailbox}/inbox/{message_id}"
+            f"/status/acknowledged"
+        )
         response = session.put(url)
         self.log_object.write_log(
-            "MESHMBOX0006", None, {"message_id": message_id,
-                                   "http_status": response.status_code}
+            "MESHMBOX0006",
+            None,
+            {"message_id": message_id, "http_status": response.status_code},
         )
         return response

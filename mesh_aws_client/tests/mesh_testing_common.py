@@ -89,7 +89,7 @@ class MeshTestingCommon:
         file_content = FILE_CONTENT
         s3_client.put_object(
             Bucket=f"{environment}-mesh",
-            Key="outbound/testfile.json",
+            Key="MESH-TEST2/outbound/testfile.json",
             Body=file_content,
         )
 
@@ -99,17 +99,17 @@ class MeshTestingCommon:
         # Setup mapping
         ssm_client.put_parameter(
             Name=f"/{environment}/mesh/mapping/"
-            + f"{environment}-mesh/outbound/src_mailbox",
+            + f"{environment}-mesh/MESH-TEST2/outbound/src_mailbox",
             Value="MESH-TEST2",
         )
         ssm_client.put_parameter(
             Name=f"/{environment}/mesh/mapping/"
-            + f"{environment}-mesh/outbound/dest_mailbox",
+            + f"{environment}-mesh/MESH-TEST2/outbound/dest_mailbox",
             Value="MESH-TEST1",
         )
         ssm_client.put_parameter(
             Name=f"/{environment}/mesh/mapping/"
-            + f"{environment}-mesh/outbound/workflow_id",
+            + f"{environment}-mesh/MESH-TEST2/outbound/workflow_id",
             Value="TESTWORKFLOW",
         )
         # Setup secrets
