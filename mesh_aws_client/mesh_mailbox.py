@@ -12,7 +12,7 @@ import json
 import requests
 
 from spine_aws_common.logger import Logger
-from .mesh_common import MeshCommon
+from mesh_aws_client.mesh_common import MeshCommon
 
 
 class MeshMessage(NamedTuple):
@@ -44,8 +44,6 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
     ALLOWED_SENDERS = "ALLOWED_SENDERS"
     ALLOWED_RECIPIENTS = "ALLOWED_RECIPIENTS"
     ALLOWED_WORKFLOW_IDS = "ALLOWED_WORKFLOW_IDS"
-
-    DEFAULT_BUFFER_SIZE = 5 * 1024 * 1024  # 5 MiB
 
     VERSION = "0.0.2"
 

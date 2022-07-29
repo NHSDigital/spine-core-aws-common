@@ -2,6 +2,7 @@
 from http import HTTPStatus
 from unittest import mock
 import json
+from requests.exceptions import HTTPError
 
 from moto import mock_s3, mock_ssm
 import boto3
@@ -113,6 +114,9 @@ class TestMeshFetchMessageChunkApplication(MeshTestCase):
         )
         self.assertTrue(
             self.log_helper.was_value_logged("MESHFETCH0002", "Log_Level", "INFO")
+        )
+        self.assertFalse(
+            self.log_helper.was_value_logged("MESHFETCH0002a", "Log_Level", "INFO")
         )
         self.assertFalse(
             self.log_helper.was_value_logged("MESHFETCH0003", "Log_Level", "INFO")
@@ -234,7 +238,6 @@ class TestMeshFetchMessageChunkApplication(MeshTestCase):
         except Exception as exception:  # pylint: disable=broad-except
             # need to fail happy pass on any exception
             self.fail(f"Invocation crashed with Exception {str(exception)}")
-        print(response)
 
         expected_return_code = HTTPStatus.PARTIAL_CONTENT.value
         self.assertEqual(response["statusCode"], expected_return_code)
@@ -255,7 +258,59 @@ class TestMeshFetchMessageChunkApplication(MeshTestCase):
         expected_return_code = HTTPStatus.OK.value
         self.assertEqual(response["statusCode"], expected_return_code)
         self.assertEqual(response["body"]["complete"], True)
-        print(response)
+
+        # Check we got the logs we expect
+        self.assertTrue(
+            self.log_helper.was_value_logged("MESHFETCH0001", "Log_Level", "INFO")
+        )
+        self.assertTrue(
+            self.log_helper.was_value_logged("MESHFETCH0002", "Log_Level", "INFO")
+        )
+        self.assertTrue(
+            self.log_helper.was_value_logged("MESHFETCH0002a", "Log_Level", "INFO")
+        )
+        self.assertTrue(
+            self.log_helper.was_value_logged("MESHFETCH0003", "Log_Level", "INFO")
+        )
+        self.assertTrue(
+            self.log_helper.was_value_logged("MESHFETCH0004", "Log_Level", "INFO")
+        )
+        self.assertTrue(
+            self.log_helper.was_value_logged("LAMBDA0003", "Log_Level", "INFO")
+        )
+
+    @mock_ssm
+    @mock_s3
+    @mock.patch.object(MeshFetchMessageChunkApplication, "_create_new_internal_id")
+    @requests_mock.Mocker()
+    def test_mesh_fetch_file_chunk_app_gone_away_unhappy_path(
+        self, mock_create_new_internal_id, mock_response
+    ):
+        """Test the lambda with unhappy path"""
+        # Mock responses from MESH server
+        mock_response.get(
+            f"/messageexchange/MESH-TEST1/inbox/{MeshTestingCommon.KNOWN_MESSAGE_ID1}",
+            text="",
+            status_code=HTTPStatus.GONE.value,
+            headers={
+                "Content-Type": "application/json",
+            },
+        )
+
+        mock_create_new_internal_id.return_value = MeshTestingCommon.KNOWN_INTERNAL_ID1
+        s3_client = boto3.client("s3", region_name="eu-west-2")
+        ssm_client = boto3.client("ssm", region_name="eu-west-2")
+        MeshTestingCommon.setup_mock_aws_s3_buckets(self.environment, s3_client)
+        MeshTestingCommon.setup_mock_aws_ssm_parameter_store(
+            self.environment, ssm_client
+        )
+        mock_input = self._sample_first_input_event()
+
+        try:
+            self.app.main(event=mock_input, context=MeshTestingCommon.CONTEXT)
+        except HTTPError:
+            return
+        self.fail("Failed to raise 410 Client Error")
 
     @staticmethod
     def _sample_first_input_event():
