@@ -58,7 +58,8 @@ class MeshSendMessageChunkApplication(LambdaApplication):
         self.key = self.input["key"]
         file_response = self.s3_client.head_object(Bucket=self.bucket, Key=self.key)
         self.file_size = file_response['ContentLength']
-        self.buffer_size = self.DEFAULT_BUFFER_SIZE
+        # self.buffer_size = self.DEFAULT_BUFFER_SIZE
+        self.buffer_size = 4
 
         self.mailbox = MeshMailbox(
             self.log_object, self.input["src_mailbox"], self.environment

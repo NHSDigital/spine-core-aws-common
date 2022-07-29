@@ -365,7 +365,7 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
                 "message_id": None,
                 "current_byte_position": 0,
                 "compress_ratio": 1,
-                "will_compres": False
+                "will_compress": False
             },
         }
         count = 1
@@ -432,7 +432,7 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
                 "message_id": None,
                 "current_byte_position": 0,
                 "compress_ratio": 1,
-                "will_compres": False
+                "will_compress": False
             },
         }
         count = 1
@@ -533,243 +533,70 @@ j+hua8zczi52wXtVIUHp1AuPVSTY0fwHFC6aajr7p970vxLVqQEqLhc=
         self.assertEqual(0, len(message_list_6))
 
 
-    # @mock_ssm
-    # @mock_s3
-    # @mock.patch.object(MeshSendMessageChunkApplication, "_create_new_internal_id")
-    # def test_send_chunked_file_using_app(self, mock_create_new_internal_id):
-    #     """Test fetching a chunk"""
-    #
-    #     s3_client = boto3.client("s3", region_name="eu-west-2")
-    #     ssm_client = boto3.client("ssm", region_name="eu-west-2")
-    #     mock_create_new_internal_id.return_value = MeshTestingCommon.KNOWN_INTERNAL_ID1
-    #     self.setup_mock_aws_environment(s3_client, ssm_client)
-    #     logger = Logger()
-    #     logger.process_name = f"{self.environment}_test_fetch_chunk"
-    #
-    #     dest_mailbox = MeshMailbox(
-    #         logger, mailbox="MESH-UI-01", environment=f"{self.environment}"
-    #     )
-    #     src_mailbox = MeshMailbox(
-    #         logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
-    #     )
-    #     response_1, message_list_1 = dest_mailbox.list_messages()
-    #
-    #     # byte_range_0_10 = f"bytes=0-10"
-    #     # s3_object_0_10 = s3_client.get_object(Bucket=f"{self.environment}-mesh", Key="MESH-TEST2/outbound/testfile.json", Range=byte_range_0_10)
-    #     # s3_data_0_10 = s3_object_0_10["Body"].read().decode("utf8")
-    #     # self.assertEqual("12345678901", s3_data_0_10)
-    #     # s3_file = s3_bucket.objects[0]
-    #     _, message_list_4 = dest_mailbox.list_messages()
-    #     # msg_chunk_0_10 = MeshMessage(
-    #     #     file_name="test.dat", data=s3_data_0_10, src_mailbox="MESH-UI-02", dest_mailbox="MESH-UI-01",
-    #     #     workflow_id="TEST", message_id=None
-    #     # )
-    #     # _, message_list_5 = dest_mailbox.list_messages()
-    #     # send_response_0_10 = src_mailbox.send_chunk(mesh_message_object=msg_chunk_0_10, number_of_chunks=4)
-    #     # _, message_list_6 = dest_mailbox.list_messages()
-    #     # sent_text_dict = send_response_0_10.text
-    #     # sent_dict = json.loads(sent_text_dict)
-    #     # msg1_id = sent_dict['messageID']
-    #
-    #     mock_input = {
-    #         "statusCode": HTTPStatus.OK.value,
-    #         "headers": {"Content-Type": "application/json"},
-    #         "body": {
-    #             "internal_id": logger.internal_id,
-    #             "src_mailbox": src_mailbox.mailbox,
-    #             "dest_mailbox": dest_mailbox.mailbox,
-    #             "workflow_id": "test_workflow",
-    #             "bucket": f"{self.environment}-mesh",
-    #             "key": "MESH-TEST2/outbound/testfile.json",
-    #             "chunked": True,
-    #             "chunk_number": 1,
-    #             "total_chunks": 4,
-    #             "chunk_size": 10,
-    #             "complete": False,
-    #             "message_id": None,
-    #             "current_byte_position": 0
-    #         },
-    #     }
-    #
-    #     while not mock_input["body"]["complete"]:
-    #         chunk_num = mock_input["body"].get("chunk_num", 1)
-    #         print(f">>>>>>>>>>> Chunk {chunk_num} >>>>>>>>>>>>>>>>>>>>")
-    #         try:
-    #             response = self.app.main(
-    #                 event=mock_input, context=MeshTestingCommon.CONTEXT
-    #             )
-    #         except Exception as exception:  # pylint: disable=broad-except
-    #             # need to fail happy pass on any exception
-    #             self.fail(f"Invocation crashed with Exception {str(exception)}")
-    #         mock_input = response
-    #         print(response)
+    @mock_ssm
+    @mock_s3
+    @mock.patch.object(MeshSendMessageChunkApplication, "_create_new_internal_id")
+    def test_send_multi_chunk_file_using_app_in_parts(self, mock_create_new_internal_id):
+        """Test fetching a chunk"""
 
+        s3_client = boto3.client("s3", region_name="eu-west-2")
+        ssm_client = boto3.client("ssm", region_name="eu-west-2")
+        mock_create_new_internal_id.return_value = MeshTestingCommon.KNOWN_INTERNAL_ID1
+        self.setup_mock_aws_environment(s3_client, ssm_client)
+        logger = Logger()
+        logger.process_name = f"{self.environment}_test_fetch_chunk"
 
-    # @mock_ssm
-    # @mock_s3
-    # def test_fetch_chunk(self):
-    #     """Test fetching a chunk"""
-    #     # pylint: disable=too-many-locals
-    #     s3_client = boto3.client("s3", region_name="eu-west-2")
-    #     ssm_client = boto3.client("ssm", region_name="eu-west-2")
-    #     self.setup_mock_aws_environment(s3_client, ssm_client)
-    #     logger = Logger()
-    #     logger.process_name = f"{self.environment}_test_fetch_chunk"
-    #     mailbox = MeshMailbox(
-    #         logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
-    #     )
-    #     # setup old mailboxes
-    #     old_mailbox1 = OldMeshMailbox(
-    #         logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
-    #     )
-    #     # old_mailbox2 = OldMeshMailbox(
-    #     #     logger, mailbox="TEST-PCRM-2", environment=f"{self.environment}"
-    #     # )
-    #
-    #     # Send a test file to the mailbox using old method
-    #     # msg = OldMeshMessage(
-    #     #     "test.dat", b"12345", "TEST-PCRM-2", "MESH-UI-02", "TEST", None
-    #     # )
-    #     # old_mailbox2.send_chunk(msg)
-    #
-    #     # poll for message ID using old method
-    #     message_list = old_mailbox1.mesh_client.list_messages()
-    #     self.assertGreaterEqual(len(message_list), 1)
-    #     print(message_list)
-    #     message_id = message_list[0]
-    #
-    #     # get message chunk and stream to S3
-    #     response = mailbox.get_chunk(message_id)
-    #     self.assertEqual(response.status_code, 200)
-    #     response.raise_for_status()
-    #
-    #     # print(response.headers)
-    #     # print(response.encoding)
-    #
-    #     # print(mailbox.params)
-    #     s3_bucket = mailbox.get_param(MeshMailbox.INBOUND_BUCKET)
-    #     s3_folder = mailbox.get_param(MeshMailbox.INBOUND_FOLDER)
-    #     s3_key = s3_folder + "/" if len(s3_folder) > 0 else ""
-    #     file_name = response.headers["Mex-Filename"]
-    #     s3_key += file_name if len(file_name) > 0 else message_id + ".dat"
-    #     # print(s3_bucket)
-    #     # print(s3_key)
-    #
-    #     multipart_upload = s3_client.create_multipart_upload(
-    #         Bucket=s3_bucket, Key=s3_key
-    #     )
-    #
-    #     upload_id = multipart_upload["UploadId"]
-    #     part_number = 1
-    #     etags = []
-    #
-    #     # decompressor = zlib.compressobj(9, zlib.DEFLATED, zlib.MAX_WBITS | 16)
-    #     for buffer in response.iter_content(chunk_size=self.BUFFER_SIZE):
-    #         # print(buffer)
-    #
-    #         # if encoding is gzip:
-    #         #     # Note potential 10:1/20:1 size increase here. 5MB -> 50MB/100MB
-    #         #     # Ensure lambda memory limit is set appropriately
-    #         #     sendbuffer = decompressor.uncompress(buffer)
-    #         # else:
-    #         #     sendbuffer = buffer]
-    #         response = s3_client.upload_part(
-    #             Body=buffer,
-    #             Bucket=s3_bucket,
-    #             Key=s3_key,
-    #             PartNumber=part_number,
-    #             ContentLength=len(buffer),
-    #             UploadId=upload_id,
-    #         )
-    #         # print(response["ETag"])
-    #         etags.append(
-    #             {
-    #                 "ETag": response["ETag"],
-    #                 "PartNumber": part_number,
-    #             }
-    #         )
-    #         part_number += 1
-    #
-    #     response = s3_client.complete_multipart_upload(
-    #         Bucket=s3_bucket,
-    #         Key=s3_key,
-    #         UploadId=upload_id,
-    #         MultipartUpload={"Parts": etags},
-    #     )MESH-UI-02
-    #
-    #     # Check S3 uploaded message
-    #     response = s3_client.head_object(
-    #         Bucket=s3_bucket, Key=s3_key, ChecksumMode="ENABLED"
-    #     )
-    #     # print(response)
-    #
-    # @mock_ssm
-    # @mock_s3
-    # def test_poll_messages(self):
-    #     """Test sending a chunk"""
-    #     s3_client = boto3.client("s3", region_name="eu-west-2")
-    #     ssm_client = boto3.client("ssm", region_name="eu-west-2")
-    #     self.setup_mock_aws_environment(s3_client, ssm_client)
-    #     logger = Logger()
-    #     mailbox = MeshMailbox(
-    #         logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
-    #     )
-    #     _, message_list = mailbox.list_messages()
-    #     old_mailbox1 = OldMeshMailbox(
-    #         logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
-    #     )
-    #     old_message_list = old_mailbox1.mesh_client.list_messages()
-    #     self.assertEqual(old_message_list, message_list)
-    #
-    # @mock_ssm
-    # @mock_s3
-    # def test_acknowledge_message(self):
-    #     """Test sending a chunk"""
-    #     s3_client = boto3.client("s3", region_name="eu-west-2")
-    #     ssm_client = boto3.client("ssm", region_name="eu-west-2")
-    #     self.setup_mock_aws_environment(s3_client, ssm_client)
-    #     logger = Logger()
-    #     mailbox = MeshMailbox(
-    #         logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
-    #     )
-    #     old_mailbox2 = OldMeshMailbox(
-    #         logger, mailbox="TEST-PCRM-2", environment=f"{self.environment}"
-    #     )
-    #
-    #     # Send a test file to the mailbox using old method
-    #     msg1 = OldMeshMessage(
-    #         "test.dat", b"12345", "TEST-PCRM-2", "MESH-UI-02", "TEST", None
-    #     )
-    #     old_mailbox2.send_chunk(msg1)
-    #     msg2 = OldMeshMessage(
-    #         "test.dat", b"67891", "TEST-PCRM-2", "MESH-UI-02", "TEST", None
-    #     )
-    #     old_mailbox2.send_chunk(msg2)
-    #
-    #     _, message_list_pre_acknowledge = mailbox.list_messages()
-    #     first_message_id = message_list_pre_acknowledge[0]
-    #
-    #     self.assertIn(first_message_id, message_list_pre_acknowledge)
-    #
-    #     mailbox.acknowledge_message(first_message_id)
-    #     _, message_list_post_acknowledge = mailbox.list_messages()
-    #     self.assertNotIn(first_message_id, message_list_post_acknowledge)
-    #
-    #     # old_mailbox1 = OldMeshMailbox(
-    #     #     logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
-    #     # )
-    #     # old_message_list = old_mailbox1.mesh_client.list_messages()
+        dest_mailbox = MeshMailbox(
+            logger, mailbox="MESH-UI-01", environment=f"{self.environment}"
+        )
+        src_mailbox = MeshMailbox(
+            logger, mailbox="MESH-UI-02", environment=f"{self.environment}"
+        )
+        response_1, message_list_1 = dest_mailbox.list_messages()
+        mock_input = {
+            "statusCode": HTTPStatus.OK.value,
+            "headers": {"Content-Type": "application/json"},
+            "body": {
+                "internal_id": logger.internal_id,
+                "src_mailbox": src_mailbox.mailbox,
+                "dest_mailbox": dest_mailbox.mailbox,
+                "workflow_id": "test_workflow",
+                "bucket": f"{self.environment}-mesh",
+                "key": "MESH-TEST2/outbound/testfile.json",
+                "chunked": True,
+                "chunk_number": 1,
+                "total_chunks": 3,
+                "chunk_size": 12,
+                "complete": False,
+                "message_id": None,
+                "current_byte_position": 0,
+                "compress_ratio": 1,
+                "will_compress": True
+            },
+        }
+        count = 1
+        while not mock_input["body"]["complete"]:
+            chunk_num = mock_input["body"].get("chunk_num", 1)
+            print(f">>>>>>>>>>> Chunk {chunk_num} >>>>>>>>>>>>>>>>>>>>")
+            try:
+                response = self.app.main(
+                    event=mock_input, context=MeshTestingCommon.CONTEXT
+                )
+            except Exception as exception:  # pylint: disable=broad-except
+                # need to fail happy pass on any exception
+                self.fail(f"Invocation crashed with Exception {str(exception)}")
+            if count == 1:
+                message_id = response['body']['message_id']
+            count = count + 1
+            mock_input = response
+            print(response)
 
-
-# # compression example
-# with requests.get(url, stream=True, verify=False) as r:
-#     if save_file_path.endswith('gz'):
-#         compressor = zlib.compressobj(9, zlib.DEFLATED, zlib.MAX_WBITS | 16)
-#         with open(save_file_path, 'wb') as f:
-#             for chunk in r.iter_content(chunk_size=1024*1024):
-#                 f.write(compressor.compress(chunk))
-#             f.write(compressor.flush())
-#     else:
-#         with open(save_file_path, 'wb') as f:
-#             shutil.copyfileobj(r.raw, f)
-
+        time.sleep(1)
+        _, message_list_5 = dest_mailbox.list_messages()
+        len_5 = len(message_list_5)
+        self.assertIn(message_id, message_list_5)
+        for id in message_list_5:
+            acknowledge_response = dest_mailbox.acknowledge_message(id)
+            self.assertEqual(200, acknowledge_response.status_code)
+        _, message_list_6 = dest_mailbox.list_messages()
+        self.assertEqual(0, len(message_list_6))
