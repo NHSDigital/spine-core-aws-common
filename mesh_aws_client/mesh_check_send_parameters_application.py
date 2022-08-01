@@ -100,12 +100,15 @@ class MeshCheckSendParametersApplication(LambdaApplication):
                 "workflow_id": workflow_id,
                 "bucket": bucket,
                 "key": key,
-                "chunk": do_chunking,
+                "chunked": do_chunking,
                 "chunk_number": 1,
                 "total_chunks": chunks,
                 "chunk_size": self.chunk_size,
                 "complete": False,
                 "message_id": None,
+                "current_byte_position": 0,
+                "compress_ratio": 1,
+                "will_compress": False
             },
         }
 

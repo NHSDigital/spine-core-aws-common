@@ -51,7 +51,7 @@ class TestMeshCheckSendParametersApplication(MeshTestCase):
         MeshTestingCommon.get_known_internal_id1,
     )
     def test_mesh_check_send_parameters_happy_path(self):
-        """Test the lambda as a whole, happy path"""
+        """Test the lambda as a whole, happy path for small file"""
 
         s3_client = boto3.client("s3", config=MeshTestingCommon.aws_config)
         ssm_client = boto3.client("ssm", config=MeshTestingCommon.aws_config)
@@ -73,12 +73,15 @@ class TestMeshCheckSendParametersApplication(MeshTestCase):
                 "workflow_id": "TESTWORKFLOW",
                 "bucket": f"{self.environment}-mesh",
                 "key": "MESH-TEST2/outbound/testfile.json",
-                "chunk": True,
+                "chunked": True,
                 "chunk_number": 1,
                 "total_chunks": 4,
                 "chunk_size": 10,
                 "complete": False,
                 "message_id": None,
+                "current_byte_position": 0,
+                "compress_ratio": 1,
+                "will_compress": False,
             },
         }
         try:
@@ -100,6 +103,14 @@ class TestMeshCheckSendParametersApplication(MeshTestCase):
             self.log_helper.was_value_logged("LAMBDA0003", "Log_Level", "INFO")
         )
 
+    def _singleton_test_setup(self):
+        """Setup for singleton test"""
+        s3_client = boto3.client("s3", config=MeshTestingCommon.aws_config)
+        ssm_client = boto3.client("ssm", config=MeshTestingCommon.aws_config)
+        self.setup_mock_aws_environment(s3_client, ssm_client)
+        sfn_client = boto3.client("stepfunctions", config=MeshTestingCommon.aws_config)
+        return sfn_client
+
     # pylint: disable=too-many-statements
     @mock_stepfunctions
     @mock_ssm
@@ -113,10 +124,7 @@ class TestMeshCheckSendParametersApplication(MeshTestCase):
         """
         Test that the singleton check works correctly
         """
-        s3_client = boto3.client("s3", config=MeshTestingCommon.aws_config)
-        ssm_client = boto3.client("ssm", config=MeshTestingCommon.aws_config)
-        self.setup_mock_aws_environment(s3_client, ssm_client)
-        sfn_client = boto3.client("stepfunctions", config=MeshTestingCommon.aws_config)
+        sfn_client = self._singleton_test_setup()
 
         print("------------------------- TEST 1 -------------------------------")
         # define step function

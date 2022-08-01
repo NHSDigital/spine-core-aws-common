@@ -1,6 +1,5 @@
 """Mailbox class that handles all the complexity of talking to MESH API"""
 import platform
-from http import HTTPStatus
 from typing import NamedTuple
 from hashlib import sha256
 import atexit
@@ -18,11 +17,13 @@ from mesh_aws_client.mesh_common import MeshCommon
 class MeshMessage(NamedTuple):
     """Named tuple for holding Mesh Message info"""
 
-    data_stream = None
+    file_name: str = None
+    data: any = None
     src_mailbox: str = None
     dest_mailbox: str = None
     workflow_id: str = None
     message_id: str = None
+    will_compress: bool = False
 
 
 class MeshMailbox:  # pylint: disable=too-many-instance-attributes
@@ -185,17 +186,49 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         """
         return self.handshake()
 
-    @staticmethod
-    def send_chunk_stream(
-        # self,
-        # mesh_message_object: MeshMessage,
-        # chunk: bool = False,
-        # chunk_size: int = MeshCommon.DEFAULT_CHUNK_SIZE,
-        # chunk_num: int = 1,
+    def send_chunk(
+        self,
+        mesh_message_object: MeshMessage,
+        number_of_chunks: int = 1,
+        chunk_num: int = 1,
     ):
         """Send a chunk from a stream"""
         # override mailbox dest_mailbox if provided in message_object
-        return HTTPStatus.NOT_IMPLEMENTED.value
+        session = self._setup_session()
+        session.headers["Mex-From"] = mesh_message_object.src_mailbox
+        session.headers["Mex-To"] = mesh_message_object.dest_mailbox
+        session.headers["Mex-WorkflowID"] = mesh_message_object.workflow_id
+        session.headers["Mex-FileName"] = mesh_message_object.file_name
+        session.headers["Mex-Chunk-Range"] = f"{chunk_num}:{number_of_chunks}"
+        session.headers["Content-Type"] = "application/octet-stream"
+        session.headers["Mex-Content-Encrypted"] = "N"
+        if mesh_message_object.will_compress:
+            session.headers["Content-Encoding"] = "gzip"
+            session.headers["Mex-Content-Compress"] = "Y"
+            session.headers["Mex-Content-Compressed"] = "Y"
+
+        mesh_url = self.params[MeshMailbox.MESH_URL]
+        if chunk_num == 1:
+            session.headers["Mex-MessageType"] = "DATA"
+            url = f"{mesh_url}/messageexchange/{self.mailbox}/outbox"
+        else:
+            url = (
+                f"{mesh_url}/messageexchange/{self.mailbox}/outbox/"
+                + f"{mesh_message_object.message_id}/{chunk_num}"
+            )
+        response = session.post(url, data=mesh_message_object.data, stream=True)
+        response.raw.decode_content = True
+        message_id = json.loads(response.text)["messageID"]
+        self.log_object.write_log(
+            "MESHSEND0007",
+            None,
+            {
+                "file": mesh_message_object.file_name,
+                "http_status": response.status_code,
+                "message_id": message_id,
+            },
+        )
+        return response
 
     def get_chunk(self, message_id, chunk_num=1):
         """Return a response object for a MESH chunk"""

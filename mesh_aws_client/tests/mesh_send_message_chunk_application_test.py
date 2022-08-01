@@ -64,7 +64,8 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
             # need to fail happy pass on any exception
             self.fail(f"Invocation crashed with Exception {str(e)}")
 
-        self.assertEqual(self.app.body, MeshTestingCommon.FILE_CONTENT.encode("utf8"))
+        # Can't test like this with chunking!
+        # self.assertEqual(self.app.body, MeshTestingCommon.FILE_CONTENT.encode("utf8"))
 
         response["body"].pop("message_id")
         self.assertDictEqual(mock_response, response)
@@ -113,5 +114,7 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
                 "total_chunks": 1,
                 "chunk_size": 50,
                 "complete": False,
+                "current_byte_position": 0,
+                "will_compress": False,
             },
         }
