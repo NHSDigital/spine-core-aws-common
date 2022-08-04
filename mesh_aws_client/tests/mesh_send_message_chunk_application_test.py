@@ -19,12 +19,66 @@ from mesh_aws_client.tests.mesh_testing_common import (
 class TestMeshSendMessageChunkApplication(MeshTestCase):
     """Testing MeshSendMessageChunk application"""
 
+    FILE_CONTENT = "123456789012345678901234567890123"
+    FILE_SIZE = len(FILE_CONTENT)
+
     @mock.patch.dict("os.environ", MeshTestingCommon.os_environ_values)
     def setUp(self):
         """Override setup to use correct application object"""
         super().setUp()
         self.app = MeshSendMessageChunkApplication()
         self.environment = self.app.system_config["Environment"]
+
+    @mock_ssm
+    @mock_s3
+    @mock.patch.object(MeshSendMessageChunkApplication, "_create_new_internal_id")
+    @requests_mock.Mocker()
+    def test_get_file_from_s3_uncompressed_without_parts(self, mock_create_new_internal_id, mock_response):
+        #FILE_CONTENT = "123456789012345678901234567890123"
+        s3_client = boto3.client("s3", config=MeshTestingCommon.aws_config)
+        ssm_client = boto3.client("ssm", config=MeshTestingCommon.aws_config)
+        MeshTestingCommon.setup_mock_aws_s3_buckets(self.environment, s3_client)
+        MeshTestingCommon.setup_mock_aws_ssm_parameter_store(
+            self.environment, ssm_client
+        )
+        self.app.current_byte = 0
+        self.app.file_size = 33
+        self.app.s3_client = s3_client
+        self.app.bucket = f"{self.environment}-mesh"
+        self.app.key = "MESH-TEST2/outbound/testfile.json"
+        self.app.chunk_size = 33
+        self.app.buffer_size = 33
+        gen = self.app._get_file_from_s3()
+        all_33_bytes = next(gen)
+        self.assertEqual(b"123456789012345678901234567890123", all_33_bytes)
+
+
+    @mock_ssm
+    @mock_s3
+    @mock.patch.object(MeshSendMessageChunkApplication, "_create_new_internal_id")
+    @requests_mock.Mocker()
+    def test_get_file_from_s3_uncompressed_with_parts(self, mock_create_new_internal_id, mock_response):
+        s3_client = boto3.client("s3", config=MeshTestingCommon.aws_config)
+        ssm_client = boto3.client("ssm", config=MeshTestingCommon.aws_config)
+        MeshTestingCommon.setup_mock_aws_s3_buckets(self.environment, s3_client)
+        MeshTestingCommon.setup_mock_aws_ssm_parameter_store(
+            self.environment, ssm_client
+        )
+        self.app.current_byte = 0
+        self.app.file_size = 33
+        self.app.s3_client = s3_client
+        self.app.bucket = f"{self.environment}-mesh"
+        self.app.key = "MESH-TEST2/outbound/testfile.json"
+        self.app.chunk_size = 33
+        self.app.buffer_size = 7
+        gen = self.app._get_file_from_s3()
+        # considered putting a while loop here comparing current byte to self.FILE_SIZE
+        # but that's exactly the same as the logic we're testing
+        self.assertEqual(b"1234567", next(gen))
+        self.assertEqual(b"8901234", next(gen))
+        self.assertEqual(b"5678901", next(gen))
+        self.assertEqual(b"2345678", next(gen))
+        self.assertEqual(b"90123", next(gen))
 
     @mock_ssm
     @mock_s3
