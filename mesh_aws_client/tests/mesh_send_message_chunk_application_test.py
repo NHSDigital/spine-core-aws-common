@@ -76,8 +76,6 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
         self.app.chunk_size = 33
         self.app.buffer_size = 7
         gen = self.app._get_file_from_s3()
-        # considered putting a while loop here comparing current byte to self.FILE_SIZE
-        # but that's exactly the same as the logic we're testing
         self.assertEqual(b"1234567", next(gen))
         self.assertEqual(b"8901234", next(gen))
         self.assertEqual(b"5678901", next(gen))
@@ -89,10 +87,8 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
     @mock.patch.object(MeshSendMessageChunkApplication, "_create_new_internal_id")
     @requests_mock.Mocker()
     def test_get_file_from_s3_compressed_without_parts(self, mock_create_new_internal_id, mock_response):
-        #FILE_CONTENT = "123456789012345678901234567890123"
         s3_client = boto3.client("s3", config=MeshTestingCommon.aws_config)
         ssm_client = boto3.client("ssm", config=MeshTestingCommon.aws_config)
-        # MeshTestingCommon.setup_mock_aws_s3_buckets(self.environment, s3_client)
         MeshTestingCommon.setup_mock_aws_ssm_parameter_store(
             self.environment, ssm_client
         )
@@ -128,10 +124,8 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
     @mock.patch.object(MeshSendMessageChunkApplication, "_create_new_internal_id")
     @requests_mock.Mocker()
     def test_get_file_from_s3_compressed_with_parts(self, mock_create_new_internal_id, mock_response):
-        #FILE_CONTENT = "123456789012345678901234567890123"
         s3_client = boto3.client("s3", config=MeshTestingCommon.aws_config)
         ssm_client = boto3.client("ssm", config=MeshTestingCommon.aws_config)
-        # MeshTestingCommon.setup_mock_aws_s3_buckets(self.environment, s3_client)
         MeshTestingCommon.setup_mock_aws_ssm_parameter_store(
             self.environment, ssm_client
         )
@@ -157,11 +151,11 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
         self.app.buffer_size = 6 * self.MEBIBYTE
         gen = self.app._get_file_from_s3()
         compressed_part_1 = next(gen)
-        uncompressed_part_1 = gzip.decompress((compressed_part_1))
+        uncompressed_part_1 = gzip.decompress(compressed_part_1)
         compressed_part_2 = next(gen)
-        uncompressed_part_2 = gzip.decompress((compressed_part_2))
+        uncompressed_part_2 = gzip.decompress(compressed_part_2)
         compressed_part_3 = next(gen)
-        uncompressed_part_3 = gzip.decompress((compressed_part_3))
+        uncompressed_part_3 = gzip.decompress(compressed_part_3)
         uncompressed_result = uncompressed_part_1 + uncompressed_part_2 + uncompressed_part_3
         uncompressed_size = len (uncompressed_result)
         self.assertEqual(file_size, uncompressed_size)
@@ -173,12 +167,12 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
     @mock.patch.object(MeshSendMessageChunkApplication, "_create_new_internal_id")
     @requests_mock.Mocker()
     def test_mesh_send_file_chunk_app_no_chunks_happy_path(
-        self, mock_create_new_internal_id, mock_response
+        self, mock_create_new_internal_id, response_mocker
     ):
         """Test the lambda with small file, no chunking, happy path"""
         mock_create_new_internal_id.return_value = MeshTestingCommon.KNOWN_INTERNAL_ID
 
-        mock_response.post(
+        response_mocker.post(
             "/messageexchange/MESH-TEST2/outbox",
             text=json.dumps({"messageID": "20210711164906010267_97CCD9"}),
             headers={
@@ -194,23 +188,23 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
         MeshTestingCommon.setup_mock_aws_ssm_parameter_store(
             self.environment, ssm_client
         )
-        mock_input = self._sample_input_event()
-        mock_response = self._sample_input_event()
-        mock_response["body"].update({"complete": True})
+        mock_lambda_input = self._sample_input_event()
+        expected_lambda_response = self._sample_input_event()
+        expected_lambda_response["body"].update({"complete": True})
 
         try:
-            response = self.app.main(
-                event=mock_input, context=MeshTestingCommon.CONTEXT
+            lambda_response = self.app.main(
+                event=mock_lambda_input, context=MeshTestingCommon.CONTEXT
             )
         except Exception as e:  # pylint: disable=broad-except
             # need to fail happy pass on any exception
             self.fail(f"Invocation crashed with Exception {str(e)}")
 
         # Can't test like this with chunking!
-        # self.assertEqual(self.app.body, MeshTestingCommon.FILE_CONTENT.encode("utf8"))
+        self.assertEqual(self.app.body, MeshTestingCommon.FILE_CONTENT.encode("utf8"))
 
-        response["body"].pop("message_id")
-        self.assertDictEqual(mock_response, response)
+        lambda_response["body"].pop("message_id")
+        self.assertDictEqual(expected_lambda_response, lambda_response)
         # Check completion
         self.assertTrue(
             self.log_helper.was_value_logged("LAMBDA0003", "Log_Level", "INFO")
