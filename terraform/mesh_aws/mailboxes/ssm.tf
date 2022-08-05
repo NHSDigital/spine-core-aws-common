@@ -30,7 +30,7 @@ resource "aws_ssm_parameter" "mailbox_allowed_workflow_ids" {
 
 resource "aws_ssm_parameter" "mailbox_password" {
   name      = "/${var.name}/mesh/mailboxes/${var.mailbox_id}/MAILBOX_PASSWORD"
-  overwrite = true
+  overwrite = false
   type      = "SecureString"
   value     = "To Replace"
 
