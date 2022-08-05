@@ -1,4 +1,5 @@
 """ Testing MeshSendMessageChunk Application """
+import gzip
 from http import HTTPStatus
 from unittest import mock
 import json
@@ -21,6 +22,9 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
 
     FILE_CONTENT = "123456789012345678901234567890123"
     FILE_SIZE = len(FILE_CONTENT)
+
+    MEBIBYTE = 1024 * 1024
+    DEFAULT_BUFFER_SIZE = 20 * MEBIBYTE
 
     @mock.patch.dict("os.environ", MeshTestingCommon.os_environ_values)
     def setUp(self):
@@ -79,6 +83,90 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
         self.assertEqual(b"5678901", next(gen))
         self.assertEqual(b"2345678", next(gen))
         self.assertEqual(b"90123", next(gen))
+
+    @mock_ssm
+    @mock_s3
+    @mock.patch.object(MeshSendMessageChunkApplication, "_create_new_internal_id")
+    @requests_mock.Mocker()
+    def test_get_file_from_s3_compressed_without_parts(self, mock_create_new_internal_id, mock_response):
+        #FILE_CONTENT = "123456789012345678901234567890123"
+        s3_client = boto3.client("s3", config=MeshTestingCommon.aws_config)
+        ssm_client = boto3.client("ssm", config=MeshTestingCommon.aws_config)
+        # MeshTestingCommon.setup_mock_aws_s3_buckets(self.environment, s3_client)
+        MeshTestingCommon.setup_mock_aws_ssm_parameter_store(
+            self.environment, ssm_client
+        )
+        s3_client.create_bucket(
+            Bucket=f"{self.environment}-mesh-big",
+            CreateBucketConfiguration={"LocationConstraint": "eu-west-2"},
+        )
+        # string alone is 15 bytes
+        file_content = b"012345678901234" * 1024 * 1024
+        file_size = len(file_content)
+        s3_client.put_object(
+            Bucket=f"{self.environment}-mesh-big",
+            Key="MESH-TEST2/outbound/testfile.json",
+            Body=file_content,
+        )
+        self.app.current_byte = 0
+        self.app.file_size = file_size
+        self.app.s3_client = s3_client
+        self.app.bucket = f"{self.environment}-mesh-big"
+        self.app.key = "MESH-TEST2/outbound/testfile.json"
+        self.app.chunk_size = self.DEFAULT_BUFFER_SIZE
+        self.app.compress = True
+        gen = self.app._get_file_from_s3()
+        compressed_result = next(gen)
+        uncompressed_result = gzip.decompress((compressed_result))
+        uncompressed_size = len (uncompressed_result)
+        self.assertEqual(file_size, uncompressed_size)
+        self.assertEqual(file_content, uncompressed_result)
+
+
+    @mock_ssm
+    @mock_s3
+    @mock.patch.object(MeshSendMessageChunkApplication, "_create_new_internal_id")
+    @requests_mock.Mocker()
+    def test_get_file_from_s3_compressed_with_parts(self, mock_create_new_internal_id, mock_response):
+        #FILE_CONTENT = "123456789012345678901234567890123"
+        s3_client = boto3.client("s3", config=MeshTestingCommon.aws_config)
+        ssm_client = boto3.client("ssm", config=MeshTestingCommon.aws_config)
+        # MeshTestingCommon.setup_mock_aws_s3_buckets(self.environment, s3_client)
+        MeshTestingCommon.setup_mock_aws_ssm_parameter_store(
+            self.environment, ssm_client
+        )
+        s3_client.create_bucket(
+            Bucket=f"{self.environment}-mesh-big",
+            CreateBucketConfiguration={"LocationConstraint": "eu-west-2"},
+        )
+        # string alone is 15 bytes
+        file_content = b"012345678901234" * 1024 * 1024
+        file_size = len(file_content)
+        s3_client.put_object(
+            Bucket=f"{self.environment}-mesh-big",
+            Key="MESH-TEST2/outbound/testfile.json",
+            Body=file_content,
+        )
+        self.app.current_byte = 0
+        self.app.file_size = file_size
+        self.app.s3_client = s3_client
+        self.app.bucket = f"{self.environment}-mesh-big"
+        self.app.key = "MESH-TEST2/outbound/testfile.json"
+        self.app.chunk_size = self.DEFAULT_BUFFER_SIZE
+        self.app.compress = True
+        self.app.buffer_size = 6 * self.MEBIBYTE
+        gen = self.app._get_file_from_s3()
+        compressed_part_1 = next(gen)
+        uncompressed_part_1 = gzip.decompress((compressed_part_1))
+        compressed_part_2 = next(gen)
+        uncompressed_part_2 = gzip.decompress((compressed_part_2))
+        compressed_part_3 = next(gen)
+        uncompressed_part_3 = gzip.decompress((compressed_part_3))
+        uncompressed_result = uncompressed_part_1 + uncompressed_part_2 + uncompressed_part_3
+        uncompressed_size = len (uncompressed_result)
+        self.assertEqual(file_size, uncompressed_size)
+        self.assertEqual(file_content, uncompressed_result)
+
 
     @mock_ssm
     @mock_s3
