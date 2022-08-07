@@ -32,11 +32,11 @@ class TestMeshFetchMessageChunkApplication(MeshTestCase):
     @mock.patch.object(MeshFetchMessageChunkApplication, "_create_new_internal_id")
     @requests_mock.Mocker()
     def test_mesh_fetch_file_chunk_app_no_chunks_happy_path(
-        self, mock_create_new_internal_id, mock_response
+        self, mock_create_new_internal_id, response_mocker
     ):
         """Test the lambda with small file, no chunking, happy path"""
         # Mock responses from MESH server
-        mock_response.get(
+        response_mocker.get(
             f"/messageexchange/MESH-TEST1/inbox/{MeshTestingCommon.KNOWN_MESSAGE_ID1}",
             text="123456789012345678901234567890123",
             status_code=HTTPStatus.OK.value,
@@ -63,7 +63,7 @@ class TestMeshFetchMessageChunkApplication(MeshTestCase):
                 "Etag": "915cd12d58ce2f820959e9ba41b2ebb02f2e6005",
             },
         )
-        mock_response.put(
+        response_mocker.put(
             f"/messageexchange/MESH-TEST1/inbox/{MeshTestingCommon.KNOWN_MESSAGE_ID1}"
             + "/status/acknowledged",
             text=json.dumps({"messageId": MeshTestingCommon.KNOWN_MESSAGE_ID1}),
@@ -278,6 +278,70 @@ class TestMeshFetchMessageChunkApplication(MeshTestCase):
         self.assertTrue(
             self.log_helper.was_value_logged("LAMBDA0003", "Log_Level", "INFO")
         )
+
+    @mock_ssm
+    @mock_s3
+    @mock.patch.object(MeshFetchMessageChunkApplication, "_create_new_internal_id")
+    @requests_mock.Mocker()
+    def test_mesh_fetch_file_chunk_app_report(
+        self, mock_create_new_internal_id, response_mocker
+    ):
+        """Test the lambda with a Non-Delivery Report"""
+        # Mock responses from MESH server
+        response_mocker.get(
+            f"/messageexchange/MESH-TEST1/inbox/{MeshTestingCommon.KNOWN_MESSAGE_ID1}",
+            text="",
+            status_code=HTTPStatus.OK.value,
+            headers={
+                "Content-Type": "application/octet-stream",
+                "Content-Length": "0",
+                "Connection": "keep-alive",
+                "Mex-Messageid": MeshTestingCommon.KNOWN_MESSAGE_ID2,
+                "Mex-Linkedmsgid": MeshTestingCommon.KNOWN_MESSAGE_ID1,
+                "Mex-To": "MESH-TEST1",
+                "Mex-Subject": "NDR",
+                "Mex-Workflowid": "TESTWORKFLOW",
+                "Mex-Messagetype": "REPORT",
+                "Mex-Version": "1.0",
+                "Mex-Addresstype": "ALL",
+                "Mex-Statuscode": "14",
+                "Mex-Statusevent": "SEND",
+                "Mex-Statusdescription": "Message not collected by recipient after 5 days",  # noqa pylint: disable=line-too-long
+                "Mex-Statussuccess": "ERROR",
+                "Mex-Statustimestamp": "20210705162157",
+                "Mex-Content-Compressed": "N",
+                "Etag": "915cd12d58ce2f820959e9ba41b2ebb02f2e6005",
+                "Strict-Transport-Security": "max-age=15552000",
+            },
+        )
+        response_mocker.put(
+            f"/messageexchange/MESH-TEST1/inbox/{MeshTestingCommon.KNOWN_MESSAGE_ID1}"
+            + "/status/acknowledged",
+            text=json.dumps({"messageId": MeshTestingCommon.KNOWN_MESSAGE_ID1}),
+            headers={
+                "Content-Type": "application/json",
+                "Transfer-Encoding": "chunked",
+                "Connection": "keep-alive",
+            },
+        )
+        mock_create_new_internal_id.return_value = MeshTestingCommon.KNOWN_INTERNAL_ID1
+        s3_client = boto3.client("s3", region_name="eu-west-2")
+        ssm_client = boto3.client("ssm", region_name="eu-west-2")
+        MeshTestingCommon.setup_mock_aws_s3_buckets(self.environment, s3_client)
+        MeshTestingCommon.setup_mock_aws_ssm_parameter_store(
+            self.environment, ssm_client
+        )
+        mock_input = self._sample_first_input_event()
+        try:
+            response = self.app.main(
+                event=mock_input, context=MeshTestingCommon.CONTEXT
+            )
+        except Exception as exception:  # pylint: disable=broad-except
+            # need to fail happy pass on any exception
+            self.fail(f"Invocation crashed with Exception {str(exception)}")
+
+        expected_return_code = HTTPStatus.OK.value
+        self.assertEqual(response["statusCode"], expected_return_code)
 
     @mock_ssm
     @mock_s3
