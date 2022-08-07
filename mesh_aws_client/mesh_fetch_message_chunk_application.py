@@ -68,7 +68,7 @@ class MeshFetchMessageChunkApplication(
         s3_folder = self.mailbox.params.get("INBOUND_FOLDER", "")
         if len(s3_folder) > 0:
             s3_folder += "/"
-        file_name = self.http_response.headers["Mex-Filename"]
+        file_name = self.http_response.headers.get("Mex-Filename", self.message_id)
         self.s3_key = s3_folder + (
             file_name if len(file_name) > 0 else self.message_id + ".dat"
         )
@@ -285,7 +285,9 @@ class MeshFetchMessageChunkApplication(
                 "aws_current_part_id": self.aws_current_part_id,
                 "aws_part_etags": self.aws_part_etags,
                 "internal_id": self.internal_id,
-                "file_name": self.http_response.headers["Mex-Filename"],
+                "file_name": self.http_response.headers.get(
+                    "Mex-Filename", self.message_id
+                ),
             }
         )
 
