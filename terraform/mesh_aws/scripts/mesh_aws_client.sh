@@ -7,7 +7,7 @@ set -x
 set -o pipefail
 
 CODE_DIR="../mesh_aws_client/mesh_aws_client"
-PYTHON_BIN="python3.8"
+PYTHON_BIN="python3"
 
 # Deterministic dir
 SCRIPT_DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)"
