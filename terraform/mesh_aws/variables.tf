@@ -8,11 +8,13 @@ variable "config" {
   type = object({
     environment = string
     verify_ssl  = bool
+    use_secrets_manager = bool
   })
 
   default = {
     environment = "integration"
     verify_ssl  = true
+    use_secrets_manager = false
   }
 
   validation {
