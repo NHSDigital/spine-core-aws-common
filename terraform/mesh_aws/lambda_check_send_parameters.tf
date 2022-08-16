@@ -9,9 +9,9 @@ resource "aws_security_group" "check_send_parameters" {
   vpc_id      = var.config.vpc_id
 
   egress {
-    from_port = 443
-    to_port   = 443
-    protocol  = "tcp"
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
     security_groups = concat(
       var.config.aws_ssm_endpoint_sg_id,
       var.config.aws_sfn_endpoint_sg_id,
@@ -39,14 +39,18 @@ resource "aws_lambda_function" "check_send_parameters" {
     }
   }
 
-  vpc_config {
-    count              = var.config.vpc_id == "" ? 0 : 1
-    subnet_ids         = var.config.subnet_ids
-    security_group_ids = [aws_security_group.check_send_parameters[count.index].id]
+  dynamic "vpc_config" {
+    for_each = var.vpc_enabled == true ? [var.vpc_enabled] : []
+    content {
+      subnet_ids         = var.config.subnet_ids
+      security_group_ids = [aws_security_group.check_send_parameters[0].id]
+    }
   }
 
-  depends_on = [aws_cloudwatch_log_group.check_send_parameters,
-  aws_iam_role_policy_attachment.check_send_parameters]
+  depends_on = [
+    aws_cloudwatch_log_group.check_send_parameters,
+    aws_iam_role_policy_attachment.check_send_parameters
+  ]
 }
 
 resource "aws_cloudwatch_log_group" "check_send_parameters" {

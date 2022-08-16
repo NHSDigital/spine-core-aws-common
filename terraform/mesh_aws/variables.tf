@@ -2,6 +2,10 @@ variable "name_prefix" {
   description = "Name to prefix on to the resources"
 }
 
+variable "vpc_enabled" {
+  default = false
+}
+
 variable "config" {
   description = "Shared Mesh configuration"
 
