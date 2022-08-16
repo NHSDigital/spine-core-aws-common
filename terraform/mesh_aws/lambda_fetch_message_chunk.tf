@@ -3,6 +3,7 @@ locals {
 }
 
 resource "aws_security_group" "fetch_message_chunk" {
+  count       = var.config.vpc_id == "" ? 0 : 1
   name        = local.fetch_message_chunk_name
   description = local.fetch_message_chunk_name
   vpc_id      = var.config.vpc_id
@@ -44,10 +45,11 @@ resource "aws_lambda_function" "fetch_message_chunk" {
     }
   }
 
-  # vpc_config {
-  #   subnet_ids         = var.config.subnet_ids
-  #   security_group_ids = [aws_security_group.fetch_message_chunk.id]
-  # }
+  vpc_config {
+    count              = var.config.vpc_id == "" ? 0 : 1
+    subnet_ids         = var.config.subnet_ids
+    security_group_ids = [aws_security_group.fetch_message_chunk.id]
+  }
 
   depends_on = [aws_cloudwatch_log_group.fetch_message_chunk,
   aws_iam_role_policy_attachment.fetch_message_chunk]
