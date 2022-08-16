@@ -3,7 +3,6 @@ locals {
 }
 
 resource "aws_security_group" "check_send_parameters" {
-  count       = var.config.vpc_id == "" ? 0 : 1
   name        = local.check_send_parameters_name
   description = local.check_send_parameters_name
   vpc_id      = var.config.vpc_id

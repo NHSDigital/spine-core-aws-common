@@ -3,7 +3,6 @@ locals {
 }
 
 resource "aws_security_group" "send_message_chunk" {
-  count       = var.config.vpc_id == "" ? 0 : 1
   name        = local.send_message_chunk_name
   description = local.send_message_chunk_name
   vpc_id      = var.config.vpc_id

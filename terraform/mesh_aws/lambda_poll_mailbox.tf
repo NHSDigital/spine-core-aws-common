@@ -3,7 +3,6 @@ locals {
 }
 
 resource "aws_security_group" "poll_mailbox" {
-  count       = var.config.vpc_id == "" ? 0 : 1
   name        = local.poll_mailbox_name
   description = local.poll_mailbox_name
   vpc_id      = var.config.vpc_id
