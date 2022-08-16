@@ -16,9 +16,9 @@ resource "aws_security_group" "poll_mailbox" {
   }
 
   egress {
-    from_port = 443
-    to_port   = 443
-    protocol  = "tcp"
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
     security_groups = concat(
       var.config.aws_ssm_endpoint_sg_id,
       var.config.aws_sfn_endpoint_sg_id,
@@ -46,14 +46,18 @@ resource "aws_lambda_function" "poll_mailbox" {
     }
   }
 
-  vpc_config {
-    count              = var.config.vpc_id == "" ? 0 : 1
-    subnet_ids         = var.config.subnet_ids
-    security_group_ids = [aws_security_group.poll_mailbox[count.index].id]
+  dynamic "vpc_config" {
+    for_each = var.vpc_enabled == true ? [var.vpc_enabled] : []
+    content {
+      subnet_ids         = var.config.subnet_ids
+      security_group_ids = [aws_security_group.poll_mailbox[0].id]
+    }
   }
 
-  depends_on = [aws_cloudwatch_log_group.poll_mailbox,
-  aws_iam_role_policy_attachment.poll_mailbox]
+  depends_on = [
+    aws_cloudwatch_log_group.poll_mailbox,
+    aws_iam_role_policy_attachment.poll_mailbox
+  ]
 }
 
 resource "aws_cloudwatch_log_group" "poll_mailbox" {

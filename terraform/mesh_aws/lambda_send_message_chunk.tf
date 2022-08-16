@@ -16,9 +16,9 @@ resource "aws_security_group" "send_message_chunk" {
   }
 
   egress {
-    from_port = 443
-    to_port   = 443
-    protocol  = "tcp"
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
     security_groups = concat(
       var.config.aws_s3_endpoint_sg_id,
       var.config.aws_ssm_endpoint_sg_id,
@@ -44,14 +44,20 @@ resource "aws_lambda_function" "send_message_chunk" {
       Environment = local.name
     }
   }
-  vpc_config {
-    count              = var.config.vpc_id == "" ? 0 : 1
-    subnet_ids         = var.config.subnet_ids
-    security_group_ids = [aws_security_group.send_message_chunk[count.index].id]
+
+  dynamic "vpc_config" {
+    for_each = var.vpc_enabled == true ? [var.vpc_enabled] : []
+    content {
+      subnet_ids         = var.config.subnet_ids
+      security_group_ids = [aws_security_group.send_message_chunk[0].id]
+    }
   }
 
-  depends_on = [aws_cloudwatch_log_group.send_message_chunk,
-  aws_iam_role_policy_attachment.send_message_chunk]
+
+  depends_on = [
+    aws_cloudwatch_log_group.send_message_chunk,
+    aws_iam_role_policy_attachment.send_message_chunk
+  ]
 }
 
 resource "aws_cloudwatch_log_group" "send_message_chunk" {

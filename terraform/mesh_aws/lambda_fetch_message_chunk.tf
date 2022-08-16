@@ -45,10 +45,12 @@ resource "aws_lambda_function" "fetch_message_chunk" {
     }
   }
 
-  vpc_config {
-    count              = var.config.vpc_id == "" ? 0 : 1
-    subnet_ids         = var.config.subnet_ids
-    security_group_ids = [aws_security_group.fetch_message_chunk[count.index].id]
+    dynamic "vpc_config" {
+    for_each = var.vpc_enabled == true ? [var.vpc_enabled] : []
+    content {
+      subnet_ids         = var.config.subnet_ids
+      security_group_ids = [aws_security_group.fetch_message_chunk[0].id]
+    }
   }
 
   depends_on = [aws_cloudwatch_log_group.fetch_message_chunk,
