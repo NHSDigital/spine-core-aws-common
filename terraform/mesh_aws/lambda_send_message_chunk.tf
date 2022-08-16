@@ -47,7 +47,7 @@ resource "aws_lambda_function" "send_message_chunk" {
   vpc_config {
     count              = var.config.vpc_id == "" ? 0 : 1
     subnet_ids         = var.config.subnet_ids
-    security_group_ids = [aws_security_group.send_message_chunk.id]
+    security_group_ids = [aws_security_group.send_message_chunk[count.index].id]
   }
 
   depends_on = [aws_cloudwatch_log_group.send_message_chunk,
