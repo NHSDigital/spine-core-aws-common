@@ -13,6 +13,11 @@ resource "aws_sfn_state_machine" "get_messages" {
     level                  = "ALL"
   }
 
+  depends_on = [
+    aws_lambda_function.poll_mailbox,
+    aws_lambda_function.fetch_message_chunk
+  ]
+
   definition = jsonencode({
     Comment = local.get_messages_name
     StartAt = "Poll for messages"

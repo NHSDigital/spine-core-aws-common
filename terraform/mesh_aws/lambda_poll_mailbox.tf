@@ -2,6 +2,33 @@ locals {
   poll_mailbox_name = "${local.name}-poll-mailbox"
 }
 
+resource "aws_security_group" "poll_mailbox" {
+  count       = var.config.vpc_id == "" ? 0 : 1
+  name        = local.poll_mailbox_name
+  description = local.poll_mailbox_name
+  vpc_id      = var.config.vpc_id
+
+  egress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = var.config.environment == "production" ? local.mesh_ips.production : local.mesh_ips.integration
+  }
+
+  egress {
+    from_port = 443
+    to_port   = 443
+    protocol  = "tcp"
+    security_groups = concat(
+      var.config.aws_ssm_endpoint_sg_id,
+      var.config.aws_sfn_endpoint_sg_id,
+      var.config.aws_logs_endpoints_sg_id,
+      var.config.aws_kms_endpoints_sg_id,
+      var.config.aws_lambda_endpoints_sg_id
+    )
+  }
+}
+
 resource "aws_lambda_function" "poll_mailbox" {
   function_name    = local.poll_mailbox_name
   filename         = data.archive_file.mesh_aws_client.output_path
@@ -19,7 +46,14 @@ resource "aws_lambda_function" "poll_mailbox" {
     }
   }
 
-  depends_on = [aws_cloudwatch_log_group.poll_mailbox]
+  vpc_config {
+    count              = var.config.vpc_id == "" ? 0 : 1
+    subnet_ids         = var.config.subnet_ids
+    security_group_ids = [aws_security_group.poll_mailbox.id]
+  }
+
+  depends_on = [aws_cloudwatch_log_group.poll_mailbox,
+  aws_iam_role_policy_attachment.poll_mailbox]
 }
 
 resource "aws_cloudwatch_log_group" "poll_mailbox" {
@@ -113,6 +147,33 @@ data "aws_iam_policy_document" "poll_mailbox" {
       aws_kms_alias.mesh.target_key_arn
     ]
   }
+
+  statement {
+    sid    = "EC2Interfaces"
+    effect = "Allow"
+
+    actions = [
+      "ec2:CreateNetworkInterface",
+      "ec2:DescribeNetworkInterfaces",
+      "ec2:DeleteNetworkInterface",
+    ]
+
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "poll_mailbox_check_sfn" {
+  role       = aws_iam_role.poll_mailbox.name
+  policy_arn = aws_iam_policy.poll_mailbox_check_sfn.arn
+}
+
+resource "aws_iam_policy" "poll_mailbox_check_sfn" {
+  name        = "${local.poll_mailbox_name}-check-sfn-policy"
+  description = "${local.poll_mailbox_name}-check-sfn-policy"
+  policy      = data.aws_iam_policy_document.poll_mailbox_check_sfn.json
+}
+
+data "aws_iam_policy_document" "poll_mailbox_check_sfn" {
 
   statement {
     sid    = "SFNList"

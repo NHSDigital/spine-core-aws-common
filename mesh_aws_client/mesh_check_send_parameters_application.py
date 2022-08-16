@@ -75,6 +75,8 @@ class MeshCheckSendParametersApplication(LambdaApplication):
         file_size = self._get_file_size(bucket, key)
         (do_chunking, chunks) = calculate_chunks(file_size, self.chunk_size)
         # TODO compression calculations and recaculate chunks and chunk_size
+        # currently turned off due to potential incompatibility with MESH
+        # Java Client
 
         self.log_object.write_log(
             "MESHSEND0004",
@@ -108,7 +110,7 @@ class MeshCheckSendParametersApplication(LambdaApplication):
                 "message_id": None,
                 "current_byte_position": 0,
                 "compress_ratio": 1,
-                "will_compress": False
+                "will_compress": False,
             },
         }
 

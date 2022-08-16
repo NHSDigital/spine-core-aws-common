@@ -8,11 +8,28 @@ variable "config" {
   type = object({
     environment = string
     verify_ssl  = bool
+    vpc_id      = string
+    subnet_ids  = list(string)
+    # Must be a better way of doing this
+    aws_s3_endpoint_sg_id      = list(string)
+    aws_ssm_endpoint_sg_id     = list(string)
+    aws_sfn_endpoint_sg_id     = list(string)
+    aws_logs_endpoints_sg_id   = list(string)
+    aws_kms_endpoints_sg_id    = list(string)
+    aws_lambda_endpoints_sg_id = list(string)
   })
 
   default = {
-    environment = "integration"
-    verify_ssl  = true
+    environment                = "integration"
+    verify_ssl                 = true
+    vpc_id                     = ""
+    subnet_ids                 = []
+    aws_s3_endpoint_sg_id      = []
+    aws_ssm_endpoint_sg_id     = []
+    aws_sfn_endpoint_sg_id     = []
+    aws_logs_endpoints_sg_id   = []
+    aws_kms_endpoints_sg_id    = []
+    aws_lambda_endpoints_sg_id = []
   }
 
   validation {
