@@ -49,7 +49,7 @@ resource "aws_lambda_function" "poll_mailbox" {
   vpc_config {
     count              = var.config.vpc_id == "" ? 0 : 1
     subnet_ids         = var.config.subnet_ids
-    security_group_ids = [aws_security_group.poll_mailbox[count.index].id]
+    security_group_ids = [aws_security_group.poll_mailbox[0].id]
   }
 
   depends_on = [aws_cloudwatch_log_group.poll_mailbox,
