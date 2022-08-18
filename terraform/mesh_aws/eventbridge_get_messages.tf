@@ -5,7 +5,7 @@ resource "aws_cloudwatch_event_rule" "get_messages" {
 }
 
 resource "aws_cloudwatch_event_target" "get_messages" {
-  for_each = { for mailbox in var.mailboxes : mailbox.id => mailbox }
+  for_each = var.mailbox_ids
 
   rule      = aws_cloudwatch_event_rule.get_messages.name
   target_id = "GetMessages${each.key}"
@@ -13,7 +13,7 @@ resource "aws_cloudwatch_event_target" "get_messages" {
   role_arn  = aws_iam_role.get_messages_event.arn
 
   input = jsonencode({
-    mailbox = each.key
+    mailbox = each.value
   })
 }
 
