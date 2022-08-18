@@ -7,4 +7,6 @@ module "mailboxes" {
   bucket_id  = aws_s3_bucket.mesh.id
   mailbox_id = each.key
   mailbox    = each.value
+  config     = var.config
+  key_id = aws_kms_key.mesh.key_id
 }

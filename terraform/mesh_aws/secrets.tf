@@ -1,21 +1,13 @@
-resource "aws_secretsmanager_secret" "ca_cert" {
-  name      = "/${local.name}/mesh/MESH_CA_CERT"
-}
-resource "aws_secretsmanager_secret" "client_cert" {
-  name      = "/${local.name}/mesh/MESH_CLIENT_CERT"
-}
 resource "aws_secretsmanager_secret" "client_key" {
+  count = var.config.use_secrets_manager == "true" ? 1 : 0
   name      = "/${local.name}/mesh/MESH_CLIENT_KEY"
+  description = "/${local.name}/mesh/MESH_CLIENT_KEY"
+  kms_key_id  = aws_kms_key.mesh.key_id
 }
 
 resource "aws_secretsmanager_secret" "shared_key" {
+  count = var.config.use_secrets_manager == "true" ? 1 : 0
   name      = "/${local.name}/mesh/MESH_SHARED_KEY"
-}
-
-resource "aws_secretsmanager_secret" "url" {
-  name      = "/${local.name}/mesh/MESH_URL"
-}
-
-resource "aws_secretsmanager_secret" "verify_ssl" {
-  name      = "/${local.name}/mesh/MESH_VERIFY_SSL"
+  description = "/${local.name}/mesh/MESH_SHARED_KEY"
+  kms_key_id  = aws_kms_key.mesh.key_id
 }

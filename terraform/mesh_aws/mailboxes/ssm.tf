@@ -29,6 +29,7 @@ resource "aws_ssm_parameter" "mailbox_allowed_workflow_ids" {
 }
 
 resource "aws_ssm_parameter" "mailbox_password" {
+  count = var.config.use_secrets_manager == "false" ? 1 : 0
   name      = "/${var.name}/mesh/mailboxes/${var.mailbox_id}/MAILBOX_PASSWORD"
   type      = "SecureString"
   value     = "To Replace"
@@ -38,6 +39,13 @@ resource "aws_ssm_parameter" "mailbox_password" {
       value,
     ]
   }
+}
+
+resource "aws_secretsmanager_secret" "mailbox_password" {
+  count = var.config.use_secrets_manager == "true" ? 1 : 0
+  name      = "/${var.name}/mesh/mailboxes/${var.mailbox_id}/MAILBOX_PASSWORD"
+  description = "/${var.name}/mesh/mailboxes/${var.mailbox_id}/MAILBOX_PASSWORD"
+  kms_key_id  = var.key_id
 }
 
 resource "aws_ssm_parameter" "mailbox_inbound_bucket" {

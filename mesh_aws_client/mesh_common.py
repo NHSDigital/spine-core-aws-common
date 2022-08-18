@@ -13,6 +13,7 @@ import requests
 
 from spine_aws_common.logger import Logger
 
+REGION_NAME = os.environ.get("AWS_REGION")
 
 class SingletonCheckFailure(Exception):
     """Singleton check failed"""
@@ -102,12 +103,42 @@ class MeshCommon:
         }
 
     @staticmethod
+    def get_params(path, recursive=False, decryption=True):
+        ssm_client = boto3.client("ssm", region_name=REGION_NAME)
+        params_result = ssm_client.get_parameters_by_path(
+            Path=path,
+            Recursive=recursive,
+            WithDecryption=decryption,
+        )
+        params = params_result.get("Parameters", {})
+        new_params_dict = {}
+        for entry in params:
+            name = entry.get("Name", None)
+            if name:
+                var_name = os.path.basename(name)
+                new_params_dict[var_name] = entry.get("Value", None)
+        if os.environ.get("use_secrets_manager") == "true":
+            secrets_client = boto3.client("secretsmanager", region_name=REGION_NAME)
+            secrets_params_result = secrets_client.get_parameters_by_path(
+                Path=path,
+                Recursive=recursive,
+                WithDecryption=decryption,
+            )
+            secrets_params = secrets_params_result.get("Parameters", {})
+            for entry in secrets_params:
+                name = entry.get("Name", None)
+                if name:
+                    var_name = os.path.basename(name)
+                    new_params_dict[var_name] = entry.get("Value", None)
+        return new_params_dict
+
+
+    @staticmethod
     def get_ssm_params(path, recursive=False, decryption=True):
         """Get parameters from SSM param store and return as simple dict"""
-        # TODO region name fix
         # if use_secrets_manager == true
         # else
-        ssm_client = boto3.client("ssm", region_name="eu-west-2")
+        ssm_client = boto3.client("ssm", region_name=REGION_NAME)
 
         params_result = ssm_client.get_parameters_by_path(
             Path=path,
