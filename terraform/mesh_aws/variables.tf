@@ -2,6 +2,10 @@ variable "name_prefix" {
   description = "Name to prefix on to the resources"
 }
 
+variable "vpc_enabled" {
+  default = false
+}
+
 variable "config" {
   description = "Shared Mesh configuration"
 
@@ -9,12 +13,28 @@ variable "config" {
     environment = string
     verify_ssl  = bool
     use_secrets_manager = bool
+    vpc_id      = string
+    subnet_ids  = list(string)
+    aws_s3_endpoint_sg_id      = list(string)
+    aws_ssm_endpoint_sg_id     = list(string)
+    aws_sfn_endpoint_sg_id     = list(string)
+    aws_logs_endpoints_sg_id   = list(string)
+    aws_kms_endpoints_sg_id    = list(string)
+    aws_lambda_endpoints_sg_id = list(string)
   })
 
   default = {
-    environment = "integration"
-    verify_ssl  = true
-    use_secrets_manager = false
+    environment                = "integration"
+    verify_ssl                 = true
+    use_secrets_manager        = false
+    vpc_id                     = ""
+    subnet_ids                 = []
+    aws_s3_endpoint_sg_id      = []
+    aws_ssm_endpoint_sg_id     = []
+    aws_sfn_endpoint_sg_id     = []
+    aws_logs_endpoints_sg_id   = []
+    aws_kms_endpoints_sg_id    = []
+    aws_lambda_endpoints_sg_id = []
   }
 
   validation {

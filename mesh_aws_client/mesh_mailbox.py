@@ -258,20 +258,20 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         mesh_url = self.params[MeshMailbox.MESH_URL]
         url = f"{mesh_url}/messageexchange/{self.mailbox}/inbox"
         response = session.get(url)
+        response.raise_for_status()
 
-        text_dict = response.text
-        python_dict = json.loads(text_dict)
-        python_list = python_dict["messages"]
+        response_data = json.loads(response.text)
+        message_ids = response_data["messages"]
         self.log_object.write_log(
             "MESHMBOX0005",
             None,
             {
                 "mailbox": self.mailbox,
-                "message_count": len(python_list),
+                "message_count": len(message_ids),
                 "http_status": response.status_code,
             },
         )
-        return response, python_list
+        return response, message_ids
 
     def acknowledge_message(self, message_id):
         """

@@ -13,6 +13,11 @@ resource "aws_sfn_state_machine" "send_message" {
     level                  = "ALL"
   }
 
+  depends_on = [
+    aws_lambda_function.check_send_parameters,
+    aws_lambda_function.send_message_chunk
+  ]
+
   definition = jsonencode({
     Comment = local.send_message_name
     StartAt = "Check send parameters"

@@ -2,6 +2,33 @@ locals {
   fetch_message_chunk_name = "${local.name}-fetch-message-chunk"
 }
 
+resource "aws_security_group" "fetch_message_chunk" {
+  count       = var.config.vpc_id == "" ? 0 : 1
+  name        = local.fetch_message_chunk_name
+  description = local.fetch_message_chunk_name
+  vpc_id      = var.config.vpc_id
+
+  egress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = var.config.environment == "production" ? local.mesh_ips.production : local.mesh_ips.integration
+  }
+
+  egress {
+    from_port = 443
+    to_port   = 443
+    protocol  = "tcp"
+    security_groups = concat(
+      var.config.aws_s3_endpoint_sg_id,
+      var.config.aws_ssm_endpoint_sg_id,
+      var.config.aws_logs_endpoints_sg_id,
+      var.config.aws_kms_endpoints_sg_id,
+      var.config.aws_lambda_endpoints_sg_id
+    )
+  }
+}
+
 resource "aws_lambda_function" "fetch_message_chunk" {
   function_name    = local.fetch_message_chunk_name
   filename         = data.archive_file.mesh_aws_client.output_path
@@ -18,7 +45,16 @@ resource "aws_lambda_function" "fetch_message_chunk" {
     }
   }
 
-  depends_on = [aws_cloudwatch_log_group.fetch_message_chunk]
+    dynamic "vpc_config" {
+    for_each = var.vpc_enabled == true ? [var.vpc_enabled] : []
+    content {
+      subnet_ids         = var.config.subnet_ids
+      security_group_ids = [aws_security_group.fetch_message_chunk[0].id]
+    }
+  }
+
+  depends_on = [aws_cloudwatch_log_group.fetch_message_chunk,
+  aws_iam_role_policy_attachment.fetch_message_chunk]
 }
 
 resource "aws_cloudwatch_log_group" "fetch_message_chunk" {
@@ -138,5 +174,18 @@ data "aws_iam_policy_document" "fetch_message_chunk" {
       aws_s3_bucket.mesh.arn,
       "${aws_s3_bucket.mesh.arn}/*"
     ]
+  }
+
+  statement {
+    sid    = "EC2Interfaces"
+    effect = "Allow"
+
+    actions = [
+      "ec2:CreateNetworkInterface",
+      "ec2:DescribeNetworkInterfaces",
+      "ec2:DeleteNetworkInterface",
+    ]
+
+    resources = ["*"]
   }
 }
