@@ -43,6 +43,7 @@ resource "aws_lambda_function" "poll_mailbox" {
     variables = {
       Environment                     = local.name
       GET_MESSAGES_STEP_FUNCTION_NAME = local.get_messages_name
+      use_secrets_manager             = var.config.use_secrets_manager
     }
   }
 

@@ -36,6 +36,7 @@ resource "aws_lambda_function" "check_send_parameters" {
     variables = {
       Environment                     = local.name
       SEND_MESSAGE_STEP_FUNCTION_NAME = local.send_message_name
+      use_secrets_manager             = var.config.use_secrets_manager
     }
   }
 

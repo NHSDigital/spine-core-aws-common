@@ -42,6 +42,7 @@ resource "aws_lambda_function" "send_message_chunk" {
   environment {
     variables = {
       Environment = local.name
+      use_secrets_manager = var.config.use_secrets_manager
     }
   }
 
