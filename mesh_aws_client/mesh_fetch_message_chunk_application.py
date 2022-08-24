@@ -275,6 +275,15 @@ class MeshFetchMessageChunkApplication(
                 else:
                     part_buffer = buffer
 
+        self.log_object.write_log(
+            "MESHFETCH0001a",
+            None,
+            {
+                "length": len(buffer),
+                "message_id": self.message_id,
+            },
+        )
+
         is_finished = not self.chunked
         if is_finished:
             self._finish_multipart_upload()
