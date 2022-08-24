@@ -235,6 +235,10 @@ class MeshFetchMessageChunkApplication(
             },
         )
 
+        if self.current_chunk == 1:
+            # if first chunk, authenticate first
+            self.mailbox.authenticate()
+
         # get stream for this chunk
         self.http_response = self.mailbox.get_chunk(
             self.message_id, chunk_num=self.current_chunk
