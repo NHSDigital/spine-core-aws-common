@@ -137,6 +137,10 @@ class MeshSendMessageChunkApplication(
             self.input["dest_mailbox"], self.input["workflow_id"]
         )
 
+        if self.current_chunk == 1:
+            # if first chunk, authenticate first
+            self.mailbox.authenticate()
+
         message_object = MeshMessage(
             file_name=os.path.basename(self.key),
             data=self._get_file_from_s3(),
@@ -163,6 +167,11 @@ class MeshSendMessageChunkApplication(
         is_finished = self.current_chunk >= total_chunks if self.chunked else True
         if self.chunked and not is_finished:
             self.current_chunk += 1
+
+        if is_finished:
+            # check mailbox for any reports
+            # TODO expand this
+            _response, _messages = self.mailbox.list_messages()
 
         # update input event to send as response
         self.response.update({"statusCode": status_code})
