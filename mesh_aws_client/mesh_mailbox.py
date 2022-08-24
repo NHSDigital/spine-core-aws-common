@@ -168,12 +168,12 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         Do an authenticated handshake with the MESH server
         """
         session = self._setup_session()
-        session.headers["Mex-ClientVersion"] = (
-            f"AWS Serverless MESH Client={MeshMailbox.VERSION}",
-        )
-        session.headers["Mex-OSArchitecture"] = (platform.machine(),)
-        session.headers["Mex-OSName"] = (platform.system(),)
-        session.headers["Mex-OSVersion"] = (platform.release(),)
+        session.headers[
+            "Mex-ClientVersion"
+        ] = f"AWS Serverless MESH Client={MeshMailbox.VERSION}"
+        session.headers["Mex-OSArchitecture"] = platform.machine()
+        session.headers["Mex-OSName"] = platform.system()
+        session.headers["Mex-OSVersion"] = platform.release()
 
         mesh_url = self.params[MeshMailbox.MESH_URL]
         url = f"{mesh_url}/messageexchange/{self.mailbox}"

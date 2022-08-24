@@ -36,6 +36,30 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
         """Test the lambda with small file, no chunking, happy path"""
         mock_create_new_internal_id.return_value = MeshTestingCommon.KNOWN_INTERNAL_ID
 
+        mock_response.get(
+            "/messageexchange/MESH-TEST2",
+            headers={
+                "Content-Type": "application/json",
+                "Connection": "keep-alive",
+            },
+            text="",
+        )
+        mock_response.get(
+            "/messageexchange/MESH-TEST2/inbox",
+            headers={
+                "Content-Type": "application/json",
+                "Connection": "keep-alive",
+            },
+            text=json.dumps(
+                {
+                    "messages": [
+                        MeshTestingCommon.KNOWN_MESSAGE_ID1,
+                        MeshTestingCommon.KNOWN_MESSAGE_ID2,
+                        MeshTestingCommon.KNOWN_MESSAGE_ID3,
+                    ]
+                }
+            ),
+        )
         mock_response.post(
             "/messageexchange/MESH-TEST2/outbox",
             text=json.dumps({"messageID": "20210711164906010267_97CCD9"}),
