@@ -110,7 +110,7 @@ class MeshCheckSendParametersApplication(LambdaApplication):
                 "message_id": None,
                 "current_byte_position": 0,
                 "compress_ratio": 1,
-                "will_compress": False,
+                "will_compress": True,
             },
         }
 
