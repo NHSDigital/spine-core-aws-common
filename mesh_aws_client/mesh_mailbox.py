@@ -44,7 +44,7 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
     ALLOWED_RECIPIENTS = "ALLOWED_RECIPIENTS"
     ALLOWED_WORKFLOW_IDS = "ALLOWED_WORKFLOW_IDS"
 
-    VERSION = "0.0.2"
+    VERSION = "0.9.1"
 
     def __init__(self, log_object: Logger, mailbox: str, environment: str):
         self.mailbox = mailbox
@@ -146,10 +146,6 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         """
         return {
             "Authorization": self._build_mesh_authorization_header(),
-            "Mex-ClientVersion": f"AWS Serverless MESH Client={MeshMailbox.VERSION}",
-            "Mex-OSArchitecture": platform.machine(),
-            "Mex-OSName": platform.system(),
-            "Mex-OSVersion": platform.release(),
         }
 
     def _setup_session(self) -> requests.Session:
@@ -172,6 +168,13 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         Do an authenticated handshake with the MESH server
         """
         session = self._setup_session()
+        session.headers["Mex-ClientVersion"] = (
+            f"AWS Serverless MESH Client={MeshMailbox.VERSION}",
+        )
+        session.headers["Mex-OSArchitecture"] = (platform.machine(),)
+        session.headers["Mex-OSName"] = (platform.system(),)
+        session.headers["Mex-OSVersion"] = (platform.release(),)
+
         mesh_url = self.params[MeshMailbox.MESH_URL]
         url = f"{mesh_url}/messageexchange/{self.mailbox}"
         response = session.get(url)
