@@ -246,7 +246,7 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
                 f"{mesh_url}/messageexchange/{self.mailbox}/inbox/{message_id}"
                 + f"/{chunk_num}"
             )
-        response = session.get(url, stream=True)
+        response = session.get(url, stream=True, headers={"Accept-Encoding": "gzip"})
         response.raw.decode_content = True
         return response
 
