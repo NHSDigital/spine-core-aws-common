@@ -90,7 +90,7 @@ class MeshFetchMessageChunkApplication(
 
     def _is_last_chunk(self, chunk_num):
         chunk_range = self.http_response.headers.get("Mex-Chunk-Range", "1:1")
-        number_of_chunks = int(chunk_range[2:])
+        number_of_chunks = int(chunk_range.split(":")[1])
         last_chunk = chunk_num == number_of_chunks
         return last_chunk
 
