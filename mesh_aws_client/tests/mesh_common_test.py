@@ -61,6 +61,11 @@ class TestMeshMailbox(TestCase):
             Description = f"/{self.environment}/mesh/MESH_CLIENT_KEY2",
             SecretString = "DummyKey2"
         )
+        self.secrets_manager.create_secret(
+            Name=f"/{self.environment}/foobar/FOOBAR_KEY1",
+            Description = f"/{self.environment}/foobar/FOOBAR_KEY1",
+            SecretString = "FoobarKey2"
+        )
         self.ssm_client.put_parameter(
             Name = f"/{self.environment}/mesh/MESH_URL1",
             Description = f"/{self.environment}/mesh/MESH_URL1",
@@ -74,6 +79,13 @@ class TestMeshMailbox(TestCase):
             Overwrite = True,
             Type = "String",
             Value = "DummyUrl2"
+        )
+        self.ssm_client.put_parameter(
+            Name = f"/{self.environment}/foobar/FOOBAR_URL",
+            Description = f"/{self.environment}/foobar/FOOBAR_URL",
+            Overwrite = True,
+            Type = "String",
+            Value = "FoobarUrl1"
         )
         param_dict = MeshCommon.get_params(f"/{self.environment}/mesh/")
         expected_params = {'MESH_URL1': 'DummyUrl1',
@@ -98,6 +110,11 @@ class TestMeshMailbox(TestCase):
             Description = f"/{self.environment}/mesh/MESH_CLIENT_KEY2",
             SecretString = "DummyKey2"
         )
+        self.secrets_manager.create_secret(
+            Name=f"/{self.environment}/foobar/FOOBAR_KEY1",
+            Description = f"/{self.environment}/foobar/FOOBAR_KEY1",
+            SecretString = "FoobarKey2"
+        )
         self.ssm_client.put_parameter(
             Name = f"/{self.environment}/mesh/MESH_URL1",
             Description = f"/{self.environment}/mesh/MESH_URL1",
@@ -111,6 +128,13 @@ class TestMeshMailbox(TestCase):
             Overwrite = True,
             Type = "String",
             Value = "DummyUrl2"
+        )
+        self.ssm_client.put_parameter(
+            Name = f"/{self.environment}/foobar/FOOBAR_URL",
+            Description = f"/{self.environment}/foobar/FOOBAR_URL",
+            Overwrite = True,
+            Type = "String",
+            Value = "FoobarUrl1"
         )
         param_dict = MeshCommon.get_params(f"/{self.environment}/mesh/")
         expected_params = {'MESH_URL1': 'DummyUrl1',
