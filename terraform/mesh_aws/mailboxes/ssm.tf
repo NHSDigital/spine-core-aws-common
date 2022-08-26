@@ -33,6 +33,7 @@ resource "aws_ssm_parameter" "mailbox_password" {
   name      = "/${var.name}/mesh/mailboxes/${var.mailbox_id}/MAILBOX_PASSWORD"
   type      = "SecureString"
   value     = "To Replace"
+  overwrite = false
 
   lifecycle {
     ignore_changes = [
