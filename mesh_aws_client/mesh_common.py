@@ -119,17 +119,14 @@ class MeshCommon:
                 new_params_dict[var_name] = entry.get("Value", None)
         if os.environ.get("use_secrets_manager") == "true":
             secrets_client = boto3.client("secretsmanager", region_name=REGION_NAME)
-            secrets_params_result = secrets_client.get_parameters_by_path(
-                Path=path,
-                Recursive=recursive,
-                WithDecryption=decryption,
-            )
-            secrets_params = secrets_params_result.get("Parameters", {})
-            for entry in secrets_params:
-                name = entry.get("Name", None)
-                if name:
+            all_secrets_dict = secrets_client.list_secrets()
+            all_secrets_list = all_secrets_dict['SecretList']
+            for secret in all_secrets_list:
+                name = secret['Name']
+                if name.startswith(path):
+                    secret_value = secrets_client.get_secret_value(SecretId=name)['SecretString']
                     var_name = os.path.basename(name)
-                    new_params_dict[var_name] = entry.get("Value", None)
+                    new_params_dict[var_name] = secret_value
         return new_params_dict
 
 

@@ -3,11 +3,11 @@ from unittest import TestCase, mock
 import json
 import os
 
-from moto import mock_ssm
+from moto import mock_ssm, mock_secretsmanager
 import boto3
 import requests_mock
 
-from mesh_aws_client.mesh_common import MeshMailbox
+from mesh_aws_client.mesh_common import MeshCommon
 from mesh_aws_client.tests.mesh_testing_common import MeshTestingCommon
 from spine_aws_common.tests.utils.log_helper import LogHelper
 
@@ -19,6 +19,7 @@ class TestMeshMailbox(TestCase):
         super().__init__(methodName=method_name)
         self.environment = None
         self.ssm_client = None
+        self.secrets_manager = None
 
     @mock_ssm
     @mock.patch.dict(
@@ -39,28 +40,79 @@ class TestMeshMailbox(TestCase):
         self.log_helper.set_stdout_capture()
         self.environment = os.environ["ENV"]
         self.ssm_client = boto3.client("ssm", region_name="eu-west-2")
+        self.secrets_manager = boto3.client("secretsmanager", region_name="eu-west-2")
 
     def tearDown(self):
         self.log_helper.clean_up()
 
     @mock_ssm
+    @mock_secretsmanager
     @requests_mock.Mocker()
-    def test_mesh_mailbox(self, mock_response):
+    def test_get_params_ssm_and_secrets(self, mock_response):
         """Test mailbox functionality"""
-
-        mock_response.post(
-            "/messageexchange/MESH-TEST2", text=json.dumps({"mailboxId": "MESH-TEST2"})
+        os.environ["use_secrets_manager"] = "true"
+        self.secrets_manager.create_secret(
+            Name=f"/{self.environment}/mesh/MESH_CLIENT_KEY",
+            Description = f"/{self.environment}/mesh/MESH_CLIENT_KEY",
+            SecretString = "DummyKey1"
         )
-        mock_response.get(
-            "/messageexchange/MESH-TEST2/inbox", text=json.dumps({"messages": []})
+        self.secrets_manager.create_secret(
+            Name=f"/{self.environment}/mesh/MESH_CLIENT_KEY2",
+            Description = f"/{self.environment}/mesh/MESH_CLIENT_KEY2",
+            SecretString = "DummyKey2"
         )
-
-        MeshTestingCommon.setup_mock_aws_ssm_parameter_store(
-            self.environment, self.ssm_client
+        self.ssm_client.put_parameter(
+            Name = f"/{self.environment}/mesh/MESH_URL1",
+            Description = f"/{self.environment}/mesh/MESH_URL1",
+            Overwrite = True,
+            Type = "String",
+            Value = "DummyUrl1"
         )
+        self.ssm_client.put_parameter(
+            Name = f"/{self.environment}/mesh/MESH_URL2",
+            Description = f"/{self.environment}/mesh/MESH_URL2",
+            Overwrite = True,
+            Type = "String",
+            Value = "DummyUrl2"
+        )
+        param_dict = MeshCommon.get_params(f"/{self.environment}/mesh/")
+        expected_params = {'MESH_URL1': 'DummyUrl1',
+                           'MESH_URL2': 'DummyUrl2',
+                           'MESH_CLIENT_KEY': 'DummyKey1',
+                           'MESH_CLIENT_KEY2': 'DummyKey2'}
+        self.assertEqual(expected_params, param_dict)
 
-        mailbox = MeshMailbox(mock.MagicMock(), "MESH-TEST2", self.environment)
-        response = mailbox.authenticate()
-        self.assertEqual(response, b"hello")
-        response = mailbox.mesh_client.list_messages()
-        self.assertTrue(isinstance(response, list))
+    @mock_ssm
+    @mock_secretsmanager
+    @requests_mock.Mocker()
+    def test_get_params_just_ssm(self, mock_response):
+        """Test mailbox functionality"""
+        os.environ["use_secrets_manager"] = "false"
+        self.secrets_manager.create_secret(
+            Name=f"/{self.environment}/mesh/MESH_CLIENT_KEY",
+            Description = f"/{self.environment}/mesh/MESH_CLIENT_KEY",
+            SecretString = "DummyKey1"
+        )
+        self.secrets_manager.create_secret(
+            Name=f"/{self.environment}/mesh/MESH_CLIENT_KEY2",
+            Description = f"/{self.environment}/mesh/MESH_CLIENT_KEY2",
+            SecretString = "DummyKey2"
+        )
+        self.ssm_client.put_parameter(
+            Name = f"/{self.environment}/mesh/MESH_URL1",
+            Description = f"/{self.environment}/mesh/MESH_URL1",
+            Overwrite = True,
+            Type = "String",
+            Value = "DummyUrl1"
+        )
+        self.ssm_client.put_parameter(
+            Name = f"/{self.environment}/mesh/MESH_URL2",
+            Description = f"/{self.environment}/mesh/MESH_URL2",
+            Overwrite = True,
+            Type = "String",
+            Value = "DummyUrl2"
+        )
+        param_dict = MeshCommon.get_params(f"/{self.environment}/mesh/")
+        expected_params = {'MESH_URL1': 'DummyUrl1',
+                           'MESH_URL2': 'DummyUrl2'}
+        self.assertEqual(expected_params, param_dict)
