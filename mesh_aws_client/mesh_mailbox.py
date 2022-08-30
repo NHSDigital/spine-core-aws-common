@@ -45,7 +45,7 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
     ALLOWED_RECIPIENTS = "ALLOWED_RECIPIENTS"
     ALLOWED_WORKFLOW_IDS = "ALLOWED_WORKFLOW_IDS"
 
-    VERSION = "0.9.1"
+    VERSION = "1.0.0"
 
     def __init__(self, log_object: Logger, mailbox: str, environment: str):
         self.mailbox = mailbox
