@@ -1,5 +1,6 @@
 """Mailbox class that handles all the complexity of talking to MESH API"""
 import platform
+import os
 from typing import NamedTuple
 from hashlib import sha256
 import atexit
@@ -60,7 +61,7 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         self.workflow_id = None
 
         self._setup()
-        atexit.register(self._clean_up)
+        atexit.register(self.clean_up)
 
     def _setup(self) -> None:
         """Get mailbox config from SSM paramater store"""
@@ -80,8 +81,20 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         )
         self._write_certs_to_files()
 
-    def _clean_up(self) -> None:
+    def clean_up(self) -> None:
         """Clear up after use"""
+        if self.client_cert_file:
+            filename = self.client_cert_file.name
+            self.client_cert_file.close()
+            os.remove(filename)
+        if self.client_key_file:
+            filename = self.client_key_file.name
+            self.client_key_file.close()
+            os.remove(filename)
+        if self.ca_cert_file:
+            filename = self.ca_cert_file.name
+            self.ca_cert_file.close()
+            os.remove(filename)
 
     def get_param(self, param) -> str:
         """Shortcut to get a parameter"""
@@ -220,6 +233,7 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
                 + f"{mesh_message_object.message_id}/{chunk_num}"
             )
         response = session.post(url, data=mesh_message_object.data, stream=True)
+        response.raise_for_status()
         response.raw.decode_content = True
         message_id = json.loads(response.text)["messageID"]
         self.log_object.write_log(

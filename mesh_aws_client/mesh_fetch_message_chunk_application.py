@@ -29,7 +29,6 @@ class MeshFetchMessageChunkApplication(
         """
         super().__init__(additional_log_config, load_ssm_params)
         self.mailbox = None
-        self.old_mailbox = None  # TODO remove
         self.input = {}
         self.environment = os.environ.get("Environment", "default")
         self.chunk_size = os.environ.get("CHUNK_SIZE", MeshCommon.DEFAULT_CHUNK_SIZE)
@@ -315,6 +314,7 @@ class MeshFetchMessageChunkApplication(
                 "file_name": self._get_filename(),
             }
         )
+        self.mailbox.clean_up()
 
 
 # create instance of class in global space

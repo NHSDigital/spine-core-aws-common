@@ -110,7 +110,6 @@ class MeshSendMessageChunkApplication(
 
         is_finished = self.input.get("complete", False)
         if is_finished:
-            # TODO log error
             self.response.update({"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR.value})
             raise SystemError("Already completed upload to MESH")
 
@@ -136,10 +135,6 @@ class MeshSendMessageChunkApplication(
         self.mailbox.set_destination_and_workflow(
             self.input["dest_mailbox"], self.input["workflow_id"]
         )
-
-        if self.current_chunk == 1:
-            # if first chunk, authenticate first
-            self.mailbox.authenticate()
 
         message_object = MeshMessage(
             file_name=os.path.basename(self.key),
@@ -170,7 +165,6 @@ class MeshSendMessageChunkApplication(
 
         if is_finished:
             # check mailbox for any reports
-            # TODO expand this
             _response, _messages = self.mailbox.list_messages()
 
         # update input event to send as response
@@ -183,6 +177,8 @@ class MeshSendMessageChunkApplication(
                 "current_byte_position": self.current_byte,
             }
         )
+
+        self.mailbox.clean_up()
 
 
 # create instance of class in global space
