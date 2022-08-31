@@ -64,7 +64,7 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         atexit.register(self.clean_up)
 
     def _setup(self) -> None:
-        """Get mailbox config from SSM paramater store"""
+        """Get mailbox config from SSM parameter store"""
         self.log_object.write_log(
             "MESHMBOX0001",
             None,
@@ -265,7 +265,7 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         return response
 
     def list_messages(self):
-        """PCRM-6130 Return a list of messages in the mailbox in the form:
+        """Return a list of messages in the mailbox in the form:
         [
             '20220610195418651944_2202CC',
             '20220613142621549393_6430C9'
@@ -292,7 +292,7 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
 
     def acknowledge_message(self, message_id):
         """
-        PCRM-6130 Acknowledge receipt of the last message from the mailbox.
+        Acknowledge receipt of the last message from the mailbox.
         """
         session = self._setup_session()
         mesh_url = self.params[MeshMailbox.MESH_URL]

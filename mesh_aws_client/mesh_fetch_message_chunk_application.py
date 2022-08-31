@@ -257,10 +257,9 @@ class MeshFetchMessageChunkApplication(
         is_report = self.http_response.headers.get("Mex-Messagetype") == "REPORT"
         if is_report:
             buffer = json.dumps(dict(self.http_response.headers))
-            etag = self._upload_part_to_s3(buffer, True, True)
+            self._upload_part_to_s3(buffer, True, True)
             bytes_read = len(buffer)
-
-        if not is_report:
+        else:
             # read bytes into buffer
             for buffer in self.http_response.iter_content(
                 chunk_size=self.DEFAULT_BUFFER_SIZE
