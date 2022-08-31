@@ -7,7 +7,7 @@ from moto import mock_ssm
 import boto3
 import requests_mock
 
-from mesh_aws_client.mesh_common import MeshMailbox
+from mesh_aws_client.mesh_mailbox import MeshMailbox
 from mesh_aws_client.tests.mesh_testing_common import MeshTestingCommon
 from spine_aws_common.tests.utils.log_helper import LogHelper
 
@@ -62,5 +62,5 @@ class TestMeshMailbox(TestCase):
         mailbox = MeshMailbox(mock.MagicMock(), "MESH-TEST2", self.environment)
         response = mailbox.authenticate()
         self.assertEqual(response, b"hello")
-        response = mailbox.mesh_client.list_messages()
+        response = mailbox.list_messages()
         self.assertTrue(isinstance(response, list))
