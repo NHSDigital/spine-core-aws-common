@@ -2,6 +2,11 @@ locals {
   check_send_parameters_name = "${local.name}-check-send-parameters"
 }
 
+resource "aws_vpc_endpoint" "private_s3" {
+  vpc_id       = var.config.vpc_id
+  service_name = "com.amazonaws.eu-west-2.s3"
+}
+
 resource "aws_security_group" "check_send_parameters" {
   count       = var.config.vpc_id == "" ? 0 : 1
   name        = local.check_send_parameters_name

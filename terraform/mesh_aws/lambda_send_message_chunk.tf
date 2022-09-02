@@ -2,6 +2,11 @@ locals {
   send_message_chunk_name = "${local.name}-send-message-chunk"
 }
 
+resource "aws_vpc_endpoint" "private_s3" {
+  vpc_id       = var.config.vpc_id
+  service_name = "com.amazonaws.eu-west-2.s3"
+}
+
 resource "aws_security_group" "send_message_chunk" {
   count       = var.config.vpc_id == "" ? 0 : 1
   name        = local.send_message_chunk_name
