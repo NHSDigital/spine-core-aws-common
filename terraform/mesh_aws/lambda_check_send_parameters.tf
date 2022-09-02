@@ -19,7 +19,7 @@ resource "aws_security_group" "check_send_parameters" {
       var.config.aws_kms_endpoints_sg_id,
       var.config.aws_lambda_endpoints_sg_id
     )
-    prefix_list_ids = [aws_vpc_endpoint.private_s3.prefix_list_id]
+    prefix_list_ids = [data.aws_vpc_endpoint.s3.prefix_list_id]
   }
 }
 
