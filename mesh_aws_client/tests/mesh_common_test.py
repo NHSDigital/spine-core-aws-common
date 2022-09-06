@@ -1,6 +1,5 @@
 """Tests for MeshMailbox class (mesh_client wrapper)"""
 from unittest import TestCase, mock
-import json
 import os
 
 from moto import mock_ssm, mock_secretsmanager
@@ -8,12 +7,11 @@ import boto3
 import requests_mock
 
 from mesh_aws_client.mesh_common import MeshCommon
-from mesh_aws_client.tests.mesh_testing_common import MeshTestingCommon
 from spine_aws_common.tests.utils.log_helper import LogHelper
 
 
-class TestMeshMailbox(TestCase):
-    """Testing MeshMailbox class"""
+class TestMeshCommon(TestCase):
+    """Testing MeshCommon class"""
 
     def __init__(self, method_name):
         super().__init__(methodName=method_name)
@@ -49,7 +47,7 @@ class TestMeshMailbox(TestCase):
     @mock_secretsmanager
     @requests_mock.Mocker()
     def test_get_params_ssm_and_secrets(self, mock_response):
-        """Test mailbox functionality"""
+        """Test get_params will get both ssm variables and secrets when use_secrets_manager is true"""
         os.environ["use_secrets_manager"] = "true"
         self.secrets_manager.create_secret(
             Name=f"/{self.environment}/mesh/MESH_CLIENT_KEY",
@@ -98,7 +96,7 @@ class TestMeshMailbox(TestCase):
     @mock_secretsmanager
     @requests_mock.Mocker()
     def test_get_params_just_ssm(self, mock_response):
-        """Test mailbox functionality"""
+        """Test get_params will only get ssm variables when use_secrets_manager is false"""
         os.environ["use_secrets_manager"] = "false"
         self.secrets_manager.create_secret(
             Name=f"/{self.environment}/mesh/MESH_CLIENT_KEY",
