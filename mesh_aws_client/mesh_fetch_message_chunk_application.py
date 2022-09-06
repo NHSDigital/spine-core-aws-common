@@ -29,7 +29,6 @@ class MeshFetchMessageChunkApplication(
         """
         super().__init__(additional_log_config, load_ssm_params)
         self.mailbox = None
-        self.old_mailbox = None  # TODO remove
         self.input = {}
         self.environment = os.environ.get("Environment", "default")
         self.chunk_size = os.environ.get("CHUNK_SIZE", MeshCommon.DEFAULT_CHUNK_SIZE)
@@ -90,7 +89,7 @@ class MeshFetchMessageChunkApplication(
 
     def _is_last_chunk(self, chunk_num):
         chunk_range = self.http_response.headers.get("Mex-Chunk-Range", "1:1")
-        number_of_chunks = int(chunk_range[2:])
+        number_of_chunks = int(chunk_range.split(":")[1])
         last_chunk = chunk_num == number_of_chunks
         return last_chunk
 
@@ -253,13 +252,14 @@ class MeshFetchMessageChunkApplication(
 
         parts_read = 0
         part_buffer = b""
+        bytes_read = 0
 
         is_report = self.http_response.headers.get("Mex-Messagetype") == "REPORT"
         if is_report:
             buffer = json.dumps(dict(self.http_response.headers))
-            etag = self._upload_part_to_s3(buffer, True, True)
-
-        if self.http_response.headers.get("Mex-Messagetype") == "DATA":
+            self._upload_part_to_s3(buffer, True, True)
+            bytes_read = len(buffer)
+        else:
             # read bytes into buffer
             for buffer in self.http_response.iter_content(
                 chunk_size=self.DEFAULT_BUFFER_SIZE
@@ -274,6 +274,16 @@ class MeshFetchMessageChunkApplication(
                     part_buffer = b""
                 else:
                     part_buffer = buffer
+                    bytes_read += len(buffer)
+
+        self.log_object.write_log(
+            "MESHFETCH0001a",
+            None,
+            {
+                "length": bytes_read,
+                "message_id": self.message_id,
+            },
+        )
 
         is_finished = not self.chunked
         if is_finished:
@@ -303,6 +313,7 @@ class MeshFetchMessageChunkApplication(
                 "file_name": self._get_filename(),
             }
         )
+        self.mailbox.clean_up()
 
 
 # create instance of class in global space

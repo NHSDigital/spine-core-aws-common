@@ -1,17 +1,9 @@
 """Common methods and classes used for mesh client"""
 from collections import namedtuple
-from http import HTTPStatus
-import atexit
-import json
 import os
-import tempfile
-
-from mesh_client import MeshClient
-from urllib3.exceptions import InsecureRequestWarning
+import json
 import boto3
-import requests
-
-from spine_aws_common.logger import Logger
+from mesh_client import MeshClient
 
 REGION_NAME = os.environ.get("AWS_REGION", "eu-west-2")
 

@@ -16,9 +16,9 @@ resource "aws_security_group" "send_message_chunk" {
   }
 
   egress {
-    from_port       = 443
-    to_port         = 443
-    protocol        = "tcp"
+    from_port = 443
+    to_port   = 443
+    protocol  = "tcp"
     security_groups = concat(
       var.config.aws_s3_endpoint_sg_id,
       var.config.aws_ssm_endpoint_sg_id,
@@ -26,6 +26,7 @@ resource "aws_security_group" "send_message_chunk" {
       var.config.aws_kms_endpoints_sg_id,
       var.config.aws_lambda_endpoints_sg_id
     )
+    prefix_list_ids = [data.aws_vpc_endpoint.s3.prefix_list_id]
   }
 }
 
@@ -47,7 +48,7 @@ resource "aws_lambda_function" "send_message_chunk" {
   }
 
   dynamic "vpc_config" {
-    for_each = var.vpc_enabled == true ? [var.vpc_enabled] : []
+    for_each = var.config.vpc_enabled == true ? [var.config.vpc_enabled] : []
     content {
       subnet_ids         = var.config.subnet_ids
       security_group_ids = [aws_security_group.send_message_chunk[0].id]

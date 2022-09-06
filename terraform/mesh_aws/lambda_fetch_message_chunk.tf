@@ -26,6 +26,7 @@ resource "aws_security_group" "fetch_message_chunk" {
       var.config.aws_kms_endpoints_sg_id,
       var.config.aws_lambda_endpoints_sg_id
     )
+    prefix_list_ids = [data.aws_vpc_endpoint.s3.prefix_list_id]
   }
 }
 
@@ -46,8 +47,8 @@ resource "aws_lambda_function" "fetch_message_chunk" {
     }
   }
 
-    dynamic "vpc_config" {
-    for_each = var.vpc_enabled == true ? [var.vpc_enabled] : []
+  dynamic "vpc_config" {
+    for_each = var.config.vpc_enabled == true ? [var.config.vpc_enabled] : []
     content {
       subnet_ids         = var.config.subnet_ids
       security_group_ids = [aws_security_group.fetch_message_chunk[0].id]

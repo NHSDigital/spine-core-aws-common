@@ -110,7 +110,6 @@ class MeshSendMessageChunkApplication(
 
         is_finished = self.input.get("complete", False)
         if is_finished:
-            # TODO log error
             self.response.update({"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR.value})
             raise SystemError("Already completed upload to MESH")
 
@@ -164,6 +163,10 @@ class MeshSendMessageChunkApplication(
         if self.chunked and not is_finished:
             self.current_chunk += 1
 
+        if is_finished:
+            # check mailbox for any reports
+            _response, _messages = self.mailbox.list_messages()
+
         # update input event to send as response
         self.response.update({"statusCode": status_code})
         self.response["body"].update(
@@ -174,6 +177,8 @@ class MeshSendMessageChunkApplication(
                 "current_byte_position": self.current_byte,
             }
         )
+
+        self.mailbox.clean_up()
 
 
 # create instance of class in global space

@@ -82,6 +82,8 @@ class MeshPollMailboxApplication(LambdaApplication):
             },
         }
 
+        mailbox.clean_up()
+
 
 # create instance of class in global space
 # this ensures initial setup of logging/config is only done on cold start
