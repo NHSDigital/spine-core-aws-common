@@ -37,7 +37,7 @@ class MeshSendMessageChunkApplication(
         self.current_chunk = 1
         self.chunk_size = MeshCommon.DEFAULT_CHUNK_SIZE
         self.compression_ratio = 1
-        self.compress = False
+        self.will_compress = False
         self.s3_client = None
         self.bucket = ""
         self.key = ""
@@ -53,7 +53,7 @@ class MeshSendMessageChunkApplication(
         self.chunk_size = self.input.get("chunk_size", MeshCommon.DEFAULT_CHUNK_SIZE)
         self.chunked = self.input.get("chunked", False)
         self.compression_ratio = self.input.get("compress_ratio", 1)
-        self.compress = self.input.get("compress", False)
+        self.will_compress = self.input.get("will_compress", False)
         self.s3_client = boto3.client("s3")
         self.bucket = self.input["bucket"]
         self.key = self.input["key"]
@@ -99,7 +99,7 @@ class MeshSendMessageChunkApplication(
             else:
                 file_content = None
 
-            if self.compress:
+            if self.will_compress:
                 compressed_bytes = gzip.compress(file_content)
                 yield compressed_bytes
             else:
@@ -110,7 +110,6 @@ class MeshSendMessageChunkApplication(
 
         is_finished = self.input.get("complete", False)
         if is_finished:
-            # TODO log error
             self.response.update({"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR.value})
             raise SystemError("Already completed upload to MESH")
 
@@ -144,7 +143,7 @@ class MeshSendMessageChunkApplication(
             dest_mailbox=self.mailbox.dest_mailbox,
             src_mailbox=self.mailbox.mailbox,
             workflow_id=self.mailbox.workflow_id,
-            will_compress=self.compress,
+            will_compress=self.will_compress,
         )
         if self.file_size > 0:
             mailbox_response = self.mailbox.send_chunk(
@@ -164,6 +163,10 @@ class MeshSendMessageChunkApplication(
         if self.chunked and not is_finished:
             self.current_chunk += 1
 
+        if is_finished:
+            # check mailbox for any reports
+            _response, _messages = self.mailbox.list_messages()
+
         # update input event to send as response
         self.response.update({"statusCode": status_code})
         self.response["body"].update(
@@ -174,6 +177,8 @@ class MeshSendMessageChunkApplication(
                 "current_byte_position": self.current_byte,
             }
         )
+
+        self.mailbox.clean_up()
 
 
 # create instance of class in global space

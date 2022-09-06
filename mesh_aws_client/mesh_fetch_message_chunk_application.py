@@ -3,6 +3,7 @@ Module for MESH API functionality for step functions
 """
 from http import HTTPStatus
 import os
+import json
 
 import boto3
 from botocore.errorfactory import ClientError
@@ -28,7 +29,6 @@ class MeshFetchMessageChunkApplication(
         """
         super().__init__(additional_log_config, load_ssm_params)
         self.mailbox = None
-        self.old_mailbox = None  # TODO remove
         self.input = {}
         self.environment = os.environ.get("Environment", "default")
         self.chunk_size = os.environ.get("CHUNK_SIZE", MeshCommon.DEFAULT_CHUNK_SIZE)
@@ -63,12 +63,21 @@ class MeshFetchMessageChunkApplication(
             self.log_object, self.input["dest_mailbox"], self.environment
         )
 
+    def _get_filename(self):
+        file_name = self.http_response.headers.get("Mex-Filename", "")
+        if len(file_name) == 0:
+            if self.http_response.headers.get("Mex-Messagetype") == "REPORT":
+                file_name = self.message_id + ".ctl"
+            else:
+                file_name = self.message_id + ".dat"
+        return file_name
+
     def _get_aws_bucket_and_key(self):
         self.s3_bucket = self.mailbox.params["INBOUND_BUCKET"]
         s3_folder = self.mailbox.params.get("INBOUND_FOLDER", "")
         if len(s3_folder) > 0:
             s3_folder += "/"
-        file_name = self.http_response.headers["Mex-Filename"]
+        file_name = self._get_filename()
         self.s3_key = s3_folder + (
             file_name if len(file_name) > 0 else self.message_id + ".dat"
         )
@@ -80,7 +89,7 @@ class MeshFetchMessageChunkApplication(
 
     def _is_last_chunk(self, chunk_num):
         chunk_range = self.http_response.headers.get("Mex-Chunk-Range", "1:1")
-        number_of_chunks = int(chunk_range[2:])
+        number_of_chunks = int(chunk_range.split(":")[1])
         last_chunk = chunk_num == number_of_chunks
         return last_chunk
 
@@ -123,7 +132,15 @@ class MeshFetchMessageChunkApplication(
                         Key=s3_tempfile_key,
                         Body=buffer,
                     )
-                return None, len(buffer)
+                self.log_object.write_log(
+                    "MESHFETCH0002a",
+                    None,
+                    {
+                        "aws_part_size": len(buffer),
+                        "aws_upload_id": self.aws_upload_id,
+                    },
+                )
+                return None
 
         response = self.s3_client.upload_part(
             Body=buffer,
@@ -150,7 +167,17 @@ class MeshFetchMessageChunkApplication(
             }
         )
         self.aws_current_part_id += 1
-        return etag, len(buffer)
+        self.log_object.write_log(
+            "MESHFETCH0002",
+            None,
+            {
+                "aws_part_id": self.aws_current_part_id,
+                "aws_part_size": len(buffer),
+                "aws_upload_id": self.aws_upload_id,
+                "etag": etag,
+            },
+        )
+        return etag
 
     def _create_multipart_upload(self):
         """Create an S3 multipart upload"""
@@ -225,40 +252,38 @@ class MeshFetchMessageChunkApplication(
 
         parts_read = 0
         part_buffer = b""
-        # read bytes into buffer
-        for buffer in self.http_response.iter_content(
-            chunk_size=self.DEFAULT_BUFFER_SIZE
-        ):
-            parts_read += 1
-            last_part = self._is_last_part(parts_read)
-            last_chunk = self._is_last_chunk(self.current_chunk)
-            etag, bytes_written = self._upload_part_to_s3(
-                part_buffer + buffer,
-                last_chunk,
-                last_part,
-            )
-            if etag:
-                self.log_object.write_log(
-                    "MESHFETCH0002",
-                    None,
-                    {
-                        "aws_part_id": self.aws_current_part_id,
-                        "aws_part_size": bytes_written,
-                        "aws_upload_id": self.aws_upload_id,
-                        "etag": etag,
-                    },
+        bytes_read = 0
+
+        is_report = self.http_response.headers.get("Mex-Messagetype") == "REPORT"
+        if is_report:
+            buffer = json.dumps(dict(self.http_response.headers))
+            self._upload_part_to_s3(buffer, True, True)
+            bytes_read = len(buffer)
+        else:
+            # read bytes into buffer
+            for buffer in self.http_response.iter_content(
+                chunk_size=self.DEFAULT_BUFFER_SIZE
+            ):
+                parts_read += 1
+                last_part = self._is_last_part(parts_read)
+                last_chunk = self._is_last_chunk(self.current_chunk)
+                etag = self._upload_part_to_s3(
+                    part_buffer + buffer, last_chunk, last_part
                 )
-                part_buffer = b""
-            else:
-                part_buffer = buffer
-                self.log_object.write_log(
-                    "MESHFETCH0002a",
-                    None,
-                    {
-                        "aws_part_size": bytes_written,
-                        "aws_upload_id": self.aws_upload_id,
-                    },
-                )
+                if etag:
+                    part_buffer = b""
+                else:
+                    part_buffer = buffer
+                    bytes_read += len(buffer)
+
+        self.log_object.write_log(
+            "MESHFETCH0001a",
+            None,
+            {
+                "length": bytes_read,
+                "message_id": self.message_id,
+            },
+        )
 
         is_finished = not self.chunked
         if is_finished:
@@ -285,9 +310,10 @@ class MeshFetchMessageChunkApplication(
                 "aws_current_part_id": self.aws_current_part_id,
                 "aws_part_etags": self.aws_part_etags,
                 "internal_id": self.internal_id,
-                "file_name": self.http_response.headers["Mex-Filename"],
+                "file_name": self._get_filename(),
             }
         )
+        self.mailbox.clean_up()
 
 
 # create instance of class in global space

@@ -33,11 +33,11 @@ class MeshPollMailboxApplication(LambdaApplication):
     def start(self):
         # in case of crash
         self.response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR.value}
-        mailbox = MeshMailbox(self.log_object, self.mailbox_name, self.environment)
 
         try:
             MeshCommon.singleton_check(
-                self.mailbox_name, self.get_messages_step_function_name
+                self.mailbox_name,
+                self.get_messages_step_function_name,
             )
         except SingletonCheckFailure as e:
             self.response = MeshCommon.return_failure(
@@ -49,6 +49,7 @@ class MeshPollMailboxApplication(LambdaApplication):
             )
             return
 
+        mailbox = MeshMailbox(self.log_object, self.mailbox_name, self.environment)
         list_response, message_list = mailbox.list_messages()
         list_response.raise_for_status()
         message_count = len(message_list)
@@ -80,6 +81,8 @@ class MeshPollMailboxApplication(LambdaApplication):
                 "message_list": output_list,
             },
         }
+
+        mailbox.clean_up()
 
 
 # create instance of class in global space

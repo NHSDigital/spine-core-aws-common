@@ -1,8 +1,8 @@
 resource "aws_ssm_parameter" "ca_cert" {
   name      = "/${local.name}/mesh/MESH_CA_CERT"
-  overwrite = true
   type      = "SecureString"
   value     = "To Replace"
+  overwrite = false
 
   lifecycle {
     ignore_changes = [
@@ -12,9 +12,9 @@ resource "aws_ssm_parameter" "ca_cert" {
 }
 resource "aws_ssm_parameter" "client_cert" {
   name      = "/${local.name}/mesh/MESH_CLIENT_CERT"
-  overwrite = true
   type      = "SecureString"
   value     = "To Replace"
+  overwrite = false
 
   lifecycle {
     ignore_changes = [
@@ -24,9 +24,9 @@ resource "aws_ssm_parameter" "client_cert" {
 }
 resource "aws_ssm_parameter" "client_key" {
   name      = "/${local.name}/mesh/MESH_CLIENT_KEY"
-  overwrite = true
   type      = "SecureString"
   value     = "To Replace"
+  overwrite = false
 
   lifecycle {
     ignore_changes = [
@@ -37,9 +37,9 @@ resource "aws_ssm_parameter" "client_key" {
 
 resource "aws_ssm_parameter" "shared_key" {
   name      = "/${local.name}/mesh/MESH_SHARED_KEY"
-  overwrite = true
   type      = "SecureString"
   value     = "To Replace"
+  overwrite = false
 
   lifecycle {
     ignore_changes = [

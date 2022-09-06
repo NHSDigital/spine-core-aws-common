@@ -171,7 +171,6 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
     ):
         """Test the lambda with small file, no chunking, happy path"""
         mock_create_new_internal_id.return_value = MeshTestingCommon.KNOWN_INTERNAL_ID
-
         response_mocker.post(
             "/messageexchange/MESH-TEST2/outbox",
             text=json.dumps({"messageID": "20210711164906010267_97CCD9"}),

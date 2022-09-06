@@ -1,5 +1,6 @@
 """Mailbox class that handles all the complexity of talking to MESH API"""
 import platform
+import os
 from typing import NamedTuple
 from hashlib import sha256
 import atexit
@@ -44,7 +45,7 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
     ALLOWED_RECIPIENTS = "ALLOWED_RECIPIENTS"
     ALLOWED_WORKFLOW_IDS = "ALLOWED_WORKFLOW_IDS"
 
-    VERSION = "0.0.2"
+    VERSION = "1.0.0"
 
     def __init__(self, log_object: Logger, mailbox: str, environment: str):
         self.mailbox = mailbox
@@ -60,10 +61,10 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         self.workflow_id = None
 
         self._setup()
-        atexit.register(self._clean_up)
+        atexit.register(self.clean_up)
 
     def _setup(self) -> None:
-        """Get mailbox config from SSM paramater store"""
+        """Get mailbox config from SSM parameter store"""
         self.log_object.write_log(
             "MESHMBOX0001",
             None,
@@ -80,8 +81,20 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         )
         self._write_certs_to_files()
 
-    def _clean_up(self) -> None:
+    def clean_up(self) -> None:
         """Clear up after use"""
+        if self.client_cert_file:
+            filename = self.client_cert_file.name
+            self.client_cert_file.close()
+            os.remove(filename)
+        if self.client_key_file:
+            filename = self.client_key_file.name
+            self.client_key_file.close()
+            os.remove(filename)
+        if self.ca_cert_file:
+            filename = self.ca_cert_file.name
+            self.ca_cert_file.close()
+            os.remove(filename)
 
     def get_param(self, param) -> str:
         """Shortcut to get a parameter"""
@@ -146,10 +159,6 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         """
         return {
             "Authorization": self._build_mesh_authorization_header(),
-            "Mex-ClientVersion": f"AWS Serverless MESH Client={MeshMailbox.VERSION}",
-            "Mex-OSArchitecture": platform.machine(),
-            "Mex-OSName": platform.system(),
-            "Mex-OSVersion": platform.release(),
         }
 
     def _setup_session(self) -> requests.Session:
@@ -172,6 +181,13 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         Do an authenticated handshake with the MESH server
         """
         session = self._setup_session()
+        session.headers[
+            "Mex-ClientVersion"
+        ] = f"AWS Serverless MESH Client={MeshMailbox.VERSION}"
+        session.headers["Mex-OSArchitecture"] = platform.machine()
+        session.headers["Mex-OSName"] = platform.system()
+        session.headers["Mex-OSVersion"] = platform.release()
+
         mesh_url = self.params[MeshMailbox.MESH_URL]
         url = f"{mesh_url}/messageexchange/{self.mailbox}"
         response = session.get(url)
@@ -217,6 +233,7 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
                 + f"{mesh_message_object.message_id}/{chunk_num}"
             )
         response = session.post(url, data=mesh_message_object.data, stream=True)
+        response.raise_for_status()
         response.raw.decode_content = True
         message_id = json.loads(response.text)["messageID"]
         self.log_object.write_log(
@@ -243,12 +260,12 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
                 f"{mesh_url}/messageexchange/{self.mailbox}/inbox/{message_id}"
                 + f"/{chunk_num}"
             )
-        response = session.get(url, stream=True)
+        response = session.get(url, stream=True, headers={"Accept-Encoding": "gzip"})
         response.raw.decode_content = True
         return response
 
     def list_messages(self):
-        """PCRM-6130 Return a list of messages in the mailbox in the form:
+        """Return a list of messages in the mailbox in the form:
         [
             '20220610195418651944_2202CC',
             '20220613142621549393_6430C9'
@@ -258,24 +275,24 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         mesh_url = self.params[MeshMailbox.MESH_URL]
         url = f"{mesh_url}/messageexchange/{self.mailbox}/inbox"
         response = session.get(url)
+        response.raise_for_status()
 
-        text_dict = response.text
-        python_dict = json.loads(text_dict)
-        python_list = python_dict["messages"]
+        response_data = json.loads(response.text)
+        message_ids = response_data["messages"]
         self.log_object.write_log(
             "MESHMBOX0005",
             None,
             {
                 "mailbox": self.mailbox,
-                "message_count": len(python_list),
+                "message_count": len(message_ids),
                 "http_status": response.status_code,
             },
         )
-        return response, python_list
+        return response, message_ids
 
     def acknowledge_message(self, message_id):
         """
-        PCRM-6130 Acknowledge receipt of the last message from the mailbox.
+        Acknowledge receipt of the last message from the mailbox.
         """
         session = self._setup_session()
         mesh_url = self.params[MeshMailbox.MESH_URL]
