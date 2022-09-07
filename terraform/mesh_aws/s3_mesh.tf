@@ -10,10 +10,14 @@ resource "aws_s3_bucket" "mesh" {
   server_side_encryption_configuration {
     rule {
       apply_server_side_encryption_by_default {
-        kms_master_key_id = aws_kms_key.mesh.arn
+        kms_master_key_id = aws_kms_key.mesh.key_id
         sse_algorithm     = "aws:kms"
       }
     }
+  }
+
+  versioning {
+    enabled = true
   }
 }
 
