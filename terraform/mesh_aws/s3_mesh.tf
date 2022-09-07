@@ -55,4 +55,26 @@ data "aws_iam_policy_document" "mesh_bucket_policy" {
       variable = "aws:SecureTransport"
     }
   }
+  statement {
+    effect = "Deny"
+    principals {
+      type        = "*"
+      identifiers = ["*"]
+    }
+    actions = [
+      "s3:*",
+    ]
+    resources = [
+      "arn:aws:s3:::${local.name}",
+      "arn:aws:s3:::${local.name}/*",
+    ]
+    condition {
+      test = "NumericLessThan"
+      values = [
+        1.2,
+      ]
+
+      variable = "s3:TlsVersion"
+    }
+  }
 }
