@@ -25,14 +25,20 @@ class MeshPollMailboxApplication(LambdaApplication):
         self.get_messages_step_function_name = self.system_config.get(
             "GET_MESSAGES_STEP_FUNCTION_NAME", f"{self.environment}-get-messages"
         )
+        self.handshake = False
 
     def initialise(self):
         # initialise
         self.mailbox_name = self.event["mailbox"]
+        self.handshake = self.event.get("handshake", False)
 
     def start(self):
         # in case of crash
         self.response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR.value}
+
+        mailbox = MeshMailbox(self.log_object, self.mailbox_name, self.environment)
+        if self.handshake:
+            mailbox.handshake()
 
         try:
             MeshCommon.singleton_check(
@@ -49,7 +55,6 @@ class MeshPollMailboxApplication(LambdaApplication):
             )
             return
 
-        mailbox = MeshMailbox(self.log_object, self.mailbox_name, self.environment)
         list_response, message_list = mailbox.list_messages()
         list_response.raise_for_status()
         message_count = len(message_list)

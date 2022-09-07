@@ -196,12 +196,6 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         )
         return response.status_code
 
-    def authenticate(self) -> int:
-        """
-        Povided for compatibility
-        """
-        return self.handshake()
-
     def send_chunk(
         self,
         mesh_message_object: MeshMessage,
