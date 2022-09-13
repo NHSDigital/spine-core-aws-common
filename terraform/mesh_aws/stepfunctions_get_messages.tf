@@ -63,8 +63,16 @@ resource "aws_sfn_state_machine" "get_messages" {
                     "Lambda.SdkClientException",
                   ]
                   IntervalSeconds = 2
-                  MaxAttempts     = 6
+                  MaxAttempts     = 3
                 },
+                {
+                  ErrorEquals = [
+                    "States.TaskFailed"
+                  ],
+                  BackoffRate = 1,
+                  IntervalSeconds = 300,
+                  MaxAttempts = 2
+                }
               ]
               Type = "Task"
             }

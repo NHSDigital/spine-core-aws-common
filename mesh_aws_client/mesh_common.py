@@ -13,7 +13,6 @@ class SingletonCheckFailure(Exception):
         super().__init__()
         self.msg = msg
 
-
 class AwsFailedToPerformError(Exception):
     """Errors raised by AWS functions"""
 

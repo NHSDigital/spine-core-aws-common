@@ -38,7 +38,8 @@ class MeshPollMailboxApplication(LambdaApplication):
 
         mailbox = MeshMailbox(self.log_object, self.mailbox_name, self.environment)
         if self.handshake:
-            mailbox.handshake()
+            self.response = {"statusCode": mailbox.handshake(), "body": {}}
+            return
 
         try:
             MeshCommon.singleton_check(
