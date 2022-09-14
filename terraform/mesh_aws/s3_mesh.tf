@@ -25,3 +25,34 @@ resource "aws_s3_bucket_public_access_block" "mesh" {
   ignore_public_acls      = true
   restrict_public_buckets = true
 }
+
+resource "aws_s3_bucket_policy" "mesh_bucket_policy" {
+  bucket = aws_s3_bucket.mesh.id
+  policy = data.aws_iam_policy_document.mesh_bucket_policy.json
+}
+
+data "aws_iam_policy_document" "mesh_bucket_policy" {
+  statement {
+    sid = "AllowSSLRequestsOnly"
+    actions = [
+      "s3:*",
+    ]
+    effect = "Deny"
+    resources = [
+      "arn:aws:s3:::${local.name}",
+      "arn:aws:s3:::${local.name}/*",
+    ]
+    principals {
+      type        = "*"
+      identifiers = ["*"]
+    }
+    condition {
+      test = "Bool"
+      values = [
+        "false",
+      ]
+
+      variable = "aws:SecureTransport"
+    }
+  }
+}
