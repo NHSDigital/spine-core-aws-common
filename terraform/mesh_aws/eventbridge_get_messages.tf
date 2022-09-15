@@ -2,6 +2,7 @@ resource "aws_cloudwatch_event_rule" "get_messages" {
   name                = "${local.name}-get-messages"
   description         = "${local.name}-get-messages"
   schedule_expression = "rate(5 minutes)"
+  is_enabled          = var.get_messages_enabled
 }
 
 resource "aws_cloudwatch_event_target" "get_messages" {

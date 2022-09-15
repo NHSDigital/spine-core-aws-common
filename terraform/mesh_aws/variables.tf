@@ -86,3 +86,7 @@ variable "s3logs_retention_in_days" {
 variable "mesh_cloudwatch_log_retention_in_days" {
   default = 30
 }
+
+variable "get_messages_enabled" {
+  default = true
+}
