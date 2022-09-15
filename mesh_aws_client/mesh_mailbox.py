@@ -200,7 +200,7 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         self.log_object.write_log(
             "MESHMBOX0004", None, {"http_status": response.status_code}
         )
-        if response.status_code >= 200 and response.status_code<300:
+        if response.status_code < 200 or response.status_code > 299:
             raise HandshakeFailure
         return response.status_code
 
