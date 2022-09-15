@@ -46,8 +46,8 @@ resource "aws_iam_role_policy_attachment" "get_messages_handshake_event" {
 }
 
 resource "aws_iam_policy" "get_messages_handshake_event" {
-  name        = "${local.name}-get-messages-event"
-  description = "${local.name}-get-messages-event"
+  name        = "${local.name}-get-messages-handshake-event"
+  description = "${local.name}-get-messages-handshake-event"
   policy      = data.aws_iam_policy_document.get_messages_handshake_event.json
 }
 
