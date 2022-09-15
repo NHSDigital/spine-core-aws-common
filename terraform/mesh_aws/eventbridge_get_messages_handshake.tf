@@ -14,7 +14,7 @@ resource "aws_cloudwatch_event_target" "get_messages_handshake" {
 
   input = jsonencode({
     mailbox = each.value
-    handshake = True
+    handshake = "True"
   })
 }
 
