@@ -38,7 +38,9 @@ class MeshPollMailboxApplication(LambdaApplication):
 
         mailbox = MeshMailbox(self.log_object, self.mailbox_name, self.environment)
         if self.handshake.lower()=="true":
-            self.response = {"statusCode": mailbox.handshake(), "body": {}}
+            mailbox.handshake()
+            # 204 No Content is raised so the step function ends without looking for messages
+            self.response = {"statusCode": HTTPStatus.NO_CONTENT.value, "body": {}}
             return
 
         try:
