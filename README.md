@@ -9,27 +9,33 @@ Simply add the pre-built package to your python environment.
 The latest version can be obtained with the following curl command if your system has it present:
 
 ```
-latest_version=$(curl -SL https://github.com/NHSDigital/spine-core-aws-common/releases/latest | grep -Po 'Release v\K(\d+.\d+.\d+)' | head -n1)
+package_version=$(curl -SL https://github.com/NHSDigital/spine-core-aws-common/releases/latest | grep -Po 'Release v\K(\d+.\d+.\d+)' | head -n1)
 ```
 
-Alternatively the main page of this repo will display the latest version i.e. 0.2.3, which you can substitute in place of `$latest_version` in the below commands.
+Or you can set a specific version:
+
+```
+package_version="0.2.3"
+```
+
+Alternatively the main page of this repo will display the latest version i.e. 0.2.3, and previous versions can be searched, which you can substitute in place of `${package_version}` in the below commands.
 
 ### PIP
 
 ```
-pip install https://github.com/NHSDigital/spine-core-aws-common/releases/latest/download/spine_aws_common-$latest_version-py3-none-any.whl
+pip install https://github.com/NHSDigital/spine-core-aws-common/releases/download/v${package_version}/spine_aws_common-${package_version}-py3-none-any.whl
 ```
 
 ### requirements.txt
 
 ```
-https://github.com/NHSDigital/spine-core-aws-common/releases/latest/download/spine_aws_common-$latest_version-py3-none-any.whl
+https://github.com/NHSDigital/spine-core-aws-common/releases/download/v${package_version}/spine_aws_common-${package_version}-py3-none-any.whl
 ```
 
 ### Poetry
 
 ```
-poetry add https://github.com/NHSDigital/spine-core-aws-common/releases/latest/download/spine_aws_common-$latest_version-py3-none-any.whl
+poetry add https://github.com/NHSDigital/spine-core-aws-common/releases/download/${package_version}/spine_aws_common-${package_version}-py3-none-any.whl
 ```
 
 ## Usage
