@@ -35,7 +35,7 @@ https://github.com/NHSDigital/spine-core-aws-common/releases/download/v${package
 ### Poetry
 
 ```
-poetry add https://github.com/NHSDigital/spine-core-aws-common/releases/download/${package_version}/spine_aws_common-${package_version}-py3-none-any.whl
+poetry add https://github.com/NHSDigital/spine-core-aws-common/releases/download/v${package_version}/spine_aws_common-${package_version}-py3-none-any.whl
 ```
 
 ## Usage
