@@ -1,3 +1,4 @@
+#tfsec:ignore:aws-cloudtrail-require-bucket-access-logging tfsec:ignore:aws-s3-enable-versioning
 resource "aws_s3_bucket" "s3logs" {
   bucket = "${local.name}-s3logs"
   acl    = "log-delivery-write"
