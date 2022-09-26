@@ -99,7 +99,7 @@ class MeshSendMessageChunkApplication(
             else:
                 file_content = None
 
-            if self.will_compress:
+            if self.will_compress or self.chunked:
                 compressed_bytes = gzip.compress(file_content)
                 yield compressed_bytes
             else:
