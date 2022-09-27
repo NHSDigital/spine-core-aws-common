@@ -3,8 +3,6 @@ from collections import namedtuple
 import os
 import json
 import boto3
-from mesh_client import MeshClient
-
 
 class SingletonCheckFailure(Exception):
     """Singleton check failed"""
@@ -112,10 +110,6 @@ class MeshCommon:
                 var_name = os.path.basename(name)
                 new_params_dict[var_name] = entry.get("Value", None)
         return new_params_dict
-
-
-class ExtendedMeshClient(MeshClient):
-    """Extended functionality for lambda send"""
 
 
 # Named tuple for holding Mesh Message info
