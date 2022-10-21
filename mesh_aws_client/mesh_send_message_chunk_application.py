@@ -12,6 +12,12 @@ from spine_aws_common import LambdaApplication
 from mesh_aws_client.mesh_mailbox import MeshMailbox, MeshMessage
 from mesh_aws_client.mesh_common import MeshCommon
 
+class MaxByteExceededException(Exception):
+    """Raised when a file has more chunks, but no more bytes"""
+
+    def __init__(self, msg=None):
+        super().__init__()
+        self.msg = msg
 
 class MeshSendMessageChunkApplication(
     LambdaApplication
@@ -54,6 +60,8 @@ class MeshSendMessageChunkApplication(
         self.chunked = self.input.get("chunked", False)
         self.compression_ratio = self.input.get("compress_ratio", 1)
         self.will_compress = self.input.get("will_compress", False)
+        if self.chunked == True:
+            self.will_compress = True
         self.s3_client = boto3.client("s3")
         self.bucket = self.input["bucket"]
         self.key = self.input["key"]
@@ -99,7 +107,7 @@ class MeshSendMessageChunkApplication(
             else:
                 file_content = None
 
-            if self.will_compress or self.chunked:
+            if self.will_compress:
                 compressed_bytes = gzip.compress(file_content)
                 yield compressed_bytes
             else:
@@ -160,6 +168,8 @@ class MeshSendMessageChunkApplication(
             raise FileNotFoundError
 
         is_finished = self.current_chunk >= total_chunks if self.chunked else True
+        if self.current_byte >= self.file_size and not is_finished:
+            raise MaxByteExceededException
         if self.chunked and not is_finished:
             self.current_chunk += 1
 
@@ -175,6 +185,7 @@ class MeshSendMessageChunkApplication(
                 "message_id": message_id,
                 "chunk_number": self.current_chunk,
                 "current_byte_position": self.current_byte,
+                "will_compress": self.will_compress,
             }
         )
 
