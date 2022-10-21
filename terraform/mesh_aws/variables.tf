@@ -82,3 +82,11 @@ variable "s3logs_retention_in_days" {
     error_message = "The s3logs_retention_in_days value must be greater than or equal to 1."
   }
 }
+
+variable "mesh_cloudwatch_log_retention_in_days" {
+  default = 30
+}
+
+variable "get_messages_enabled" {
+  default = true
+}
