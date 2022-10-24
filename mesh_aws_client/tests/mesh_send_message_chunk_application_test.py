@@ -252,42 +252,6 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
                 "Connection": "keep-alive",
             },
         )
-        fake_mesh_server.post(
-            "/messageexchange/MESH-TEST2/outbox/20210711164906010267_97CCD9/2",
-            text=json.dumps({"messageID": "20210711164906010267_97CCD9"}),
-            headers={
-                "Content-Type": "application/json",
-                "Content-Length": "33",
-                "Connection": "keep-alive",
-            },
-        )
-        fake_mesh_server.post(
-            "/messageexchange/MESH-TEST2/outbox/20210711164906010267_97CCD9/3",
-            text=json.dumps({"messageID": "20210711164906010267_97CCD9"}),
-            headers={
-                "Content-Type": "application/json",
-                "Content-Length": "33",
-                "Connection": "keep-alive",
-            },
-        )
-        fake_mesh_server.post(
-            "/messageexchange/MESH-TEST2/outbox/20210711164906010267_97CCD9/4",
-            text=json.dumps({"messageID": "20210711164906010267_97CCD9"}),
-            headers={
-                "Content-Type": "application/json",
-                "Content-Length": "33",
-                "Connection": "keep-alive",
-            },
-        )
-        fake_mesh_server.post(
-            "/messageexchange/MESH-TEST2/outbox/20210711164906010267_97CCD9/5",
-            text=json.dumps({"messageID": "20210711164906010267_97CCD9"}),
-            headers={
-                "Content-Type": "application/json",
-                "Content-Length": "33",
-                "Connection": "keep-alive",
-            },
-        )
 
         s3_client = boto3.client("s3", config=MeshTestingCommon.aws_config)
         ssm_client = boto3.client("ssm", config=MeshTestingCommon.aws_config)
@@ -300,49 +264,11 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
         mock_response["body"].update({"complete": True})
         mock_response["body"].update({"will_compress": True})
 
-        try:
-            response = self.app.main(
-                event=mock_input, context=MeshTestingCommon.CONTEXT
-            )
-        except Exception as e:  # pylint: disable=broad-except
-            # need to fail happy pass on any exception
-            self.fail(f"Invocation crashed with Exception {str(e)}")
-
-        history = fake_mesh_server.request_history
-        body1 = response["body"]
-
-        try:
-            response = self.app.main(
-                event=mock_input, context=MeshTestingCommon.CONTEXT
-            )
-        except Exception as e:  # pylint: disable=broad-except
-            # need to fail happy pass on any exception
-            self.fail(f"Invocation crashed with Exception {str(e)}")
-
-        try:
-            response = self.app.main(
-                event=mock_input, context=MeshTestingCommon.CONTEXT
-            )
-        except Exception as e:  # pylint: disable=broad-except
-            # need to fail happy pass on any exception
-            self.fail(f"Invocation crashed with Exception {str(e)}")
-
         with self.assertRaises(MaxByteExceededException) as context:
             self.app.main(
                 event=mock_input, context=MeshTestingCommon.CONTEXT
             )
         self.assertIsInstance(context.exception, MaxByteExceededException)
-
-        # Can't test like this with chunking!
-        # self.assertEqual(self.app.body, MeshTestingCommon.FILE_CONTENT.encode("utf8"))
-
-        # response["body"].pop("message_id")
-        # self.assertDictEqual(mock_response, response)
-        #
-        # # Check completion
-        # self.assertTrue(
-        #     self.log_helper.was_value_logged("LAMBDA0003", "Log_Level", "INFO")
-        # )
 
     def _sample_single_chunk_input_event(self):
         """Return Example input event"""
@@ -404,10 +330,10 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
                 "key": "MESH-TEST2/outbound/testfile.json",
                 "chunked": True,
                 "chunk_number": 1,
-                "total_chunks": 5,
+                "total_chunks": 2,
                 "chunk_size": 10,
                 "complete": False,
-                "current_byte_position": 0,
+                "current_byte_position": 33,
                 "compress_ratio": 1,
                 "will_compress": False,
             },
