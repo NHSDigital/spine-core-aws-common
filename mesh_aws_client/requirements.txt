@@ -1,4 +1,4 @@
-aws_lambda_powertools
+aws_lambda_powertools==1.31.1
 importlib_metadata
 mesh_client
 requests
