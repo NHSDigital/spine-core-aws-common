@@ -243,6 +243,8 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
                 "file": mesh_message_object.file_name,
                 "http_status": response.status_code,
                 "message_id": message_id,
+                "chunk_num": chunk_num,
+                "max_chunk": number_of_chunks,
             },
         )
         return response
