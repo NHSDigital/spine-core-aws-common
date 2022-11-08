@@ -82,18 +82,13 @@ class MeshFetchMessageChunkApplication(
             file_name if len(file_name) > 0 else self.message_id + ".dat"
         )
 
-    def _is_last_part(self, part_num):
-        content_length = int(self.http_response.headers["Content-Length"])
-        last_part = part_num > content_length / self.DEFAULT_BUFFER_SIZE
-        return last_part
-
     def _is_last_chunk(self, chunk_num):
         chunk_range = self.http_response.headers.get("Mex-Chunk-Range", "1:1")
         number_of_chunks = int(chunk_range.split(":")[1])
         last_chunk = chunk_num == number_of_chunks
         return last_chunk
 
-    def _upload_part_to_s3(self, buffer, last_chunk, last_part):
+    def _upload_part_to_s3(self, buffer, last_chunk):
         """Upload a part to S3 and check response"""
 
         # check if part_overflow_{message_id}.tmp exists and pre-pend to buffer
@@ -123,15 +118,14 @@ class MeshFetchMessageChunkApplication(
             # Not found
             pass
 
-        if not (last_chunk and last_part):  # not on last chunk
+        if not last_chunk:  # not on last chunk
             if len(buffer) < 5 * self.MEBIBYTE:
                 # write to s3 if buffer is less than 5 MebiBytes and last part of chunk
-                if last_part:
-                    self.s3_client.put_object(
-                        Bucket=self.s3_bucket,
-                        Key=s3_tempfile_key,
-                        Body=buffer,
-                    )
+                self.s3_client.put_object(
+                    Bucket=self.s3_bucket,
+                    Key=s3_tempfile_key,
+                    Body=buffer,
+                )
                 self.log_object.write_log(
                     "MESHFETCH0002a",
                     None,
@@ -257,7 +251,7 @@ class MeshFetchMessageChunkApplication(
         is_report = self.http_response.headers.get("Mex-Messagetype") == "REPORT"
         if is_report:
             buffer = json.dumps(dict(self.http_response.headers))
-            self._upload_part_to_s3(buffer, True, True)
+            self._upload_part_to_s3(buffer, True)
             bytes_read = len(buffer)
         else:
             # read bytes into buffer
@@ -265,10 +259,9 @@ class MeshFetchMessageChunkApplication(
                 chunk_size=self.DEFAULT_BUFFER_SIZE
             ):
                 parts_read += 1
-                last_part = self._is_last_part(parts_read)
                 last_chunk = self._is_last_chunk(self.current_chunk)
                 etag = self._upload_part_to_s3(
-                    part_buffer + buffer, last_chunk, last_part
+                    part_buffer + buffer, last_chunk
                 )
                 if etag:
                     part_buffer = b""
