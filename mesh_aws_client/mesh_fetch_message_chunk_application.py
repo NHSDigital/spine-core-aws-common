@@ -287,6 +287,7 @@ class MeshFetchMessageChunkApplication(
             "MESHFETCH0001a",
             None,
             {
+                "HTTP_RESPONSE": self.http_response.status_code,
                 "length": self.http_headers_bytes_read,
                 "message_id": self.message_id,
             },
