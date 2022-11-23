@@ -77,7 +77,6 @@ class MeshFetchMessageChunkApplication(
                 "message_id": self.message_id,
             },
         )
-
         # get stream for this chunk
         self.http_response = self.mailbox.get_chunk(
             self.message_id, chunk_num=self.current_chunk
@@ -90,30 +89,30 @@ class MeshFetchMessageChunkApplication(
 
         self._get_aws_bucket_and_key()
 
-        if self.number_of_chunks > 1 or self.current_chunk == 1:
-            # create multipart upload even if only one chunk
-            self._create_multipart_upload()
-
         if self.http_response.headers.get("Mex-Messagetype") == "REPORT":
             # REPORT FILE PATH - .ctl files
-            # if report file, we can use a single part for the multipart upload - should also be a single chunk
+            # if report file, it should be a single chunk so we can just directly upload the file using putObject
             self.log_object.write_log(
                 "MESHFETCH00041", None, {"message_id": self.message_id}
             )
 
             buffer = json.dumps(dict(self.http_response.headers)).encode("utf-8")
-            self._read_single_chunk_bytes_into_buffer()
+
             self.http_headers_bytes_read = len(buffer)
+            self._upload_to_s3(buffer, s3_key=self.s3_key)
+            self.mailbox.acknowledge_message(self.message_id)
+            self._update_response_and_mailbox_cleanup(complete=True)
         elif self.number_of_chunks == 1:
             # SINGLE SMALL FILE PATH
-            # if single chunk, we can use a single part for the multipart upload
+            # if single chunk, we can just directly upload the file using putObject
             self.log_object.write_log(
                 "MESHFETCH00042", None, {"message_id": self.message_id}
             )
 
-            buffer = json.dumps(dict(self.http_response.headers))
-            self.http_headers_bytes_read = len(buffer)
-            self._read_single_chunk_bytes_into_buffer()
+            chunk_data = self.http_response.raw.read(decode_content=True)
+            self._upload_to_s3(chunk_data, s3_key=self.s3_key)
+            self.mailbox.acknowledge_message(self.message_id)
+            self._update_response_and_mailbox_cleanup(complete=True)
         else:
             # HAPPY PATH, FILES THAT HAVE > 1 CHUNK
             # Larger file as more than one chunk
@@ -121,34 +120,35 @@ class MeshFetchMessageChunkApplication(
                 "MESHFETCH00043", None, {"message_id": self.message_id}
             )
 
+            self._create_multipart_upload()
             self._read_bytes_into_buffer()
 
-        self.log_object.write_log(
-            "MESHFETCH0001a",
-            None,
-            {
-                "length": self.http_headers_bytes_read,
-                "message_id": self.message_id,
-            },
-        )
-
-        if not self.chunked:
-            self._finish_multipart_upload()
             self.log_object.write_log(
-                "MESHFETCH0004", None, {"message_id": self.message_id}
-            )
-            self.mailbox.acknowledge_message(self.message_id)
-        else:
-            self.log_object.write_log(
-                "MESHFETCH0003",
+                "MESHFETCH0001a",
                 None,
-                {"chunk": self.current_chunk, "message_id": self.message_id},
+                {
+                    "length": self.http_headers_bytes_read,
+                    "message_id": self.message_id,
+                },
             )
-            if self.number_of_chunks > 1:
-                self.current_chunk += 1
 
-        # update event to send as response
-        self._update_response_and_mailbox_cleanup()
+            if not self.chunked:
+                self._finish_multipart_upload()
+                self.log_object.write_log(
+                    "MESHFETCH0004", None, {"message_id": self.message_id}
+                )
+                self.mailbox.acknowledge_message(self.message_id)
+            else:
+                self.log_object.write_log(
+                    "MESHFETCH0003",
+                    None,
+                    {"chunk": self.current_chunk, "message_id": self.message_id},
+                )
+                if self.number_of_chunks > 1:
+                    self.current_chunk += 1
+
+            # update event to send as response
+            self._update_response_and_mailbox_cleanup(complete=self.chunked)
 
     def _get_filename(self):
         file_name = self.http_response.headers.get("Mex-Filename", "")
@@ -214,18 +214,9 @@ class MeshFetchMessageChunkApplication(
                 # Continue as this is the first part
                 self.part_counter += 1
                 pass
-
+            # More to do here to handle the error properly
             pass
 
-        # if not last_chunk and len(buffer) < 5 * self.MEBIBYTE:
-        # write to s3 if buffer is less than 5 MebiBytes and not last part of chunk
-        # Surely this should error out and be handled?
-        # return self._upload_to_s3(buffer, s3_tempfile_key)
-
-        # if last_chunk and len(buffer) <= 5 * self.MEBIBYTE:
-        #     # write to s3 if buffer is less than 5 MebiBytes and last part of chunk
-        #     return self._upload_to_s3(buffer, s3_tempfile_key)
-        # else:
         try:
             response = self.s3_client.upload_part(
                 Body=buffer,
@@ -357,11 +348,11 @@ class MeshFetchMessageChunkApplication(
             )
             raise e
 
-    def _update_response_and_mailbox_cleanup(self):
+    def _update_response_and_mailbox_cleanup(self, complete: bool):
         self.response.update({"statusCode": self.http_response.status_code})
         self.response["body"].update(
             {
-                "complete": self.chunked,
+                "complete": complete,
                 "chunk_num": self.current_chunk,
                 "aws_upload_id": self.aws_upload_id,
                 "aws_current_part_id": self.aws_current_part_id,
@@ -391,12 +382,6 @@ class MeshFetchMessageChunkApplication(
             else:
                 part_buffer = buffer
                 self.http_headers_bytes_read += len(buffer)
-
-    def _read_single_chunk_bytes_into_buffer(self):
-        # If a single chunk, we want to send a single part to complete the multipart upload
-        # part_buffer = b""
-        chunk_data = self.http_response.raw.read(decode_content=True)
-        self._upload_part_to_s3(chunk_data, True)
 
 
 # create instance of class in global space
