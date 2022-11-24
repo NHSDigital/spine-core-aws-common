@@ -13,6 +13,7 @@ import requests
 
 from spine_aws_common.logger import Logger
 from mesh_aws_client.mesh_common import MeshCommon
+from urllib3.exceptions import InsecureRequestWarning
 
 
 class MeshMessage(NamedTuple):
@@ -79,10 +80,17 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         self.maybe_verify_ssl = (
             self.params.get(MeshMailbox.MESH_VERIFY_SSL, False) == "True"
         )
+        if not self.maybe_verify_ssl:
+            requests.package.urllib3.disable_warnings(InsecureRequestWarning)
         self._write_certs_to_files()
 
     def clean_up(self) -> None:
         """Clear up after use"""
+        self.log_object.write_log(
+            "MESHMBOX0007",
+            None,
+            {"mailbox": self.mailbox, "environment": self.environment},
+        )
         if self.client_cert_file:
             filename = self.client_cert_file.name
             self.client_cert_file.close()
