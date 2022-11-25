@@ -176,17 +176,6 @@ class MeshSendMessageChunkApplication(
             },
             )
             _response, _messages = self.mailbox.list_messages()
-        else:
-            self.log_object.write_log(
-            "MESHSEND0009",
-            None,
-            {
-                "file": self.key,
-                "bucket": self.bucket,
-                "chunk_num": self.current_chunk,
-                "max_chunk": total_chunks,
-            },
-            )
         # update input event to send as response
         self.response.update({"statusCode": status_code})
         self.response["body"].update(
