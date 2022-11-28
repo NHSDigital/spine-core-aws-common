@@ -16,6 +16,20 @@ resource "aws_s3_bucket" "mesh" {
     }
   }
 
+    lifecycle_rule {
+    id      = "ExpireMeshObjects"
+    enabled = var.mesh_s3_object_expiry_enabled
+
+    expiration {
+      days = var.mesh_s3_object_expiry_in_days
+    }
+
+    noncurrent_version_expiration {
+      days = var.mesh_s3_object_expiry_in_days
+    }
+
+  }
+
   versioning {
     enabled = true
   }
