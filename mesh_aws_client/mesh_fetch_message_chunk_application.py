@@ -82,6 +82,18 @@ class MeshFetchMessageChunkApplication(
         self.s3_key = s3_folder + (
             file_name if len(file_name) > 0 else self.message_id + ".dat"
         )
+        self.log_object.write_log(
+            "MESHSEND0001c",
+            None,
+            {
+                "message_id": self.message_id,
+                "chunk_num": self.current_chunk,
+                "s3_key": self.s3_key,
+                "s3_bucket": self.s3_bucket,
+                "s3_folder": s3_folder,
+            },
+        )
+        # log will store chunk in this bucket with this key
 
     def _is_last_chunk(self, chunk_num):
         chunk_range = self.http_response.headers.get("Mex-Chunk-Range", "1:1")
@@ -189,10 +201,19 @@ class MeshFetchMessageChunkApplication(
                 Key=self.s3_key,
             )
             self.aws_upload_id = multipart_upload["UploadId"]
+            self.log_object.write_log(
+                "MESHFETCH0005a",
+                None,
+                {
+                    "key": self.s3_key,
+                    "bucket": self.s3_bucket,
+                },
+            )
+            # log started multipart upload to bucket with key
         except ClientError as e:
             self.response.update({"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR.value})
             self.log_object.write_log(
-                "MESHFETCH0005",
+                "MESHFETCH0005b",
                 None,
                 {
                     "key": self.s3_key,
@@ -205,6 +226,7 @@ class MeshFetchMessageChunkApplication(
     def _finish_multipart_upload(self):
         """Complete the s3 multipart upload"""
         try:
+            # log completing multipart upload of key in bucket
             self.s3_client.complete_multipart_upload(
                 Bucket=self.s3_bucket,
                 Key=self.s3_key,
@@ -266,6 +288,15 @@ class MeshFetchMessageChunkApplication(
 
         is_report = self.http_response.headers.get("Mex-Messagetype") == "REPORT"
         if is_report:
+            # logging http headers of report into bucket with key
+            self.log_object.write_log(
+                "MESHSEND0008",
+                None,
+                {
+                    "s3_key": self.s3_key,
+                    "s3_bucket": self.s3_bucket,
+                },
+            )
             buffer = json.dumps(dict(self.http_response.headers))
             self._upload_part_to_s3(buffer, True)
             self.http_headers_bytes_read = len(buffer)

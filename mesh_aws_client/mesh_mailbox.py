@@ -261,7 +261,6 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         """Return a response object for a MESH chunk"""
         session = self._setup_session()
         mesh_url = self.params[MeshMailbox.MESH_URL]
-
         # if chunk number = 1, get first part
         if chunk_num == 1:
             url = f"{mesh_url}/messageexchange/{self.mailbox}/inbox/{message_id}"
@@ -272,6 +271,20 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
             )
         response = session.get(url, stream=True, headers={"Accept-Encoding": "gzip"})
         response.raw.decode_content = True
+        chunk_range = response.headers.get("Mex-Chunk-Range", "1:1")
+        number_of_chunks = int(chunk_range.split(":")[1])
+        number_of_chunks = chunk_num == number_of_chunks
+        self.log_object.write_log(
+            "MESHSEND0001b",
+            None,
+            {
+                "message_id": message_id,
+                "chunk_num": chunk_num,
+                "max_chunk": number_of_chunks,
+            },
+        )
+        # for 3 out of 5 fetch tests Mex-Chunk-Range does not exist is this ok?
+        # log chunk of chunk_max for message_id
         return response
 
     def list_messages(self):
