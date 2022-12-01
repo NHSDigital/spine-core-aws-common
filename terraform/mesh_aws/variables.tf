@@ -90,3 +90,11 @@ variable "mesh_cloudwatch_log_retention_in_days" {
 variable "get_messages_enabled" {
   default = true
 }
+
+variable "mesh_s3_object_expiry_in_days" {
+  default = 60
+}
+
+variable "mesh_s3_object_expiry_enabled" {
+  default = false
+}
