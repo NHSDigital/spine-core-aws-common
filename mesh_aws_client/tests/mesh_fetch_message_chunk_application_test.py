@@ -5,7 +5,7 @@ import json
 from requests.exceptions import HTTPError
 from parameterized import parameterized
 
-from moto import mock_s3, mock_ssm
+from moto import mock_s3, mock_ssm, mock_secretsmanager
 import boto3
 import requests_mock
 
@@ -28,6 +28,7 @@ class TestMeshFetchMessageChunkApplication(MeshTestCase):
         self.app = MeshFetchMessageChunkApplication()
         self.environment = self.app.system_config["Environment"]
 
+    @mock_secretsmanager
     @mock_ssm
     @mock_s3
     @mock.patch.object(MeshFetchMessageChunkApplication, "_create_new_internal_id")
@@ -126,6 +127,7 @@ class TestMeshFetchMessageChunkApplication(MeshTestCase):
         )
 
     @parameterized.expand([("_happy_path", 20), ("odd_sized_chunk_with_temp_file", 18)])
+    @mock_secretsmanager
     @mock_ssm
     @mock_s3
     @mock.patch.object(MeshFetchMessageChunkApplication, "_create_new_internal_id")
@@ -276,6 +278,7 @@ class TestMeshFetchMessageChunkApplication(MeshTestCase):
             self.log_helper.was_value_logged("LAMBDA0003", "Log_Level", "INFO")
         )
 
+    @mock_secretsmanager
     @mock_ssm
     @mock_s3
     @mock.patch.object(MeshFetchMessageChunkApplication, "_create_new_internal_id")
@@ -339,6 +342,7 @@ class TestMeshFetchMessageChunkApplication(MeshTestCase):
         expected_return_code = HTTPStatus.OK.value
         self.assertEqual(response["statusCode"], expected_return_code)
 
+    @mock_secretsmanager
     @mock_ssm
     @mock_s3
     @mock.patch.object(MeshFetchMessageChunkApplication, "_create_new_internal_id")

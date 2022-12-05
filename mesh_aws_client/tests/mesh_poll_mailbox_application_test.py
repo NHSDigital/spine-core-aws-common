@@ -4,7 +4,7 @@ from http import HTTPStatus
 from unittest import mock
 import json
 
-from moto import mock_s3, mock_ssm, mock_stepfunctions
+from moto import mock_s3, mock_ssm, mock_stepfunctions, mock_secretsmanager
 import boto3
 import requests_mock
 
@@ -27,6 +27,7 @@ class TestMeshPollMailboxApplication(MeshTestCase):
         self.app = MeshPollMailboxApplication()
         self.environment = self.app.system_config["Environment"]
 
+    @mock_secretsmanager
     @mock_ssm
     @mock_s3
     @mock_stepfunctions

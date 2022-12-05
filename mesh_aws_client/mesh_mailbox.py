@@ -71,8 +71,8 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
             {"mailbox": self.mailbox, "environment": self.environment},
         )
 
-        common_params = MeshCommon.get_ssm_params(f"/{self.environment}/mesh")
-        mailbox_params = MeshCommon.get_ssm_params(
+        common_params = MeshCommon.get_params(f"/{self.environment}/mesh")
+        mailbox_params = MeshCommon.get_params(
             f"/{self.environment}/mesh/mailboxes/{self.mailbox}"
         )
         self.params = {**common_params, **mailbox_params}
