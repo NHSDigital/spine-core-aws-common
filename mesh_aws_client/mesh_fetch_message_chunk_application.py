@@ -203,7 +203,6 @@ class MeshFetchMessageChunkApplication(
             self.s3_client.delete_object(
                 Bucket=self.s3_bucket,
                 Key=self.s3_tempfile_key,
-                BypassGovernanceRetention=True,
             )
         except ClientError as e:
             self.log_object.write_log(
