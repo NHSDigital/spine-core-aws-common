@@ -94,15 +94,24 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         if self.client_cert_file:
             filename = self.client_cert_file.name
             self.client_cert_file.close()
-            os.remove(filename)
+            try:
+                os.remove(filename)
+            except FileNotFoundError:
+                pass
         if self.client_key_file:
             filename = self.client_key_file.name
             self.client_key_file.close()
-            os.remove(filename)
+            try:
+                os.remove(filename)
+            except FileNotFoundError:
+                pass
         if self.ca_cert_file:
             filename = self.ca_cert_file.name
             self.ca_cert_file.close()
-            os.remove(filename)
+            try:
+                os.remove(filename)
+            except FileNotFoundError:
+                pass
 
     def get_param(self, param) -> str:
         """Shortcut to get a parameter"""
