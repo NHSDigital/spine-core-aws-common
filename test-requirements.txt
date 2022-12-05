@@ -14,3 +14,4 @@ pylint
 pytest
 coverage
 tox
+parameterized

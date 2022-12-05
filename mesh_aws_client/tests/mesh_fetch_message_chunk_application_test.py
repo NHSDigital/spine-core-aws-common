@@ -3,6 +3,7 @@ from http import HTTPStatus
 from unittest import mock
 import json
 from requests.exceptions import HTTPError
+from parameterized import parameterized
 
 from moto import mock_s3, mock_ssm
 import boto3
@@ -42,7 +43,6 @@ class TestMeshFetchMessageChunkApplication(MeshTestCase):
             status_code=HTTPStatus.OK.value,
             headers={
                 "Content-Type": "application/octet-stream",
-                "Content-Length": "33",
                 "Connection": "keep-alive",
                 "Mex-Messageid": MeshTestingCommon.KNOWN_MESSAGE_ID1,
                 "Mex-From": "MESH-TEST2",
@@ -105,8 +105,8 @@ class TestMeshFetchMessageChunkApplication(MeshTestCase):
         self.assertIn("aws_current_part_id", response["body"])
         self.assertIn("aws_upload_id", response["body"])
 
-        # Should be one etag uploaded to S3
-        self.assertEqual(len(response["body"].get("aws_part_etags")), 1)
+        # Should be 0 etags uploaded to S3 as multipart not used on single chunk
+        self.assertEqual(len(response["body"].get("aws_part_etags")), 0)
 
         # Check we got the logs we expect
         self.assertTrue(
@@ -116,33 +116,33 @@ class TestMeshFetchMessageChunkApplication(MeshTestCase):
             self.log_helper.was_value_logged("MESHFETCH0002", "Log_Level", "INFO")
         )
         self.assertFalse(
-            self.log_helper.was_value_logged("MESHFETCH0002a", "Log_Level", "INFO")
-        )
-        self.assertFalse(
             self.log_helper.was_value_logged("MESHFETCH0003", "Log_Level", "INFO")
         )
         self.assertTrue(
-            self.log_helper.was_value_logged("MESHFETCH0004", "Log_Level", "INFO")
+            self.log_helper.was_value_logged("MESHFETCH0011", "Log_Level", "INFO")
         )
         self.assertTrue(
             self.log_helper.was_value_logged("LAMBDA0003", "Log_Level", "INFO")
         )
 
+    @parameterized.expand([("_happy_path", 20), ("odd_sized_chunk_with_temp_file", 18)])
     @mock_ssm
     @mock_s3
     @mock.patch.object(MeshFetchMessageChunkApplication, "_create_new_internal_id")
     @requests_mock.Mocker()
-    def test_mesh_fetch_file_chunk_app_2_chunks_happy_path(
-        self, mock_create_new_internal_id, mock_response
+    def test_mesh_fetch_file_chunk_app_two_chunks(
+        self,
+        _,
+        mock_data1_length,
+        mock_create_new_internal_id,
+        mock_response,
     ):
         """
         Test that doing chunking works
         """
-        # megabyte = 1000 * 1000
         mebibyte = 1024 * 1024
         # Create some test data
-        # data1_length = 20 * megabyte  # 20 MB (not MiB!)
-        data1_length = 20 * mebibyte  # 20 MiB
+        data1_length = mock_data1_length * mebibyte  # 20 MiB
         data1 = ""
         while len(data1) < data1_length:
             data1 += "1234567890"
@@ -160,8 +160,8 @@ class TestMeshFetchMessageChunkApplication(MeshTestCase):
             status_code=HTTPStatus.PARTIAL_CONTENT.value,
             headers={
                 "Content-Type": "application/octet-stream",
-                "Content-Length": str(data1_length),
                 "Connection": "keep-alive",
+                "Mex-Chunk-Range": "1:2",
                 "Mex-Messageid": MeshTestingCommon.KNOWN_MESSAGE_ID1,
                 "Mex-From": "MESH-TEST2",
                 "Mex-To": "MESH-TEST1",
@@ -189,7 +189,7 @@ class TestMeshFetchMessageChunkApplication(MeshTestCase):
             status_code=HTTPStatus.OK.value,
             headers={
                 "Content-Type": "application/octet-stream",
-                "Content-Length": str(data2_length),
+                "Mex-Chunk-Range": "2:2",
                 "Connection": "keep-alive",
                 "Mex-Messageid": MeshTestingCommon.KNOWN_MESSAGE_ID1,
                 "Mex-From": "MESH-TEST2",
@@ -267,9 +267,6 @@ class TestMeshFetchMessageChunkApplication(MeshTestCase):
             self.log_helper.was_value_logged("MESHFETCH0002", "Log_Level", "INFO")
         )
         self.assertTrue(
-            self.log_helper.was_value_logged("MESHFETCH0002a", "Log_Level", "INFO")
-        )
-        self.assertTrue(
             self.log_helper.was_value_logged("MESHFETCH0003", "Log_Level", "INFO")
         )
         self.assertTrue(
@@ -294,7 +291,6 @@ class TestMeshFetchMessageChunkApplication(MeshTestCase):
             status_code=HTTPStatus.OK.value,
             headers={
                 "Content-Type": "application/octet-stream",
-                "Content-Length": "0",
                 "Connection": "keep-alive",
                 "Mex-Messageid": MeshTestingCommon.KNOWN_MESSAGE_ID2,
                 "Mex-Linkedmsgid": MeshTestingCommon.KNOWN_MESSAGE_ID1,

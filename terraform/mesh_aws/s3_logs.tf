@@ -1,3 +1,4 @@
+#tfsec:ignore:aws-cloudtrail-require-bucket-access-logging tfsec:ignore:aws-s3-enable-versioning
 resource "aws_s3_bucket" "s3logs" {
   bucket = "${local.name}-s3logs"
   acl    = "log-delivery-write"
@@ -32,6 +33,29 @@ resource "aws_s3_bucket_public_access_block" "s3logs" {
 }
 
 data "aws_iam_policy_document" "s3logs" {
+  statement {
+    sid = "AllowSSLRequestsOnly"
+    actions = [
+      "s3:*",
+    ]
+    effect = "Deny"
+    resources = [
+      "arn:aws:s3:::${local.name}-s3logs",
+      "arn:aws:s3:::${local.name}-s3logs/*",
+    ]
+    principals {
+      type        = "*"
+      identifiers = ["*"]
+    }
+    condition {
+      test = "Bool"
+      values = [
+        "false",
+      ]
+
+      variable = "aws:SecureTransport"
+    }
+  }
   statement {
     sid    = "AWSCloudTrailAclCheck"
     effect = "Allow"
