@@ -29,6 +29,7 @@ resource "aws_security_group" "poll_mailbox" {
   }
 }
 
+#tfsec:ignore:aws-lambda-enable-tracing
 resource "aws_lambda_function" "poll_mailbox" {
   function_name    = local.poll_mailbox_name
   filename         = data.archive_file.mesh_aws_client.output_path
@@ -64,6 +65,7 @@ resource "aws_lambda_function" "poll_mailbox" {
 resource "aws_cloudwatch_log_group" "poll_mailbox" {
   name              = "/aws/lambda/${local.poll_mailbox_name}"
   retention_in_days = var.cloudwatch_retention_in_days
+  kms_key_id        = aws_kms_key.mesh.arn
 }
 
 resource "aws_iam_role" "poll_mailbox" {
@@ -97,6 +99,7 @@ resource "aws_iam_policy" "poll_mailbox" {
   policy      = data.aws_iam_policy_document.poll_mailbox.json
 }
 
+#tfsec:ignore:aws-iam-no-policy-wildcards
 data "aws_iam_policy_document" "poll_mailbox" {
   statement {
     sid    = "CloudWatchAllow"
@@ -178,8 +181,8 @@ resource "aws_iam_policy" "poll_mailbox_check_sfn" {
   policy      = data.aws_iam_policy_document.poll_mailbox_check_sfn.json
 }
 
+#tfsec:ignore:aws-iam-no-policy-wildcards
 data "aws_iam_policy_document" "poll_mailbox_check_sfn" {
-
   statement {
     sid    = "SFNList"
     effect = "Allow"
