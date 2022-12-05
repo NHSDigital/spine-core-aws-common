@@ -43,12 +43,11 @@ class MeshPollMailboxApplication(LambdaApplication):
             self.response = MeshCommon.return_failure(
                 self.log_object,
                 HTTPStatus.TOO_MANY_REQUESTS.value,
-                "MESHPOLL0003",
+                "MESHPOLL0002",
                 self.mailbox_name,
                 message=e.msg,
             )
             return
-
         mailbox = MeshMailbox(self.log_object, self.mailbox_name, self.environment)
         list_response, message_list = mailbox.list_messages()
         list_response.raise_for_status()
@@ -70,6 +69,15 @@ class MeshPollMailboxApplication(LambdaApplication):
                     },
                 }
             )
+
+        self.log_object.write_log(
+            "MESHPOLL0001",
+            None,
+            {
+                "mailbox": self.mailbox_name,
+                "message_count": message_count,
+            },
+        )
 
         # to set response for the lambda
         self.response = {
