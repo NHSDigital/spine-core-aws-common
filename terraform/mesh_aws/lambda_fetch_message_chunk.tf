@@ -30,6 +30,7 @@ resource "aws_security_group" "fetch_message_chunk" {
   }
 }
 
+#tfsec:ignore:aws-lambda-enable-tracing
 resource "aws_lambda_function" "fetch_message_chunk" {
   function_name    = local.fetch_message_chunk_name
   filename         = data.archive_file.mesh_aws_client.output_path
@@ -43,6 +44,7 @@ resource "aws_lambda_function" "fetch_message_chunk" {
   environment {
     variables = {
       Environment = local.name
+      use_secrets_manager = var.config.use_secrets_manager
     }
   }
 
@@ -61,6 +63,7 @@ resource "aws_lambda_function" "fetch_message_chunk" {
 resource "aws_cloudwatch_log_group" "fetch_message_chunk" {
   name              = "/aws/lambda/${local.fetch_message_chunk_name}"
   retention_in_days = var.cloudwatch_retention_in_days
+  kms_key_id        = aws_kms_key.mesh.arn
 }
 
 resource "aws_iam_role" "fetch_message_chunk" {
@@ -94,6 +97,7 @@ resource "aws_iam_policy" "fetch_message_chunk" {
   policy      = data.aws_iam_policy_document.fetch_message_chunk.json
 }
 
+#tfsec:ignore:aws-iam-no-policy-wildcards
 data "aws_iam_policy_document" "fetch_message_chunk" {
   statement {
     sid    = "CloudWatchAllow"
@@ -169,6 +173,8 @@ data "aws_iam_policy_document" "fetch_message_chunk" {
     actions = [
       "s3:PutObject",
       "s3:AbortMultipartUpload",
+      "s3:GetObject",
+      "s3:DeleteObject",
     ]
 
     resources = [

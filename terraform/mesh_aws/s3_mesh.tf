@@ -10,10 +10,28 @@ resource "aws_s3_bucket" "mesh" {
   server_side_encryption_configuration {
     rule {
       apply_server_side_encryption_by_default {
-        kms_master_key_id = aws_kms_key.mesh.arn
+        kms_master_key_id = aws_kms_key.mesh.key_id
         sse_algorithm     = "aws:kms"
       }
     }
+  }
+
+    lifecycle_rule {
+    id      = "ExpireMeshObjects"
+    enabled = var.mesh_s3_object_expiry_enabled
+
+    expiration {
+      days = var.mesh_s3_object_expiry_in_days
+    }
+
+    noncurrent_version_expiration {
+      days = var.mesh_s3_object_expiry_in_days
+    }
+
+  }
+
+  versioning {
+    enabled = true
   }
 }
 
@@ -53,6 +71,28 @@ data "aws_iam_policy_document" "mesh_bucket_policy" {
       ]
 
       variable = "aws:SecureTransport"
+    }
+  }
+  statement {
+    effect = "Deny"
+    principals {
+      type        = "*"
+      identifiers = ["*"]
+    }
+    actions = [
+      "s3:*",
+    ]
+    resources = [
+      "arn:aws:s3:::${local.name}",
+      "arn:aws:s3:::${local.name}/*",
+    ]
+    condition {
+      test = "NumericLessThan"
+      values = [
+        1.2,
+      ]
+
+      variable = "s3:TlsVersion"
     }
   }
 }

@@ -23,6 +23,7 @@ resource "aws_security_group" "check_send_parameters" {
   }
 }
 
+#tfsec:ignore:aws-lambda-enable-tracing
 resource "aws_lambda_function" "check_send_parameters" {
   function_name    = local.check_send_parameters_name
   filename         = data.archive_file.mesh_aws_client.output_path
@@ -37,6 +38,7 @@ resource "aws_lambda_function" "check_send_parameters" {
     variables = {
       Environment                     = local.name
       SEND_MESSAGE_STEP_FUNCTION_NAME = local.send_message_name
+      use_secrets_manager             = var.config.use_secrets_manager
     }
   }
 
@@ -57,6 +59,7 @@ resource "aws_lambda_function" "check_send_parameters" {
 resource "aws_cloudwatch_log_group" "check_send_parameters" {
   name              = "/aws/lambda/${local.check_send_parameters_name}"
   retention_in_days = var.cloudwatch_retention_in_days
+  kms_key_id        = aws_kms_key.mesh.arn
 }
 
 resource "aws_iam_role" "check_send_parameters" {
@@ -90,6 +93,7 @@ resource "aws_iam_policy" "check_send_parameters" {
   policy      = data.aws_iam_policy_document.check_send_parameters.json
 }
 
+#tfsec:ignore:aws-iam-no-policy-wildcards
 data "aws_iam_policy_document" "check_send_parameters" {
   statement {
     sid    = "CloudWatchAllow"
@@ -185,6 +189,7 @@ resource "aws_iam_policy" "check_send_parameters_check_sfn" {
   policy      = data.aws_iam_policy_document.check_send_parameters_check_sfn.json
 }
 
+#tfsec:ignore:aws-iam-no-policy-wildcards
 data "aws_iam_policy_document" "check_send_parameters_check_sfn" {
   statement {
     sid    = "SFNList"

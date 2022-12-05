@@ -140,6 +140,7 @@ resource "aws_sfn_state_machine" "get_messages" {
 resource "aws_cloudwatch_log_group" "get_messages" {
   name              = "/aws/states/${local.get_messages_name}"
   retention_in_days = var.cloudwatch_retention_in_days
+  kms_key_id        = aws_kms_key.mesh.arn
 }
 
 resource "aws_iam_role" "get_messages" {
@@ -175,6 +176,7 @@ resource "aws_iam_policy" "get_messages" {
   policy      = data.aws_iam_policy_document.get_messages.json
 }
 
+#tfsec:ignore:aws-iam-no-policy-wildcards
 data "aws_iam_policy_document" "get_messages" {
   statement {
     sid    = "CloudWatchAllow"
