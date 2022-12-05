@@ -97,6 +97,9 @@ class MeshCommon:
 
     @staticmethod
     def get_params(path, recursive=False, decryption=True):
+        """
+        Get parameters from SSM and secrets manager
+        """
         ssm_client = boto3.client("ssm", region_name=REGION_NAME)
         params_result = ssm_client.get_parameters_by_path(
             Path=path,
