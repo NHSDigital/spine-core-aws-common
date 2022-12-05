@@ -3,12 +3,13 @@ from http import HTTPStatus
 from unittest import mock
 import json
 
-from moto import mock_s3, mock_ssm, mock_secretsmanager
+from moto import mock_s3, mock_ssm
 import boto3
 import requests_mock
 
 from mesh_aws_client.mesh_send_message_chunk_application import (
-    MeshSendMessageChunkApplication, MaxByteExceededException,
+    MeshSendMessageChunkApplication,
+    MaxByteExceededException,
 )
 from mesh_aws_client.tests.mesh_testing_common import (
     MeshTestCase,
@@ -32,18 +33,17 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
         self.app = MeshSendMessageChunkApplication()
         self.environment = self.app.system_config["Environment"]
 
-    @mock_secretsmanager
     @mock_ssm
     @mock_s3
     @mock.patch.object(MeshSendMessageChunkApplication, "_create_new_internal_id")
     @requests_mock.Mocker()
     def test_mesh_send_file_chunk_app_no_chunks_happy_path(
-        self, mock_create_new_internal_id, mock_response
+        self, mock_create_new_internal_id, response_mocker
     ):
         """Test the lambda with small file, no chunking, happy path"""
         mock_create_new_internal_id.return_value = MeshTestingCommon.KNOWN_INTERNAL_ID
 
-        mock_response.get(
+        response_mocker.get(
             "/messageexchange/MESH-TEST2",
             headers={
                 "Content-Type": "application/json",
@@ -51,9 +51,8 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
                 "Connection": "keep-alive",
             },
         )
-        mock_response.get(
+        response_mocker.get(
             "/messageexchange/MESH-TEST2/inbox",
-            text=json.dumps({"messages": []}),
             headers={
                 "Content-Type": "application/json",
                 "Connection": "keep-alive",
@@ -68,7 +67,7 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
                 }
             ),
         )
-        mock_response.post(
+        response_mocker.post(
             "/messageexchange/MESH-TEST2/outbox",
             text=json.dumps({"messageID": "20210711164906010267_97CCD9"}),
             headers={
@@ -83,9 +82,9 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
         MeshTestingCommon.setup_mock_aws_ssm_parameter_store(
             self.environment, ssm_client
         )
-        mock_input = self._sample_input_event()
-        mock_response = self._sample_input_event()
-        mock_response["body"].update({"complete": True})
+        mock_lambda_input = self._sample_single_chunk_input_event()
+        expected_lambda_response = self._sample_single_chunk_input_event()
+        expected_lambda_response["body"].update({"complete": True})
 
         try:
             lambda_response = self.app.main(
@@ -103,29 +102,173 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
         )
 
     # pylint: disable=too-many-locals
-    @mock_secretsmanager
     @mock_ssm
     @mock_s3
     @mock.patch.object(MeshSendMessageChunkApplication, "_create_new_internal_id")
+    @requests_mock.Mocker()
     def test_mesh_send_file_chunk_app_2_chunks_happy_path(
-        self, mock_create_new_internal_id
+        self,
+        mock_create_new_internal_id,
+        response_mocker,
     ):
-        """
-        Test that doing chunking works
-        """
-        mock_create_new_internal_id.return_value = MeshTestingCommon.KNOWN_INTERNAL_ID2
+        """Test the lambda with small file, in 4 chunks, happy path"""
+        mock_create_new_internal_id.return_value = MeshTestingCommon.KNOWN_INTERNAL_ID
+
+        response_mocker.get(
+            "/messageexchange/MESH-TEST2",
+            headers={
+                "Content-Type": "application/json",
+                "Connection": "keep-alive",
+            },
+            text="",
+        )
+        response_mocker.get(
+            "/messageexchange/MESH-TEST2/inbox",
+            headers={
+                "Content-Type": "application/json",
+                "Connection": "keep-alive",
+            },
+            text=json.dumps(
+                {
+                    "messages": [
+                        MeshTestingCommon.KNOWN_MESSAGE_ID1,
+                        MeshTestingCommon.KNOWN_MESSAGE_ID2,
+                        MeshTestingCommon.KNOWN_MESSAGE_ID3,
+                    ]
+                }
+            ),
+        )
+        response_mocker.post(
+            "/messageexchange/MESH-TEST2/outbox",
+            text=json.dumps({"messageID": "20210711164906010267_97CCD9"}),
+            headers={
+                "Content-Type": "application/json",
+                "Content-Length": "33",
+                "Connection": "keep-alive",
+            },
+        )
+        response_mocker.post(
+            "/messageexchange/MESH-TEST2/outbox/20210711164906010267_97CCD9/2",
+            text=json.dumps({"messageID": "20210711164906010267_97CCD9"}),
+            headers={
+                "Content-Type": "application/json",
+                "Content-Length": "33",
+                "Connection": "keep-alive",
+            },
+        )
+        response_mocker.post(
+            "/messageexchange/MESH-TEST2/outbox/20210711164906010267_97CCD9/3",
+            text=json.dumps({"messageID": "20210711164906010267_97CCD9"}),
+            headers={
+                "Content-Type": "application/json",
+                "Content-Length": "33",
+                "Connection": "keep-alive",
+            },
+        )
+        response_mocker.post(
+            "/messageexchange/MESH-TEST2/outbox/20210711164906010267_97CCD9/4",
+            text=json.dumps({"messageID": "20210711164906010267_97CCD9"}),
+            headers={
+                "Content-Type": "application/json",
+                "Content-Length": "33",
+                "Connection": "keep-alive",
+            },
+        )
         s3_client = boto3.client("s3", config=MeshTestingCommon.aws_config)
         ssm_client = boto3.client("ssm", config=MeshTestingCommon.aws_config)
         MeshTestingCommon.setup_mock_aws_s3_buckets(self.environment, s3_client)
         MeshTestingCommon.setup_mock_aws_ssm_parameter_store(
             self.environment, ssm_client
         )
+        mock_input = self._sample_multi_chunk_input_event()
+        mock_response = self._sample_multi_chunk_input_event()
+        mock_response["body"].update({"complete": True})
+        mock_response["body"].update({"will_compress": True})
+        mock_response["body"].update({"chunk_number": 4})
 
-        # TODO
+        count = 1
+        while not mock_input["body"]["complete"]:
+            chunk_number = mock_input["body"].get("chunk_number", 1)
+            print(f">>>>>>>>>>> Chunk {chunk_number} >>>>>>>>>>>>>>>>>>>>")
+            try:
+                response = self.app.main(
+                    event=mock_input, context=MeshTestingCommon.CONTEXT
+                )
+            except Exception as exception:  # pylint: disable=broad-except
+                # need to fail happy pass on any exception
+                self.fail(f"Invocation crashed with Exception {str(exception)}")
+            if count == 1:
+                message_id = response["body"]["message_id"]
+            count = count + 1
+            mock_input = response
+            print(response)
 
-        response = {"statusCode": 200}
-        expected_return_code = {"statusCode": 200}
-        self.assertEqual(response, {**response, **expected_return_code})
+        mock_response["body"]["message_id"] = message_id
+        self.assertDictEqual(mock_response, response)
+
+        # Check completion
+        self.assertTrue(
+            self.log_helper.was_value_logged("LAMBDA0003", "Log_Level", "INFO")
+        )
+
+    @mock_ssm
+    @mock_s3
+    @mock.patch.object(MeshSendMessageChunkApplication, "_create_new_internal_id")
+    @requests_mock.Mocker()
+    def test_mesh_send_file_chunk_app_too_many_chunks(
+        self, mock_create_new_internal_id, fake_mesh_server
+    ):
+        """Test lambda throws MaxByteExceededException when too many chunks specified"""
+        mock_create_new_internal_id.return_value = MeshTestingCommon.KNOWN_INTERNAL_ID
+
+        fake_mesh_server.get(
+            "/messageexchange/MESH-TEST2",
+            headers={
+                "Content-Type": "application/json",
+                "Connection": "keep-alive",
+            },
+            text="",
+        )
+        fake_mesh_server.get(
+            "/messageexchange/MESH-TEST2/inbox",
+            headers={
+                "Content-Type": "application/json",
+                "Connection": "keep-alive",
+            },
+            text=json.dumps(
+                {
+                    "messages": [
+                        MeshTestingCommon.KNOWN_MESSAGE_ID1,
+                        MeshTestingCommon.KNOWN_MESSAGE_ID2,
+                        MeshTestingCommon.KNOWN_MESSAGE_ID3,
+                    ]
+                }
+            ),
+        )
+        fake_mesh_server.post(
+            "/messageexchange/MESH-TEST2/outbox",
+            text=json.dumps({"messageID": "20210711164906010267_97CCD9"}),
+            headers={
+                "Content-Type": "application/json",
+                "Content-Length": "33",
+                "Connection": "keep-alive",
+            },
+        )
+
+        s3_client = boto3.client("s3", config=MeshTestingCommon.aws_config)
+        ssm_client = boto3.client("ssm", config=MeshTestingCommon.aws_config)
+        MeshTestingCommon.setup_mock_aws_s3_buckets(self.environment, s3_client)
+        MeshTestingCommon.setup_mock_aws_ssm_parameter_store(
+            self.environment, ssm_client
+        )
+        mock_input = self._sample_too_many_chunks_input_event()
+        mock_response = self._sample_too_many_chunks_input_event()
+        mock_response["body"].update({"complete": True})
+        mock_response["body"].update({"will_compress": True})
+
+        with self.assertRaises(MaxByteExceededException) as context:
+            self.app.main(event=mock_input, context=MeshTestingCommon.CONTEXT)
+        self.assertIsInstance(context.exception, MaxByteExceededException)
 
     def _sample_single_chunk_input_event(self):
         """Return Example input event"""
@@ -139,7 +282,7 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
                 "workflow_id": "TESTWORKFLOW",
                 "bucket": f"{self.environment}-mesh",
                 "key": "MESH-TEST2/outbound/testfile.json",
-                "chunk": False,
+                "chunked": False,
                 "chunk_number": 1,
                 "total_chunks": 1,
                 "chunk_size": 50,

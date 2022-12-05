@@ -12,12 +12,14 @@ from spine_aws_common import LambdaApplication
 from mesh_aws_client.mesh_mailbox import MeshMailbox, MeshMessage
 from mesh_aws_client.mesh_common import MeshCommon
 
+
 class MaxByteExceededException(Exception):
     """Raised when a file has more chunks, but no more bytes"""
 
     def __init__(self, msg=None):
         super().__init__()
         self.msg = msg
+
 
 class MeshSendMessageChunkApplication(
     LambdaApplication
@@ -60,7 +62,7 @@ class MeshSendMessageChunkApplication(
         self.chunked = self.input.get("chunked", False)
         self.compression_ratio = self.input.get("compress_ratio", 1)
         self.will_compress = self.input.get("will_compress", False)
-        if self.chunked == True:
+        if self.chunked:
             self.will_compress = True
         self.s3_client = boto3.client("s3")
         self.bucket = self.input["bucket"]

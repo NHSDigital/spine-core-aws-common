@@ -94,6 +94,7 @@ class TestMeshCommon(TestCase):
             "MESH_CLIENT_KEY2": "DummyKey2",
         }
         self.assertEqual(expected_params, param_dict)
+        os.environ["use_secrets_manager"] = ""
 
     @mock_ssm
     @mock_secretsmanager
