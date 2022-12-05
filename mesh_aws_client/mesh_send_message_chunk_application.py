@@ -41,7 +41,7 @@ class MeshSendMessageChunkApplication(
         self.chunked = False
         self.current_byte = 0
         self.current_chunk = 1
-        self.chunk_size = 0
+        self.chunk_size = MeshCommon.DEFAULT_CHUNK_SIZE
         self.compression_ratio = 1
         self.will_compress = False
         self.s3_client = None
@@ -154,13 +154,13 @@ class MeshSendMessageChunkApplication(
             will_compress=self.will_compress,
         )
         if self.file_size > 0:
-            response = self.mailbox.send_chunk(
+            mailbox_response = self.mailbox.send_chunk(
                 mesh_message_object=message_object,
                 number_of_chunks=total_chunks,
                 chunk_num=self.current_chunk,
             )
-            status_code = response.status_code
-            message_id = json.loads(response.text)["messageID"]
+            status_code = mailbox_response.status_code
+            message_id = json.loads(mailbox_response.text)["messageID"]
             status_code = HTTPStatus.OK.value
         else:
             status_code = HTTPStatus.NOT_FOUND.value
