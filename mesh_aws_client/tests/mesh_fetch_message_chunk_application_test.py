@@ -3,7 +3,6 @@ from http import HTTPStatus
 from unittest import mock
 import json
 from requests.exceptions import HTTPError
-from parameterized import parameterized
 
 from moto import mock_s3, mock_ssm
 import boto3
@@ -125,7 +124,6 @@ class TestMeshFetchMessageChunkApplication(MeshTestCase):
             self.log_helper.was_value_logged("LAMBDA0003", "Log_Level", "INFO")
         )
 
-    @parameterized.expand([("_happy_path", 20), ("odd_sized_chunk_with_temp_file", 18)])
     @mock_ssm
     @mock_s3
     @mock.patch.object(MeshFetchMessageChunkApplication, "_create_new_internal_id")
