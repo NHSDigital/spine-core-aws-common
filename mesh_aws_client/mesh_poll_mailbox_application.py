@@ -37,9 +37,10 @@ class MeshPollMailboxApplication(LambdaApplication):
         self.response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR.value}
 
         mailbox = MeshMailbox(self.log_object, self.mailbox_name, self.environment)
-        if self.handshake.lower()=="true":
+        if self.handshake.lower() == "true":
             mailbox.handshake()
-            # 204 No Content is raised so the step function ends without looking for messages
+            # 204 No Content is raised so the step function
+            # ends without looking for messages
             self.response = {"statusCode": HTTPStatus.NO_CONTENT.value, "body": {}}
             return
 

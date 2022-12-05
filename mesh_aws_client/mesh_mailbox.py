@@ -26,12 +26,14 @@ class MeshMessage(NamedTuple):
     message_id: str = None
     will_compress: bool = False
 
+
 class HandshakeFailure(Exception):
     """Handshake failed"""
 
     def __init__(self, msg=None):
         super().__init__()
         self.msg = msg
+
 
 class MeshMailbox:  # pylint: disable=too-many-instance-attributes
     """Mailbox class that handles all the complexity of talking to MESH API"""
