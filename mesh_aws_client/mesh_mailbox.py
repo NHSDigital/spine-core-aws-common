@@ -27,6 +27,14 @@ class MeshMessage(NamedTuple):
     will_compress: bool = False
 
 
+class HandshakeFailure(Exception):
+    """Handshake failed"""
+
+    def __init__(self, msg=None):
+        super().__init__()
+        self.msg = msg
+
+
 class MeshMailbox:  # pylint: disable=too-many-instance-attributes
     """Mailbox class that handles all the complexity of talking to MESH API"""
 
@@ -194,13 +202,9 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         self.log_object.write_log(
             "MESHMBOX0004", None, {"http_status": response.status_code}
         )
+        if response.status_code < 200 or response.status_code > 299:
+            raise HandshakeFailure
         return response.status_code
-
-    def authenticate(self) -> int:
-        """
-        Povided for compatibility
-        """
-        return self.handshake()
 
     def send_chunk(
         self,
