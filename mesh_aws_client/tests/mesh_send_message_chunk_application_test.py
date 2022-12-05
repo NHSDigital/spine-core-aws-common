@@ -3,7 +3,7 @@ from http import HTTPStatus
 from unittest import mock
 import json
 
-from moto import mock_s3, mock_ssm
+from moto import mock_s3, mock_ssm, mock_secretsmanager
 import boto3
 import requests_mock
 
@@ -32,6 +32,7 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
         self.app = MeshSendMessageChunkApplication()
         self.environment = self.app.system_config["Environment"]
 
+    @mock_secretsmanager
     @mock_ssm
     @mock_s3
     @mock.patch.object(MeshSendMessageChunkApplication, "_create_new_internal_id")
@@ -85,6 +86,7 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
         )
 
     # pylint: disable=too-many-locals
+    @mock_secretsmanager
     @mock_ssm
     @mock_s3
     @mock.patch.object(MeshSendMessageChunkApplication, "_create_new_internal_id")
