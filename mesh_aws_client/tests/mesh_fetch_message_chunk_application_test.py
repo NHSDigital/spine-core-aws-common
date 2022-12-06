@@ -112,6 +112,9 @@ class TestMeshFetchMessageChunkApplication(MeshTestCase):
             self.log_helper.was_value_logged("MESHFETCH0001", "Log_Level", "INFO")
         )
         self.assertTrue(
+            self.log_helper.was_value_logged("MESHFETCH0001c", "Log_Level", "INFO")
+        )
+        self.assertTrue(
             self.log_helper.was_value_logged("MESHFETCH0002", "Log_Level", "INFO")
         )
         self.assertFalse(
@@ -122,6 +125,12 @@ class TestMeshFetchMessageChunkApplication(MeshTestCase):
         )
         self.assertTrue(
             self.log_helper.was_value_logged("MESHFETCH0004", "Log_Level", "INFO")
+        )
+        self.assertTrue(
+            self.log_helper.was_value_logged("MESHFETCH0005a", "Log_Level", "INFO")
+        )
+        self.assertFalse(
+            self.log_helper.was_value_logged("MESHFETCH0008", "Log_Level", "INFO")
         )
         self.assertTrue(
             self.log_helper.was_value_logged("LAMBDA0003", "Log_Level", "INFO")
@@ -261,6 +270,9 @@ class TestMeshFetchMessageChunkApplication(MeshTestCase):
             self.log_helper.was_value_logged("MESHFETCH0001", "Log_Level", "INFO")
         )
         self.assertTrue(
+            self.log_helper.was_value_logged("MESHFETCH0001c", "Log_Level", "INFO")
+        )
+        self.assertTrue(
             self.log_helper.was_value_logged("MESHFETCH0002", "Log_Level", "INFO")
         )
         self.assertTrue(
@@ -268,6 +280,12 @@ class TestMeshFetchMessageChunkApplication(MeshTestCase):
         )
         self.assertTrue(
             self.log_helper.was_value_logged("MESHFETCH0004", "Log_Level", "INFO")
+        )
+        self.assertTrue(
+            self.log_helper.was_value_logged("MESHFETCH0005a", "Log_Level", "INFO")
+        )
+        self.assertFalse(
+            self.log_helper.was_value_logged("MESHFETCH0008", "Log_Level", "INFO")
         )
         self.assertTrue(
             self.log_helper.was_value_logged("LAMBDA0003", "Log_Level", "INFO")
@@ -407,6 +425,9 @@ class TestMeshFetchMessageChunkApplication(MeshTestCase):
             self.log_helper.was_value_logged("MESHFETCH0001", "Log_Level", "INFO")
         )
         self.assertTrue(
+            self.log_helper.was_value_logged("MESHFETCH0001c", "Log_Level", "INFO")
+        )
+        self.assertTrue(
             self.log_helper.was_value_logged("MESHFETCH0002", "Log_Level", "INFO")
         )
         self.assertTrue(
@@ -417,6 +438,12 @@ class TestMeshFetchMessageChunkApplication(MeshTestCase):
         )
         self.assertTrue(
             self.log_helper.was_value_logged("MESHFETCH0004", "Log_Level", "INFO")
+        )
+        self.assertTrue(
+            self.log_helper.was_value_logged("MESHFETCH0005a", "Log_Level", "INFO")
+        )
+        self.assertFalse(
+            self.log_helper.was_value_logged("MESHFETCH0008", "Log_Level", "INFO")
         )
         self.assertTrue(
             self.log_helper.was_value_logged("LAMBDA0003", "Log_Level", "INFO")
@@ -484,6 +511,9 @@ class TestMeshFetchMessageChunkApplication(MeshTestCase):
 
         expected_return_code = HTTPStatus.OK.value
         self.assertEqual(response["statusCode"], expected_return_code)
+        self.assertTrue(
+            self.log_helper.was_value_logged("MESHFETCH0008", "Log_Level", "INFO")
+        )
 
     @mock_ssm
     @mock_s3

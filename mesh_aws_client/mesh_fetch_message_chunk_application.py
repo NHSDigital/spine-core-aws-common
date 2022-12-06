@@ -83,7 +83,7 @@ class MeshFetchMessageChunkApplication(
             file_name if len(file_name) > 0 else self.message_id + ".dat"
         )
         self.log_object.write_log(
-            "MESHSEND0001c",
+            "MESHFETCH0001c",
             None,
             {
                 "message_id": self.message_id,
@@ -93,7 +93,6 @@ class MeshFetchMessageChunkApplication(
                 "s3_folder": s3_folder,
             },
         )
-        # log will store chunk in this bucket with this key
 
     def _is_last_chunk(self, chunk_num):
         chunk_range = self.http_response.headers.get("Mex-Chunk-Range", "1:1")
@@ -209,7 +208,6 @@ class MeshFetchMessageChunkApplication(
                     "bucket": self.s3_bucket,
                 },
             )
-            # log started multipart upload to bucket with key
         except ClientError as e:
             self.response.update({"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR.value})
             self.log_object.write_log(
@@ -290,7 +288,7 @@ class MeshFetchMessageChunkApplication(
         if is_report:
             # logging http headers of report into bucket with key
             self.log_object.write_log(
-                "MESHSEND0008",
+                "MESHFETCH0008",
                 None,
                 {
                     "s3_key": self.s3_key,

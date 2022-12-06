@@ -29,7 +29,7 @@ class LogHelper:
     def was_logged(self, log_reference):
         """Was a particular log reference logged"""
         if any(
-            f"logReference={log_reference}" in line for line in self._get_log_lines()
+                f"logReference={log_reference} " in line for line in self._get_log_lines()
         ):
             return True
         return False
@@ -37,7 +37,7 @@ class LogHelper:
     def was_value_logged(self, log_reference, key, value):
         """Was a particular key-value pair logged for a log reference"""
         for log_line in self._get_log_lines():
-            if f"logReference={log_reference}" not in log_line:
+            if f"logReference={log_reference} " not in log_line:
                 continue
 
             if f"{key}={value}" in log_line:
