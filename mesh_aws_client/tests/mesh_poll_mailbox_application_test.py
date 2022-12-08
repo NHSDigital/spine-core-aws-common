@@ -1,12 +1,12 @@
 """ Testing MeshPollMailbox application """
 
+import json
 from http import HTTPStatus
 from unittest import mock
-import json
 
-from moto import mock_s3, mock_ssm, mock_stepfunctions, mock_secretsmanager
 import boto3
 import requests_mock
+from moto import mock_s3, mock_ssm, mock_stepfunctions, mock_secretsmanager
 
 from mesh_aws_client.mesh_poll_mailbox_application import (
     MeshPollMailboxApplication,
@@ -87,3 +87,6 @@ class TestMeshPollMailboxApplication(MeshTestCase):
         self.assertLogs("LAMBDA0001", level="INFO")
         self.assertLogs("LAMBDA0002", level="INFO")
         self.assertLogs("LAMBDA0003", level="INFO")
+        self.assertTrue(
+            self.log_helper.was_value_logged("MESHPOLL0001", "Log_Level", "INFO")
+        )
