@@ -11,6 +11,7 @@ from hashlib import sha256
 from typing import NamedTuple
 
 import requests
+import urllib3
 from urllib3.exceptions import InsecureRequestWarning
 
 from mesh_aws_client.mesh_common import MeshCommon
