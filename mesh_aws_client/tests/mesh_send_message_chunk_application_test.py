@@ -1,11 +1,11 @@
 """ Testing MeshSendMessageChunk Application """
+import json
 from http import HTTPStatus
 from unittest import mock
-import json
 
-from moto import mock_s3, mock_ssm
 import boto3
 import requests_mock
+from moto import mock_s3, mock_ssm
 
 from mesh_aws_client.mesh_send_message_chunk_application import (
     MeshSendMessageChunkApplication,
@@ -99,6 +99,9 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
         # Check completion
         self.assertTrue(
             self.log_helper.was_value_logged("LAMBDA0003", "Log_Level", "INFO")
+        )
+        self.assertTrue(
+            self.log_helper.was_value_logged("MESHSEND0008", "Log_Level", "INFO")
         )
 
     # pylint: disable=too-many-locals
@@ -209,6 +212,9 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
         # Check completion
         self.assertTrue(
             self.log_helper.was_value_logged("LAMBDA0003", "Log_Level", "INFO")
+        )
+        self.assertTrue(
+            self.log_helper.was_value_logged("MESHSEND0008", "Log_Level", "INFO")
         )
 
     @mock_ssm

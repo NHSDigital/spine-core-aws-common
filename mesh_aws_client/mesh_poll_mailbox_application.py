@@ -1,13 +1,12 @@
 """
 Module for MESH API functionality for step functions
 """
-from http import HTTPStatus
 import os
-
-from spine_aws_common import LambdaApplication
+from http import HTTPStatus
 
 from mesh_aws_client.mesh_common import MeshCommon, SingletonCheckFailure
 from mesh_aws_client.mesh_mailbox import MeshMailbox
+from spine_aws_common import LambdaApplication
 
 
 class MeshPollMailboxApplication(LambdaApplication):
@@ -53,12 +52,11 @@ class MeshPollMailboxApplication(LambdaApplication):
             self.response = MeshCommon.return_failure(
                 self.log_object,
                 HTTPStatus.TOO_MANY_REQUESTS.value,
-                "MESHPOLL0003",
+                "MESHPOLL0002",
                 self.mailbox_name,
                 message=e.msg,
             )
             return
-
         list_response, message_list = mailbox.list_messages()
         list_response.raise_for_status()
         message_count = len(message_list)
@@ -79,6 +77,15 @@ class MeshPollMailboxApplication(LambdaApplication):
                     },
                 }
             )
+
+        self.log_object.write_log(
+            "MESHPOLL0001",
+            None,
+            {
+                "mailbox": self.mailbox_name,
+                "message_count": message_count,
+            },
+        )
 
         # to set response for the lambda
         self.response = {

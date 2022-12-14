@@ -1,16 +1,16 @@
 """
 Module for MESH API functionality for step functions
 """
-from http import HTTPStatus
-import os
 import json
+import os
+from http import HTTPStatus
 
 import boto3
 from botocore.exceptions import ClientError
 
-from spine_aws_common import LambdaApplication
 from mesh_aws_client.mesh_common import MeshCommon
 from mesh_aws_client.mesh_mailbox import MeshMailbox
+from spine_aws_common import LambdaApplication
 
 
 class MeshFetchMessageChunkApplication(
@@ -140,7 +140,13 @@ class MeshFetchMessageChunkApplication(
 
     def _handle_report_message(self):
         self.log_object.write_log(
-            "MESHFETCH0010", None, {"message_id": self.message_id}
+            "MESHFETCH0010",
+            None,
+            {
+                "message_id": self.message_id,
+                "s3_bucket": self.s3_bucket,
+                "s3_key": self.s3_key,
+            }
         )
         buffer = json.dumps(dict(self.http_response.headers)).encode("utf-8")
         self.http_headers_bytes_read = len(buffer)
@@ -164,6 +170,17 @@ class MeshFetchMessageChunkApplication(
         file_name = self._get_filename()
         self.s3_key = s3_folder + (
             file_name if len(file_name) > 0 else self.message_id + ".dat"
+        )
+        self.log_object.write_log(
+            "MESHFETCH0001c",
+            None,
+            {
+                "message_id": self.message_id,
+                "chunk_num": self.current_chunk,
+                "s3_key": self.s3_key,
+                "s3_bucket": self.s3_bucket,
+                "s3_folder": s3_folder,
+            },
         )
 
     def _is_last_chunk(self, chunk_num) -> bool:
@@ -294,10 +311,18 @@ class MeshFetchMessageChunkApplication(
                 Key=self.s3_key,
             )
             self.aws_upload_id = multipart_upload["UploadId"]
+            self.log_object.write_log(
+                "MESHFETCH0005a",
+                None,
+                {
+                    "key": self.s3_key,
+                    "bucket": self.s3_bucket,
+                },
+            )
         except ClientError as e:
             self.response.update({"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR.value})
             self.log_object.write_log(
-                "MESHFETCH0005",
+                "MESHFETCH0005b",
                 None,
                 {
                     "key": self.s3_key,
@@ -321,7 +346,6 @@ class MeshFetchMessageChunkApplication(
                     "PARTS": {"Parts": self.aws_part_etags},
                 },
             )
-
             self.s3_client.complete_multipart_upload(
                 Bucket=self.s3_bucket,
                 Key=self.s3_key,

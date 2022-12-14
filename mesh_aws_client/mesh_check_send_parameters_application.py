@@ -134,6 +134,16 @@ class MeshCheckSendParametersApplication(LambdaApplication):
         src_mailbox = mailbox_mapping["src_mailbox"]
         dest_mailbox = mailbox_mapping["dest_mailbox"]
         workflow_id = mailbox_mapping["workflow_id"]
+        self.log_object.write_log(
+            "MESHSEND0004a",
+            None,
+            {
+                "src_mailbox": src_mailbox,
+                "dest_mailbox": dest_mailbox,
+                "workflow_id": workflow_id,
+                "path": path,
+            },
+        )
         return (src_mailbox, dest_mailbox, workflow_id)
 
     @staticmethod
