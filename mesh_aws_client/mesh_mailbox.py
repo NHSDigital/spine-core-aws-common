@@ -1,19 +1,20 @@
 """Mailbox class that handles all the complexity of talking to MESH API"""
-import platform
-import os
-from typing import NamedTuple
-from hashlib import sha256
 import atexit
 import datetime
 import hmac
+import json
+import os
+import platform
 import tempfile
 import uuid
-import json
-import requests
+from hashlib import sha256
+from typing import NamedTuple
 
-from spine_aws_common.logger import Logger
-from mesh_aws_client.mesh_common import MeshCommon
+import requests
 from urllib3.exceptions import InsecureRequestWarning
+
+from mesh_aws_client.mesh_common import MeshCommon
+from spine_aws_common.logger import Logger
 
 
 class MeshMessage(NamedTuple):

@@ -87,6 +87,4 @@ class TestMeshPollMailboxApplication(MeshTestCase):
         self.assertLogs("LAMBDA0001", level="INFO")
         self.assertLogs("LAMBDA0002", level="INFO")
         self.assertLogs("LAMBDA0003", level="INFO")
-        self.assertTrue(
-            self.log_helper.was_value_logged("MESHPOLL0001", "Log_Level", "INFO")
-        )
+        self.assertLogs("MESHPOLL0001", level="INFO")
