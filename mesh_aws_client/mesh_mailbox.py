@@ -90,7 +90,7 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
             self.params.get(MeshMailbox.MESH_VERIFY_SSL, False) == "True"
         )
         if not self.maybe_verify_ssl:
-            requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+            urllib3.disable_warnings(InsecureRequestWarning)
         self._write_certs_to_files()
 
     def clean_up(self) -> None:
