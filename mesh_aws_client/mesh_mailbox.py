@@ -12,7 +12,6 @@ from typing import NamedTuple
 
 import requests
 import urllib3
-from urllib3.exceptions import InsecureRequestWarning
 
 from mesh_aws_client.mesh_common import MeshCommon
 from spine_aws_common.logger import Logger
@@ -91,7 +90,7 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
             self.params.get(MeshMailbox.MESH_VERIFY_SSL, False) == "True"
         )
         if not self.maybe_verify_ssl:
-            urllib3.disable_warnings(InsecureRequestWarning)
+            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
         self._write_certs_to_files()
 
     def clean_up(self) -> None:
