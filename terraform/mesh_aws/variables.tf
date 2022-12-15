@@ -12,6 +12,7 @@ variable "config" {
     vpc_id                     = string
     subnet_ids                 = list(string)
     vpc_enabled                = bool
+    create_s3logs_cloudtrail   = bool
     aws_s3_endpoint_sg_id      = list(string)
     aws_ssm_endpoint_sg_id     = list(string)
     aws_sfn_endpoint_sg_id     = list(string)
@@ -26,6 +27,7 @@ variable "config" {
     use_secrets_manager        = false
     vpc_id                     = ""
     vpc_enabled                = false
+    create_s3logs_cloudtrail   = true
     subnet_ids                 = []
     aws_s3_endpoint_sg_id      = []
     aws_ssm_endpoint_sg_id     = []

@@ -1,5 +1,6 @@
 #tfsec:ignore:aws-cloudtrail-require-bucket-access-logging tfsec:ignore:aws-s3-enable-versioning
 resource "aws_s3_bucket" "s3logs" {
+  count  = var.config.create_s3logs_cloudtrail ? 1 : 0
   bucket = "${local.name}-s3logs"
   acl    = "log-delivery-write"
   policy = data.aws_iam_policy_document.s3logs.json
@@ -24,6 +25,7 @@ resource "aws_s3_bucket" "s3logs" {
 }
 
 resource "aws_s3_bucket_public_access_block" "s3logs" {
+  count  = var.config.create_s3logs_cloudtrail ? 1 : 0
   bucket = aws_s3_bucket.s3logs.id
 
   block_public_acls       = true
@@ -33,6 +35,7 @@ resource "aws_s3_bucket_public_access_block" "s3logs" {
 }
 
 data "aws_iam_policy_document" "s3logs" {
+  count  = var.config.create_s3logs_cloudtrail ? 1 : 0
   statement {
     sid = "AllowSSLRequestsOnly"
     actions = [
