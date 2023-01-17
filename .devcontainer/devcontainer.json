@@ -1,0 +1,28 @@
+{
+    "name": "Spine AWS Common",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "postCreateCommand": "./.devcontainer/postCreateCommands.sh",
+    // Configure tool-specific properties.
+    "customizations": {
+        // Configure properties specific to VS Code.
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "ms-python.isort",
+                "ms-python.black-formatter",
+                "eamodio.gitlens",
+                "hashicorp.terraform",
+                "amazonwebservices.aws-toolkit-vscode",
+                "github.vscode-pull-request-github",
+                "ms-vscode.makefile-tools",
+                "njpwerner.autodocstring"
+            ]
+        }
+    },
+    "mounts": [
+        "source=${env:HOME}${env:USERPROFILE}/.aws,target=/home/listrec/.aws,type=bind",
+        "source=${env:HOME}${env:USERPROFILE}/.password-store,target=/home/listrec/.password-store,type=bind"
+    ]
+}

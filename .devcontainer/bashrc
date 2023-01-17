@@ -1,0 +1,13 @@
+
+export AWS_VAULT_BACKEND=pass
+export GPG_TTY=$(tty)
+
+PROMPT_COMMAND='history -a'
+HISTFILE=/commandhistory/.bash_history
+
+alias ll='ls -alF'
+
+. /usr/lib/git-core/git-sh-prompt
+PS1='\[\033[01;32m\]\u:\[\033[01;34m\]\w\[$(tput sgr0)$(tput setaf 003)\] $(__git_ps1 "(%s)")\[$(tput sgr0)\]\$ '
+
+export SHELL=/bin/bash
