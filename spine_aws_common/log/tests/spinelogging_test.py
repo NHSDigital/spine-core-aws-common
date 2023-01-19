@@ -69,31 +69,6 @@ APP_SPECIFIC_CONFIG = {
 }
 
 
-def test_get_log_base_config(log_path):
-    """Happy path test we get some config given a valid path"""
-    # Given
-    log_config_paths = log_path("testlog.cfg")
-
-    # When
-    actual = get_log_base_config(log_config_paths)
-
-    # Then
-    assert actual == CORE_LOG_CONFIG
-
-
-def test_get_multiple_source_log_base_config(log_path):
-    """Test that we get all the config given multiple valid paths"""
-    # Given
-    log_config_path = log_path("testlog.cfg")
-    app_log_config_path = log_path("applog.cfg")
-
-    # When
-    actual = get_log_base_config([log_config_path, app_log_config_path])
-
-    # Then
-    assert actual == {**CORE_LOG_CONFIG, **APP_SPECIFIC_CONFIG}
-
-
 @pytest.fixture(name="log_helper", scope="function")
 def loghelper_fixture() -> LogHelper:
     """LogHelper fixture"""
@@ -123,6 +98,31 @@ def logger_fixture(log_path) -> Callable:
         return get_spine_logger(**kwargs)
 
     return factory
+
+
+def test_get_log_base_config(log_path):
+    """Happy path test we get some config given a valid path"""
+    # Given
+    log_config_paths = log_path("testlog.cfg")
+
+    # When
+    actual = get_log_base_config(log_config_paths)
+
+    # Then
+    assert actual == CORE_LOG_CONFIG
+
+
+def test_get_multiple_source_log_base_config(log_path):
+    """Test that we get all the config given multiple valid paths"""
+    # Given
+    log_config_path = log_path("testlog.cfg")
+    app_log_config_path = log_path("applog.cfg")
+
+    # When
+    actual = get_log_base_config([log_config_path, app_log_config_path])
+
+    # Then
+    assert actual == {**CORE_LOG_CONFIG, **APP_SPECIFIC_CONFIG}
 
 
 def test_get_stdout_spine_handler():
@@ -407,7 +407,7 @@ def test_exception_handling_with_placeholder(spine_logger, log_helper):
     assert log_lines[0] == (
         "25/12/2018 01:12:25.345 - Log_Level=CRITICAL Process=ExceptionPlaceholderTest "
         "logReference=UTI9992 - Crash dump occurred. "
-        "See spinevfmcrashdump index for details "
+        "See crashdump index for details "
         f"with originalLogReference={log_reference}"
     )
     # Log_line 2 will contain the stack trace
