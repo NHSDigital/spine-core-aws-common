@@ -14,7 +14,7 @@ import requests
 import urllib3
 
 from mesh_aws_client.mesh_common import MeshCommon
-from spine_aws_common.logger import Logger
+from logging import Logger
 
 
 class MeshMessage(NamedTuple):
