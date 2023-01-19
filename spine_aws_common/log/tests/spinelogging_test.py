@@ -5,7 +5,7 @@ import logging
 from logging import LoggerAdapter
 import os
 from os import path
-from typing import Callable
+from typing import Callable, Generator
 
 import pytest
 from freezegun import freeze_time
@@ -56,21 +56,30 @@ CORE_LOG_CONFIG = {
 APP_SPECIFIC_CONFIG = {
     "APPCRITICAL001": [
         "CRITICAL",
-        'Application-specific Critical level log with message="{message}" for internalID={internalID}',
+        (
+            "Application-specific Critical level log with "
+            'message="{message}" for internalID={internalID}'
+        ),
     ],
     "APPDEBUG001": [
         "DEBUG",
-        'Application-specific Debug level log with message="{message}" for internalID={internalID}',
+        (
+            "Application-specific Debug level log with "
+            'message="{message}" for internalID={internalID}'
+        ),
     ],
     "APPINFO001": [
         "INFO",
-        'Application-specific Info level log with message="{message}" for internalID={internalID}',
+        (
+            "Application-specific Info level log with "
+            'message="{message}" for internalID={internalID}'
+        ),
     ],
 }
 
 
 @pytest.fixture(name="log_helper", scope="function")
-def loghelper_fixture() -> LogHelper:
+def loghelper_fixture() -> Generator[LogHelper, None, None]:
     """LogHelper fixture"""
     log_helper = LogHelper()
     log_helper.set_stream_capture()
@@ -89,7 +98,7 @@ def log_path_fixture():
 
 
 @pytest.fixture(name="spine_logger")
-def logger_fixture(log_path) -> Callable:
+def logger_fixture(log_path: str) -> Callable:
     """Fixture to provide a factory method for creating a spine logger"""
 
     def factory(**kwargs) -> LoggerAdapter:
@@ -100,7 +109,7 @@ def logger_fixture(log_path) -> Callable:
     return factory
 
 
-def test_get_log_base_config(log_path):
+def test_get_log_base_config(log_path: Callable):
     """Happy path test we get some config given a valid path"""
     # Given
     log_config_paths = log_path("testlog.cfg")
@@ -112,7 +121,7 @@ def test_get_log_base_config(log_path):
     assert actual == CORE_LOG_CONFIG
 
 
-def test_get_multiple_source_log_base_config(log_path):
+def test_get_multiple_source_log_base_config(log_path: Callable):
     """Test that we get all the config given multiple valid paths"""
     # Given
     log_config_path = log_path("testlog.cfg")
@@ -147,7 +156,9 @@ def test_get_spine_splunk_formatter():
     "log_config_name,num_lines",
     [(None, None), ("testlog.cfg", 3), ("applog.cfg", 3)],
 )
-def test_get_logger(spine_logger, log_path, log_config_name, num_lines):
+def test_get_logger(
+    spine_logger: Callable, log_path: Callable, log_config_name: str, num_lines: int
+):
     """Check some basic things about the logger we're getting"""
     # Given
     if not log_config_name or log_config_name == "cloudlogbase.cfg":
@@ -173,7 +184,7 @@ def test_get_logger(spine_logger, log_path, log_config_name, num_lines):
 
 
 @freeze_time("2023-01-12 01:22:11.578")
-def test_no_log_propagation(spine_logger, log_helper):
+def test_no_log_propagation(spine_logger: Callable, log_helper: Generator):
     """
     Test that these specifically formatted strings don't get passed to other loggers
     """
@@ -195,9 +206,11 @@ def test_no_log_propagation(spine_logger, log_helper):
     # Then
     log_lines = log_helper.get_log_lines()
     assert len(log_lines) == 1
-    assert (
-        log_lines[0]
-        == '12/01/2023 01:22:11.578 - Log_Level=INFO Process=TestPropagate logReference=TESTINFO001 - Info level log with message="I only understand preconfigured templates" for internalID=2023011701015900'
+    assert log_lines[0] == (
+        "12/01/2023 01:22:11.578 - "
+        "Log_Level=INFO Process=TestPropagate logReference=TESTINFO001 - "
+        'Info level log with message="I only understand preconfigured templates" '
+        "for internalID=2023011701015900"
     )
     assert other_stream_handler.stream.getvalue() == "Some text and some dynamic text\n"
 
@@ -322,7 +335,7 @@ def test_spine_logging_adapter_process(
 
 
 @freeze_time("2022-01-19 13:40:06.001")
-def test_usage(spine_logger, log_helper):
+def test_usage(spine_logger: Callable, log_helper: LogHelper):
     """Test how a client consumer would use the spine logger"""
     # Given
     process_name = "UsageTest"
@@ -347,7 +360,7 @@ def test_usage(spine_logger, log_helper):
 
 
 @freeze_time("2021-11-03 17:03:15.105", tz_offset=-1)
-def test_exception_handling(spine_logger, log_helper):
+def test_exception_handling(spine_logger: Callable, log_helper: LogHelper):
     """Test exception handling from the top down"""
     # Given
     process_name = "ExceptionTest"
@@ -383,7 +396,9 @@ def test_exception_handling(spine_logger, log_helper):
 
 
 @freeze_time("2018-12-25 01:12:25.345", tz_offset=-1)
-def test_exception_handling_with_placeholder(spine_logger, log_helper):
+def test_exception_handling_with_placeholder(
+    spine_logger: Callable, log_helper: LogHelper
+):
     """Test exception writes a placeholder when  theres a stack trace at a lower level"""
     # Given
     process_name = "ExceptionPlaceholderTest"
@@ -448,7 +463,13 @@ def test_exception_handling_with_placeholder(spine_logger, log_helper):
     ],
 )
 def test_masked_info_log_handling(
-    spine_logger, log_helper, log_reference, message, url, url_masked, internal_id
+    spine_logger: Callable,
+    log_helper: LogHelper,
+    log_reference: str,
+    message: str,
+    url: str,
+    url_masked: str,
+    internal_id: str,
 ):
     """
     Test that an INFO level log with masked PID creates a copy of the record and
@@ -479,7 +500,7 @@ def test_masked_info_log_handling(
 
 
 @freeze_time("2020-01-14 18:22:32.111")
-def test_unmasked_audit_log_handling(spine_logger, log_helper):
+def test_unmasked_audit_log_handling(spine_logger: Callable, log_helper: LogHelper):
     """
     Test that an AUDIT level log with unmasked data does not get interfered with and
     just routes the unmodifed data to AUDIT

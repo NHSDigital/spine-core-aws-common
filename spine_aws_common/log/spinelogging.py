@@ -49,14 +49,14 @@ SPINE_SPLUNK_DATEFORMAT = "%d/%m/%Y %H:%M:%S"
 class LambdaFormatter(Formatter):
     """Lambda creates new cloudwatch entries for every newline separated log line"""
 
-    def format(self, record) -> str:
+    def format(self, record: LogRecord) -> str:
         fmted = super().format(record)
         if not record.exc_info:
             return fmted
         return "\r".join(fmted.split("\n")) + "\n"
 
 
-def get_spine_splunk_formatter():
+def get_spine_splunk_formatter() -> Formatter:
     """Get a pre-baked Spine-style Splunk log formatter"""
     formatter = LambdaFormatter(
         SPINE_SPLUNK_LOG_FORMAT,
