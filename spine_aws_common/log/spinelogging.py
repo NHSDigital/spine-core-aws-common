@@ -271,7 +271,7 @@ class SpineTemplateLoggerAdapter(LoggerAdapter):
             if passed_extra:
                 enriched["extra"] = passed_extra
             passed_extra = {}
-        if "exc_info" in kwargs and log_details.level_value >= LoggingConstants.INFO:
+        if kwargs.get("exc_info") and log_details.level_value >= LoggingConstants.INFO:
             placeholder_details = get_log_details(
                 LoggingConstants.LR_CRASHDUMP, self._log_base_dict, self._log_base_cache
             )

@@ -21,7 +21,8 @@
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
     "python.testing.pytestArgs": [
-        "spine_aws_common"
+        "spine_aws_common",
+        "mesh_aws_client"
     ],
     "python.envFile": "${workspaceFolder}/.env"
 }

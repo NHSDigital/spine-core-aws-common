@@ -36,7 +36,9 @@ class LambdaApplication:
     def configure_logging(self, additional_log_config):
         """Default logger is a spine config driven template k=v style logger"""
         process_name = os.environ.get("AWS_LAMBDA_FUNCTION_NAME", "None")
-        self._logger = get_spine_logger(process_name, additional_log_config)
+        self._logger = get_spine_logger(
+            process_name=process_name, additional_log_config_paths=additional_log_config
+        )
         self.log_object = DeprecatedLogger(python_logger=self._logger)
 
     def main(self, event, context):
@@ -49,7 +51,7 @@ class LambdaApplication:
             self.sync_timer.start_the_clock()
             self.context = context
             self.event = self.process_event(event)
-            self.internal_id = self._get_internal_id()
+            self._set_internal_id(self._get_internal_id())
 
             self._log_start()
 
@@ -91,6 +93,7 @@ class LambdaApplication:
         Sets internalID
         """
         self.internal_id = value
+        self.log_object.set_internal_id(value)
 
     def _get_internal_id(self) -> str:
         """
