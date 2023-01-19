@@ -311,9 +311,9 @@ class SpineTemplateLoggerAdapter(LoggerAdapter):
         """BW TODO One of LFR_AUDIT, LFR_OPERATIONS, LFR_CRASHDUMP"""
         if log_details.audit_log_required:
             return LoggingConstants.LFR_AUDIT
-        elif log_details.monitor_log_required:
+        if log_details.monitor_log_required:
             return LoggingConstants.LFR_NMS
-        elif log_details.level_name == "PID":
+        if log_details.level_name == "PID":
             return LoggingConstants.LFR_PID
 
         return LoggingConstants.LFR_OPERATIONS
@@ -324,7 +324,6 @@ def get_spine_logger(
     process_name=None,
     log_config_path=None,
     additional_log_config_paths=None,
-    name=None,
 ):
     """
     Initialise a Spine-style logger that logs to a stream.

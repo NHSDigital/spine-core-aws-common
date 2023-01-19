@@ -52,6 +52,6 @@ class LogHelper:
 
     def get_log_lines(self):
         """Get the logs lines"""
-        s = self.captured_output.getvalue()
-        log_lines = [log_line for log_line in s.split("\n") if log_line]
+        output = self.captured_output.getvalue()
+        log_lines = [log_line for log_line in output.split("\n") if log_line]
         return log_lines

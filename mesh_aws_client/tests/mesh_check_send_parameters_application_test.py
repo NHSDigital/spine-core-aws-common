@@ -52,7 +52,6 @@ class TestMeshCheckSendParametersApplication(MeshTestCase):
     )
     def test_mesh_check_send_parameters_happy_path(self):
         """Test the lambda as a whole, happy path for small file"""
-
         s3_client = boto3.client("s3", config=MeshTestingCommon.aws_config)
         ssm_client = boto3.client("ssm", config=MeshTestingCommon.aws_config)
         self.setup_mock_aws_environment(s3_client, ssm_client)

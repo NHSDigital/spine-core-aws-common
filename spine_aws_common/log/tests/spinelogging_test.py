@@ -1,26 +1,26 @@
 """ Unit tests for Spine-style python logging """
 
-import io
-import logging
 from logging import LoggerAdapter
-import os
 from os import path
 from typing import Callable, Generator, Tuple
+import io
+import logging
+import os
 
-import pytest
 from freezegun import freeze_time
+import pytest
+
+from spine_aws_common.log.constants import LoggingConstants
+from spine_aws_common.log.details import LogDetails, get_log_details
+from spine_aws_common.log.log_helper import LogHelper
 from spine_aws_common.log.spinelogging import (
+    SPINE_SPLUNK_DATEFORMAT,
+    SpineTemplateLoggerAdapter,
+    get_log_base_config,
+    get_spine_logger,
     get_spine_splunk_formatter,
     get_streaming_spine_handler,
-    SPINE_SPLUNK_DATEFORMAT,
-    get_spine_logger,
-    SpineTemplateLoggerAdapter,
 )
-from spine_aws_common.log.details import LogDetails, get_log_details
-from spine_aws_common.log.constants import LoggingConstants
-from spine_aws_common.log.log_helper import LogHelper
-
-from spine_aws_common.log.spinelogging import get_log_base_config
 
 CORE_LOG_CONFIG = {
     "TESTCRITICAL001": [
@@ -189,6 +189,7 @@ def test_get_logger(
         lines = [line for line in logbase.readlines() if line.startswith("[")]
         num_lines = len(lines)
 
+    # pylint:disable=protected-access
     assert len(logger._log_base_dict.keys()) == num_lines
 
 
@@ -371,6 +372,10 @@ def test_usage(spine_logger: Callable, log_helper: LogHelper):
     )
 
 
+class LoggingTestException(Exception):
+    """just to raise something non-broad"""
+
+
 @freeze_time("2021-11-03 17:03:15.105", tz_offset=-1)
 def test_exception_handling(spine_logger: Callable, log_helper: LogHelper):
     """Test exception handling from the top down"""
@@ -383,8 +388,8 @@ def test_exception_handling(spine_logger: Callable, log_helper: LogHelper):
 
     # When
     try:
-        raise Exception("We didn't expect this to happpen")
-    except Exception:
+        raise LoggingTestException("We didn't expect this to happpen")
+    except LoggingTestException:
         logger.critical(
             log_reference, message=message, internalID=internal_id, exc_info=1
         )
@@ -402,9 +407,13 @@ def test_exception_handling(spine_logger: Callable, log_helper: LogHelper):
     # Can't be sure about individual bits of stack trace,
     # paths are dependant on environment
     assert (
-        log_sections[-2] == '    raise Exception("We didn\'t expect this to happpen")'
+        log_sections[-2]
+        == '    raise LoggingTestException("We didn\'t expect this to happpen")'
     )
-    assert log_sections[-1] == "Exception: We didn't expect this to happpen"
+    assert log_sections[-1] == (
+        "spine_aws_common.log.tests.spinelogging_test.LoggingTestException: "
+        "We didn't expect this to happpen"
+    )
 
 
 @freeze_time("2018-12-25 01:12:25.345", tz_offset=-1)
@@ -423,8 +432,8 @@ def test_exception_handling_with_placeholder(
 
     # When
     try:
-        raise Exception("We didn't expect this to happpen")
-    except Exception:
+        raise LoggingTestException("We didn't expect this to happpen")
+    except LoggingTestException:
         logger.info(log_reference, message=message, internalID=internal_id, exc_info=1)
     # Then
     log_lines = log_helper.get_log_lines()
@@ -449,18 +458,21 @@ def test_exception_handling_with_placeholder(
     # Can't be sure about individual bits of stack trace,
     # paths are dependant on environment
     assert (
-        log_sections[-2] == '    raise Exception("We didn\'t expect this to happpen")'
+        log_sections[-2]
+        == '    raise LoggingTestException("We didn\'t expect this to happpen")'
     )
-    assert log_sections[-1] == "Exception: We didn't expect this to happpen"
+    assert log_sections[-1] == (
+        "spine_aws_common.log.tests.spinelogging_test.LoggingTestException: "
+        "We didn't expect this to happpen"
+    )
 
 
 @freeze_time("2019-02-16 08:32:54.543")
 @pytest.mark.parametrize(
-    "log_reference,message,url_tuple,internal_id",
+    "log_text_tuple,url_tuple,internal_id",
     [
         (
-            "TESTMASKEDINFO001",
-            "this url might need masking",
+            ("TESTMASKEDINFO001", "this url might need masking"),
             (
                 "/request/patient/search?nhsNumber=123456789",
                 "/request/patient/search?nhsNumber=___MASKED___",
@@ -468,8 +480,7 @@ def test_exception_handling_with_placeholder(
             "20210402275931855370_962FCF_2",
         ),
         (
-            "TESTMASKEDAUDIT001",
-            "this url might need masking",
+            ("TESTMASKEDAUDIT001", "this url might need masking"),
             (
                 "/request/patient/search?nhsNumber=123456789",
                 "/request/patient/search?nhsNumber=___MASKED___",
@@ -481,8 +492,7 @@ def test_exception_handling_with_placeholder(
 def test_masked_info_log_handling(
     spine_logger: Callable,
     log_helper: LogHelper,
-    log_reference: str,
-    message: str,
+    log_text_tuple: Tuple[str, str],
     url_tuple: Tuple[str, str],
     internal_id: str,
 ):
@@ -493,6 +503,7 @@ def test_masked_info_log_handling(
     # Given
     process_name = "AutoAuditTest"
     logger = spine_logger(process_name=process_name)
+    log_reference, message = log_text_tuple
     url, url_masked = url_tuple
 
     # When
