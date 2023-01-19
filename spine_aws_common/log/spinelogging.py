@@ -7,9 +7,10 @@ from typing import List, Tuple
 import configparser
 import logging
 import os
+import sys
 
 from spine_aws_common.log.constants import LoggingConstants
-from spine_aws_common.log.details import get_log_details, LogDetails
+from spine_aws_common.log.details import LogDetails, get_log_details
 from spine_aws_common.log.formatting import (
     add_default_keys,
     create_log_line,
@@ -129,8 +130,24 @@ class SpineStreamHandler(StreamHandler):
         Intervene to write to different routing_keys with masked / unmasked
         data as appropriate
         """
-        for log_record in self._create_additional_log_records(log_record=record):
-            super().emit(log_record)
+        if self._call_emit():
+            for log_record in self._create_additional_log_records(log_record=record):
+                super().emit(log_record)
+
+    def _call_emit(self):
+        """
+        atexit function in MeshClient attempts to log after pytest stream is closed and
+        causes errors in test.
+        The rest of the time self.stream will be either stdout or stderr and should
+        never be closed.
+        If either is closed, then we want to know about it.
+        """
+        if self.stream.closed:
+            name = getattr(self.stream, "name")
+            # True will let it raise when calling write() and subsequently hit
+            # handleError, False will bypass the call to emit()
+            return name and (name in [sys.stderr.name, sys.stdout.name])
+        return True
 
     def _create_additional_log_records(self, log_record: LogRecord) -> List[LogRecord]:
         """
@@ -307,13 +324,14 @@ def get_spine_logger(
     process_name=None,
     log_config_path=None,
     additional_log_config_paths=None,
+    name=None,
 ):
     """
     Initialise a Spine-style logger that logs to a stream.
     Defaults to sys.stderr if no stream provided.
     """
 
-    spine_logger = logging.getLogger("SPINE")
+    spine_logger = logging.getLogger(LoggingConstants.SPINE_LOGGER)
     spine_logger.propagate = False
     spine_logger.setLevel(logging.INFO)
 

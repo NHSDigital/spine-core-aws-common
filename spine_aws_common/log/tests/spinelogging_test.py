@@ -5,7 +5,7 @@ import logging
 from logging import LoggerAdapter
 import os
 from os import path
-from typing import Callable, Generator
+from typing import Callable, Generator, Tuple
 
 import pytest
 from freezegun import freeze_time
@@ -41,15 +41,24 @@ CORE_LOG_CONFIG = {
     ],
     "TESTMASKEDINFO001": [
         "INFO",
-        'Log with message="{message}" and data that may be masked url={url} for internalID={internalID}',
+        (
+            'Log with message="{message}" and data that may be masked url={url} '
+            "for internalID={internalID}"
+        ),
     ],
     "TESTMASKEDAUDIT001": [
         "AUDIT",
-        'Log with message="{message}" and data that may be masked url={url} for internalID={internalID}',
+        (
+            'Log with message="{message}" and data that may be masked url={url} '
+            "for internalID={internalID}"
+        ),
     ],
     "UTI9992": [
         "CRITICAL",
-        "Crash dump occurred. See crashdump index for details with originalLogReference={originalLogReference}",
+        (
+            "Crash dump occurred. See crashdump index for details "
+            "with originalLogReference={originalLogReference}"
+        ),
     ],
 }
 
@@ -173,8 +182,8 @@ def test_get_logger(
 
     # Then
     assert isinstance(logger, SpineTemplateLoggerAdapter)
-    assert logger.name == "SPINE"
-    assert logger.logger.name == "SPINE"
+    assert logger.name == LoggingConstants.SPINE_LOGGER
+    assert logger.logger.name == LoggingConstants.SPINE_LOGGER
 
     with open(log_file_path, encoding="utf-8") as logbase:
         lines = [line for line in logbase.readlines() if line.startswith("[")]
@@ -301,7 +310,10 @@ def test_get_log_details(log_reference: str, expected_log_details: LogDetails):
         (
             "TESTCRITICAL001",
             {"message": "Something bad happened", "exc_info": True},
-            'Critical level log with message="Something bad happened" for internalID=NotProvided',
+            (
+                'Critical level log with message="Something bad happened" '
+                "for internalID=NotProvided"
+            ),
         ),
         (
             "UNKNOWN001",
@@ -399,7 +411,7 @@ def test_exception_handling(spine_logger: Callable, log_helper: LogHelper):
 def test_exception_handling_with_placeholder(
     spine_logger: Callable, log_helper: LogHelper
 ):
-    """Test exception writes a placeholder when  theres a stack trace at a lower level"""
+    """Test exception writes a placeholder when theres a stack trace at a lower level"""
     # Given
     process_name = "ExceptionPlaceholderTest"
     logger = spine_logger(
@@ -444,20 +456,24 @@ def test_exception_handling_with_placeholder(
 
 @freeze_time("2019-02-16 08:32:54.543")
 @pytest.mark.parametrize(
-    "log_reference,message,url,url_masked,internal_id",
+    "log_reference,message,url_tuple,internal_id",
     [
         (
             "TESTMASKEDINFO001",
             "this url might need masking",
-            "/request/patient/search?nhsNumber=123456789",
-            "/request/patient/search?nhsNumber=___MASKED___",
+            (
+                "/request/patient/search?nhsNumber=123456789",
+                "/request/patient/search?nhsNumber=___MASKED___",
+            ),
             "20210402275931855370_962FCF_2",
         ),
         (
             "TESTMASKEDAUDIT001",
             "this url might need masking",
-            "/request/patient/search?nhsNumber=123456789",
-            "/request/patient/search?nhsNumber=___MASKED___",
+            (
+                "/request/patient/search?nhsNumber=123456789",
+                "/request/patient/search?nhsNumber=___MASKED___",
+            ),
             "20210402275931855370_962FCF_2",
         ),
     ],
@@ -467,8 +483,7 @@ def test_masked_info_log_handling(
     log_helper: LogHelper,
     log_reference: str,
     message: str,
-    url: str,
-    url_masked: str,
+    url_tuple: Tuple[str, str],
     internal_id: str,
 ):
     """
@@ -478,6 +493,7 @@ def test_masked_info_log_handling(
     # Given
     process_name = "AutoAuditTest"
     logger = spine_logger(process_name=process_name)
+    url, url_masked = url_tuple
 
     # When
     logger.info(log_reference, message=message, url=url, internalID=internal_id)

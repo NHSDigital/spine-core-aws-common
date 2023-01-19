@@ -2,6 +2,7 @@
 import io
 import sys
 import logging
+from spine_aws_common.log.constants import LoggingConstants
 from spine_aws_common.log.spinelogging import (
     get_streaming_spine_handler,
     get_spine_splunk_formatter,
@@ -20,14 +21,14 @@ class LogHelper:
         self.captured_output = io.StringIO()
         self.stream_handler = get_streaming_spine_handler(stream=self.captured_output)
         self.stream_handler.setFormatter(get_spine_splunk_formatter())
-        spine_logger = logging.getLogger("SPINE")
+        spine_logger = logging.getLogger(LoggingConstants.SPINE_LOGGER)
         spine_logger.addHandler(self.stream_handler)
 
     def clean_up(self):
         """Cleanup after use and output for test results"""
         print(self.captured_output.getvalue(), file=sys.stderr)
         self.captured_output.close()
-        spine_logger = logging.getLogger("SPINE")
+        spine_logger = logging.getLogger(LoggingConstants.SPINE_LOGGER)
         spine_logger.removeHandler(self.stream_handler)
 
     def was_logged(self, log_reference):
@@ -54,6 +55,3 @@ class LogHelper:
         s = self.captured_output.getvalue()
         log_lines = [log_line for log_line in s.split("\n") if log_line]
         return log_lines
-
-
-'18/01/2023 17:45:49.466 - Log_Level=INFO Process=AuditTest logReference=TESTMASKEDINFO001 - Info level log with message="this url might need masking" and data that may be masked url=/request/patient/search?nhsNumber=___MASKED___ for internalID=20210402275931855370_962FCF_2\rNoneType: None\n\n'
