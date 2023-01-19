@@ -1,8 +1,6 @@
 """
 Cloud logging module
 """
-# Set imports to absolute values to avoid confusion between identical package names
-from __future__ import absolute_import, print_function
 
 import datetime
 import traceback
@@ -17,12 +15,8 @@ from spine_aws_common.log.formatting import (
     create_log_line,
     substitute_preamble_for_monitor,
 )
-from spine_aws_common.log.thirdpartylogging import SEVERITY_INPUT_MAP, LoggingAdapter
 from spine_aws_common.log.masking import mask_url
 
-
-# pylint: disable=wrong-import-order
-import logging as pythonlogging
 
 # pylint: enable=wrong-import-order
 
@@ -45,12 +39,10 @@ class Logger:
         severity_threshold="INFO",
         internal_id=None,
     ):
-        self._log_base_dict = get_log_base_config(log_base=log_base)
+        log_config_paths = [log_base]
         if additional_log_config:
-            self._log_base_dict.update(
-                get_log_base_config(log_base=additional_log_config)
-            )
-
+            log_config_paths.append(additional_log_config)
+        self._log_base_dict = get_log_base_config(log_config_paths)
         self.process_name = process_name
         self.internal_id = internal_id
         self.severity_threshold = severity_threshold
@@ -67,14 +59,7 @@ class Logger:
         """Set process name"""
         self.process_name = process_name
 
-    def write_log(
-        self,
-        log_reference="UTI9999",
-        error_list=None,
-        log_row_dict=None,
-        severity_threshold_override=None,
-        process_name=None,
-    ):
+    def write_log(self, log_reference="UTI9999", error_list=None, log_row_dict=None):
         """
         The writing of the log allows the following information to be passed:
         :param log_reference: this should resolve to a log_reference within the logBase
@@ -84,8 +69,6 @@ class Logger:
         :param log_row_dict - a dictionary of substitutions to be made against the
         logText in the log_reference
         :type log_row_dict: dict
-        :param severity_threshold_override: Not normally present - allows the standard
-        log level to be over-ridden for this entry
         :param process_name: Not normally present - allows the standard process_name to
         be over-ridden for this entry
         The process for writing a log file entry is:
@@ -98,22 +81,16 @@ class Logger:
         if log_row_dict is None:
             log_row_dict = {}
 
-        if process_name is None:
-            process_name = self.process_name
+        process_name = self.process_name
 
         if not self._log_base_dict:
             self._print_output(process_name, log_reference, log_row_dict, error_list)
             return None
 
         log_details = get_log_details(
-            log_reference,
-            self._log_base_dict,
-            self._log_base_cache,
-            pythonlogging=False,
+            log_reference, self._log_base_dict, self._log_base_cache
         )
-        if not log_details or not log_details.check_log_severity_for_log(
-            severity_threshold_override, self.severity_threshold
-        ):
+        if not log_details:
             return None
 
         # If not provided, set empty values for internalID and sessionId
@@ -152,14 +129,11 @@ class Logger:
             )
 
         if log_details.check_log_severity_for_crashdump(
-            severity_threshold_override, self.severity_threshold, error_list
+            self.severity_threshold, error_list
         ):
             stub_log_reference = LoggingConstants.LR_CRASHDUMP
             stub_log_details = get_log_details(
-                stub_log_reference,
-                self._log_base_dict,
-                self._log_base_cache,
-                pythonlogging=False,
+                stub_log_reference, self._log_base_dict, self._log_base_cache
             )
             stub_log_preamble = self._create_log_preamble(
                 time_now, stub_log_details.log_level, process_name, stub_log_reference
@@ -237,17 +211,3 @@ class Logger:
             )
             exception_line = create_log_line(log_preamble, formatted_exception, {})
             print(exception_line)
-
-
-def configure_logging_adapter(log_object):
-    """
-    Configure an adapter to allow libraries that use standard Python logging to output
-    to our log files
-    """
-    root_logger = pythonlogging.getLogger()
-    root_logger.handlers = []
-    root_logger.setLevel(SEVERITY_INPUT_MAP[log_object.severity_threshold])
-
-    adapter = LoggingAdapter(log_object)
-    root_logger.addHandler(adapter)
-    root_logger.propagate = False

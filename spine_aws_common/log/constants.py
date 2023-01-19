@@ -17,6 +17,7 @@ class LoggingConstants:
     LFR_CRASHDUMP = "crashdump"
     LFR_CONSOLE = "console"
     LFR_NMS = "monitor"
+    LFR_PID = "pid"
 
     LOGGING_DIRECTORIES = [LFR_AUDIT, LFR_OPERATIONS, LFR_CRASHDUMP, LFR_NMS]
 

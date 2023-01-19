@@ -164,7 +164,7 @@ class TestMeshCheckSendParametersApplication(MeshTestCase):
         self.log_helper.clean_up()
 
         print("------------------------- TEST 2 -------------------------------")
-        self.log_helper.set_stdout_capture()
+        self.log_helper.set_stream_capture()
 
         # create another step function with a different name
         response = MeshTestingCommon.setup_step_function(
@@ -203,7 +203,7 @@ class TestMeshCheckSendParametersApplication(MeshTestCase):
         self.log_helper.clean_up()
 
         print("------------------------- TEST 3 -------------------------------")
-        self.log_helper.set_stdout_capture()
+        self.log_helper.set_stream_capture()
 
         # 'start' state machine with different mailbox
         response = sfn_client.start_execution(
@@ -233,7 +233,7 @@ class TestMeshCheckSendParametersApplication(MeshTestCase):
         self.log_helper.clean_up()
 
         print("------------------------- TEST 4 -------------------------------")
-        self.log_helper.set_stdout_capture()
+        self.log_helper.set_stream_capture()
 
         # 'start' another instance with same mailbox as mine
         response = sfn_client.start_execution(
@@ -285,7 +285,7 @@ def sample_trigger_event():
                 "bucketName": "meshtest-mesh",
                 "X-Amz-Algorithm": "AWS4-HMAC-SHA256",
                 "x-amz-acl": "private",
-                "X-Amz-SignedHeaders": "content-md5;content-type;host;x-amz-acl;x-amz-storage-class", # noqa pylint: disable=line-too-long
+                "X-Amz-SignedHeaders": "content-md5;content-type;host;x-amz-acl;x-amz-storage-class",  # noqa pylint: disable=line-too-long
                 "Host": "meshtest-mesh.s3.eu-west-2.amazonaws.com",
                 "X-Amz-Expires": "300",
                 "key": "MESH-TEST2/outbound/testfile.json",
@@ -293,7 +293,7 @@ def sample_trigger_event():
             },
             "responseElements": {
                 "x-amz-server-side-encryption": "aws:kms",
-                "x-amz-server-side-encryption-aws-kms-key-id": "arn:aws:kms:eu-west-2:092420156801:key/4f295c4c-17fd-4c9d-84e9-266b01de0a5a", # noqa pylint: disable=line-too-long
+                "x-amz-server-side-encryption-aws-kms-key-id": "arn:aws:kms:eu-west-2:092420156801:key/4f295c4c-17fd-4c9d-84e9-266b01de0a5a",  # noqa pylint: disable=line-too-long
             },
             "requestID": "1234567890123456",
             "eventID": "75e91cfc-f2db-4e09-8f80-a206ab4cd15e",
@@ -301,7 +301,7 @@ def sample_trigger_event():
             "resources": [
                 {
                     "type": "AWS::S3::Object",
-                    "ARN": "arn:aws:s3:::meshtest-mesh/MESH-TEST2/outbound/testfile.json", # noqa pylint: disable=line-too-long
+                    "ARN": "arn:aws:s3:::meshtest-mesh/MESH-TEST2/outbound/testfile.json",  # noqa pylint: disable=line-too-long
                 },
                 {
                     "accountId": "123456789012",
