@@ -2,8 +2,6 @@
 Created 18th June 2019
 """
 from copy import deepcopy
-import logging
-import configparser
 
 from spine_aws_common.log.constants import LoggingConstants
 
@@ -14,12 +12,17 @@ class LogDetails:
     """
 
     def __init__(
-        self, log_text, log_value, log_level, monitor_log_required, audit_log_required
+        self,
+        log_text: str,
+        level_value: int = LoggingConstants.INFO,
+        level_name: str = "INFO",
+        monitor_log_required=False,
+        audit_log_required=False,
     ):
         # pylint:disable=too-many-arguments
         self.log_text = log_text
-        self.log_value = log_value
-        self.log_level = log_level
+        self.level_value = level_value
+        self.level_name = level_name
         self.monitor_log_required = monitor_log_required
         self.audit_log_required = audit_log_required
 
@@ -27,14 +30,11 @@ class LogDetails:
         self, severity_threshold_override, default_severity_threshold
     ):
         """Check to see if the log_value requires the message to be logged"""
-        severity_threshold = severity_threshold_override
-        if not severity_threshold:
-            severity_threshold = default_severity_threshold
-
+        severity_threshold = severity_threshold_override or default_severity_threshold
         severity_threshold_value = return_level(severity_threshold)[0]
 
         # Log severity does not meet the severity threshold so ignore
-        if self.log_value > severity_threshold_value:
+        if self.level_value > severity_threshold_value:
             return False
         return True
 
@@ -92,59 +92,29 @@ def return_level(log_level):
     return log_value, log_level, monitor_log_required, audit_log_required
 
 
-def _get_log_details(log_reference, log_base_dict, log_base_cache, pythonlogging):
+def get_log_details(log_reference: str, log_base_dict: dict, log_base_cache: dict):
     """
     Lookup the log text and severity for the specified log reference.
-    Cache the outcome to prevent repeated hits on the config object
+    Cache the outcome.
     """
     log_details_obj = log_base_cache.get(log_reference)
 
     if not log_details_obj:
-        # Cache miss
-        log_info = log_base_dict.get(log_reference)
-        if log_info:
-            log_level, log_text = log_info
-        else:
-            log_level, log_text = log_base_dict.get(
-                "UTI9999", ["INFO", "Missing default log"]
-            )
-            print("Missing log reference - fail build")
-
-        [log_value, log_level, monitor_log_required, audit_log_required] = return_level(
-            log_level
+        # Cache miss, build a LogDetails object from the config
+        # Get the default UTI9999 error if we can't even find that.
+        level_name, log_text = log_base_dict.get(
+            log_reference, log_base_dict.get("UTI9999", ["INFO", "Missing default log"])
         )
+        [
+            level_value,
+            level_name,
+            monitor_log_required,
+            audit_log_required,
+        ] = return_level(level_name)
 
         log_details_obj = LogDetails(
-            log_text, log_value, log_level, monitor_log_required, audit_log_required
+            log_text, level_value, level_name, monitor_log_required, audit_log_required
         )
-
-        if pythonlogging:
-            logger = logging.getLogger(LoggingConstants.SPINE_LOGGER)
-            logger.log_base_cache[log_reference] = log_details_obj
-        else:
-            log_base_cache[log_reference] = log_details_obj
+        log_base_cache[log_reference] = log_details_obj
 
     return deepcopy(log_details_obj)
-
-
-def get_log_details(log_reference, log_base_dict, log_base_cache, pythonlogging=True):
-    """
-    Get the logging text and level details based on the log reference
-    """
-    try:
-        log_details = _get_log_details(
-            log_reference, log_base_dict, log_base_cache, pythonlogging
-        )
-    except configparser.NoSectionError:
-        log_row_dict = {}
-        log_row_dict["log_reference"] = log_reference
-        log_reference = "UTI9999"
-        try:
-            log_details = _get_log_details(
-                log_reference, log_base_dict, log_base_cache, pythonlogging
-            )
-        except configparser.NoSectionError:
-            print("Log base does not contain mandatory UTI9999 entry")
-            return None
-
-    return log_details

@@ -52,7 +52,6 @@ class TestMeshCheckSendParametersApplication(MeshTestCase):
     )
     def test_mesh_check_send_parameters_happy_path(self):
         """Test the lambda as a whole, happy path for small file"""
-
         s3_client = boto3.client("s3", config=MeshTestingCommon.aws_config)
         ssm_client = boto3.client("ssm", config=MeshTestingCommon.aws_config)
         self.setup_mock_aws_environment(s3_client, ssm_client)
@@ -161,7 +160,7 @@ class TestMeshCheckSendParametersApplication(MeshTestCase):
         self.log_helper.clean_up()
 
         print("------------------------- TEST 2 -------------------------------")
-        self.log_helper.set_stdout_capture()
+        self.log_helper.set_stream_capture()
 
         # create another step function with a different name
         response = MeshTestingCommon.setup_step_function(
@@ -197,7 +196,7 @@ class TestMeshCheckSendParametersApplication(MeshTestCase):
         self.log_helper.clean_up()
 
         print("------------------------- TEST 3 -------------------------------")
-        self.log_helper.set_stdout_capture()
+        self.log_helper.set_stream_capture()
 
         # 'start' state machine with different mailbox
         response = sfn_client.start_execution(
@@ -224,7 +223,7 @@ class TestMeshCheckSendParametersApplication(MeshTestCase):
         self.log_helper.clean_up()
 
         print("------------------------- TEST 4 -------------------------------")
-        self.log_helper.set_stdout_capture()
+        self.log_helper.set_stream_capture()
 
         # 'start' another instance with same mailbox as mine
         response = sfn_client.start_execution(
