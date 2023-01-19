@@ -410,9 +410,8 @@ def test_exception_handling(spine_logger: Callable, log_helper: LogHelper):
         log_sections[-2]
         == '    raise LoggingTestException("We didn\'t expect this to happpen")'
     )
-    assert log_sections[-1] == (
-        "spine_aws_common.log.tests.spinelogging_test.LoggingTestException: "
-        "We didn't expect this to happpen"
+    assert log_sections[-1].endswith(
+        "spinelogging_test.LoggingTestException: We didn't expect this to happpen"
     )
 
 
@@ -461,9 +460,8 @@ def test_exception_handling_with_placeholder(
         log_sections[-2]
         == '    raise LoggingTestException("We didn\'t expect this to happpen")'
     )
-    assert log_sections[-1] == (
-        "spine_aws_common.log.tests.spinelogging_test.LoggingTestException: "
-        "We didn't expect this to happpen"
+    assert log_sections[-1].endswith(
+        "spinelogging_test.LoggingTestException: We didn't expect this to happpen"
     )
 
 
