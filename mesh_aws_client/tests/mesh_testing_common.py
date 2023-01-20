@@ -179,7 +179,7 @@ class MeshTestCase(TestCase):
     def setUp(self):
         """Common setup for all tests"""
         self.log_helper = LogHelper()
-        self.log_helper.set_stdout_capture()
+        self.log_helper.set_stream_capture()
 
     def tearDown(self):
         self.log_helper.clean_up()

@@ -48,21 +48,13 @@ def create_log_preamble(log_level, process_name, log_reference):
     return f"Log_Level={log_level} Process={process_name} logReference={log_reference}"
 
 
-def can_encode_string(value):
-    """
-    Python 2 and 3 compatible check to see if value is either a base or
-    unicode string.
-    """
-    return isinstance(value, str)
-
-
-def _decode_unicode_dictionary(substitution_dict):
+def _decode_unicode_dictionary(substitution_dict: dict):
     """
     Resolve any unicode issues with the dictionary
     """
     decode_dict = {}
     for key in substitution_dict:
-        if can_encode_string(substitution_dict[key]):
+        if isinstance(substitution_dict[key], str):
             decode_dict[key] = substitution_dict[key].encode("utf-8")
         else:
             decode_dict[key] = substitution_dict[key]
@@ -83,23 +75,22 @@ def evaluate_log_keys(log_details, log_row_dict):
         log_row_dict[log_key] = _substitute_if_empty(log_row_dict[log_key])
 
 
-def create_log_line(log_preamble, log_text, substitution_dict):
+def create_log_line(log_text, substitution_dict):
     """
     Write a log line, catching error scenarios (unicode and missing terms in
     dictionary) and ensuring everything fits on a single line.
     """
     try:
-        log_line = log_preamble + " - " + log_text.format(**substitution_dict)
+        log_line = log_text.format(**substitution_dict)
     except KeyError as err:
-        log_line = log_preamble + " - " + log_text + " - "
-        log_line += "No substitution due to KeyError, missing keys: "
-        log_line += str(list(err.args))
-        log_line += ", dictionary of "
-        log_line += str(substitution_dict)
-        print("Substitution failure - fail build: " + log_line)
+        log_line = (
+            f"{log_text} - No substitution due to KeyError, missing keys: "
+            f"{list(err.args)}, dictionary of {substitution_dict}"
+        )
+        print(f"Substitution failure - fail build: {log_line}")
     except UnicodeError:
         decode_dict = _decode_unicode_dictionary(substitution_dict)
-        log_line = log_preamble + " - " + log_text.format(**decode_dict)
+        log_line = log_text.format(**decode_dict)
 
     # Replace newlines with spaces
     log_line = re.sub(r"\n|\r", " ", log_line)

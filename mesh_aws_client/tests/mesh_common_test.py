@@ -34,7 +34,7 @@ class TestMeshCommon(TestCase):
     def setUp(self):
         """Common setup for all tests"""
         self.log_helper = LogHelper()
-        self.log_helper.set_stdout_capture()
+        self.log_helper.set_stream_capture()
         self.environment = os.environ["ENV"]
         self.ssm_client = boto3.client("ssm", region_name="eu-west-2")
         self.secrets_manager = boto3.client("secretsmanager", region_name="eu-west-2")

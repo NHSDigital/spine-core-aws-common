@@ -14,7 +14,7 @@ class TestLambdaApplication(TestCase):
 
     def setUp(self):
         self.log_helper = LogHelper()
-        self.log_helper.set_stdout_capture()
+        self.log_helper.set_stream_capture()
 
         self.app = LambdaApplication()
 

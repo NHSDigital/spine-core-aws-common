@@ -1,4 +1,7 @@
 """Mailbox class that handles all the complexity of talking to MESH API"""
+from hashlib import sha256
+from logging import Logger
+from typing import NamedTuple
 import atexit
 import datetime
 import hmac
@@ -7,14 +10,11 @@ import os
 import platform
 import tempfile
 import uuid
-from hashlib import sha256
-from typing import NamedTuple
 
 import requests
 import urllib3
 
 from mesh_aws_client.mesh_common import MeshCommon
-from spine_aws_common.logger import Logger
 
 
 class MeshMessage(NamedTuple):

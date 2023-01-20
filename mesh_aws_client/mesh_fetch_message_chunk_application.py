@@ -146,7 +146,7 @@ class MeshFetchMessageChunkApplication(
                 "message_id": self.message_id,
                 "s3_bucket": self.s3_bucket,
                 "s3_key": self.s3_key,
-            }
+            },
         )
         buffer = json.dumps(dict(self.http_response.headers)).encode("utf-8")
         self.http_headers_bytes_read = len(buffer)
