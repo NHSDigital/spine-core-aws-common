@@ -1,14 +1,17 @@
 """
 Module for common application functionality for Lambda functions
 """
-import os
-from datetime import datetime, timezone
-import uuid
 from abc import abstractmethod
+from datetime import datetime, timezone
+from typing import Optional
+import os
+import uuid
+
 from aws_lambda_powertools.utilities import parameters
 from aws_lambda_powertools.utilities.data_classes.common import DictWrapper
-from spine_aws_common.utilities import StopWatch
+
 from spine_aws_common.log.spinelogging import get_spine_logger
+from spine_aws_common.utilities import StopWatch
 
 DELIMITER = "_"
 
@@ -26,7 +29,7 @@ class LambdaApplication:
         self.context = None
         self.event = None
         self.sync_timer = None
-        self.internal_id: str = None
+        self.internal_id: Optional(str) = None
         self.system_config = self._load_system_config(load_ssm_params=load_ssm_params)
         self.configure_logging(additional_log_config)
         self._log_coldstart()

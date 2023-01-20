@@ -22,69 +22,75 @@ from spine_aws_common.log.spinelogging import (
     get_streaming_spine_handler,
 )
 
-CORE_LOG_CONFIG = {
-    "TESTCRITICAL001": [
-        "CRITICAL",
-        'Critical level log with message="{message}" for internalID={internalID}',
-    ],
-    "TESTDEBUG001": [
-        "DEBUG",
-        'Debug level log with message="{message}" for internalID={internalID}',
-    ],
-    "TESTINFO001": [
-        "INFO",
-        'Info level log with message="{message}" for internalID={internalID}',
-    ],
-    "TESTAUDIT001": [
-        "AUDIT",
-        'Audit level log with message="{message}" for internalID={internalID}',
-    ],
-    "TESTMASKEDINFO001": [
-        "INFO",
-        (
-            'Log with message="{message}" and data that may be masked url={url} '
-            "for internalID={internalID}"
-        ),
-    ],
-    "TESTMASKEDAUDIT001": [
-        "AUDIT",
-        (
-            'Log with message="{message}" and data that may be masked url={url} '
-            "for internalID={internalID}"
-        ),
-    ],
-    "UTI9992": [
-        "CRITICAL",
-        (
-            "Crash dump occurred. See crashdump index for details "
-            "with originalLogReference={originalLogReference}"
-        ),
-    ],
-}
+CORE_LOG_CONFIG = (
+    "testlog.cfg",
+    {
+        "TESTCRITICAL001": [
+            "CRITICAL",
+            'Critical level log with message="{message}" for internalID={internalID}',
+        ],
+        "TESTDEBUG001": [
+            "DEBUG",
+            'Debug level log with message="{message}" for internalID={internalID}',
+        ],
+        "TESTINFO001": [
+            "INFO",
+            'Info level log with message="{message}" for internalID={internalID}',
+        ],
+        "TESTAUDIT001": [
+            "AUDIT",
+            'Audit level log with message="{message}" for internalID={internalID}',
+        ],
+        "TESTMASKEDINFO001": [
+            "INFO",
+            (
+                'Log with message="{message}" and data that may be masked url={url} '
+                "for internalID={internalID}"
+            ),
+        ],
+        "TESTMASKEDAUDIT001": [
+            "AUDIT",
+            (
+                'Log with message="{message}" and data that may be masked url={url} '
+                "for internalID={internalID}"
+            ),
+        ],
+        "UTI9992": [
+            "CRITICAL",
+            (
+                "Crash dump occurred. See crashdump index for details "
+                "with originalLogReference={originalLogReference}"
+            ),
+        ],
+    },
+)
 
-APP_SPECIFIC_CONFIG = {
-    "APPCRITICAL001": [
-        "CRITICAL",
-        (
-            "Application-specific Critical level log with "
-            'message="{message}" for internalID={internalID}'
-        ),
-    ],
-    "APPDEBUG001": [
-        "DEBUG",
-        (
-            "Application-specific Debug level log with "
-            'message="{message}" for internalID={internalID}'
-        ),
-    ],
-    "APPINFO001": [
-        "INFO",
-        (
-            "Application-specific Info level log with "
-            'message="{message}" for internalID={internalID}'
-        ),
-    ],
-}
+APP_SPECIFIC_CONFIG = (
+    "applog.cfg",
+    {
+        "APPCRITICAL001": [
+            "CRITICAL",
+            (
+                "Application-specific Critical level log with "
+                'message="{message}" for internalID={internalID}'
+            ),
+        ],
+        "APPDEBUG001": [
+            "DEBUG",
+            (
+                "Application-specific Debug level log with "
+                'message="{message}" for internalID={internalID}'
+            ),
+        ],
+        "APPINFO001": [
+            "INFO",
+            (
+                "Application-specific Info level log with "
+                'message="{message}" for internalID={internalID}'
+            ),
+        ],
+    },
+)
 
 
 @pytest.fixture(name="log_helper", scope="function")
@@ -100,7 +106,7 @@ def loghelper_fixture() -> Generator[LogHelper, None, None]:
 def log_path_fixture():
     """Convenience to consistently evaluate local testdata directory"""
 
-    def factory(filename="testlog.cfg"):
+    def factory(filename=CORE_LOG_CONFIG[0]):
         return path.join(path.dirname(__file__), "testdata", filename)
 
     return factory
@@ -121,26 +127,26 @@ def logger_fixture(log_path: str) -> Callable:
 def test_get_log_base_config(log_path: Callable):
     """Happy path test we get some config given a valid path"""
     # Given
-    log_config_paths = log_path("testlog.cfg")
+    log_config_paths = log_path(CORE_LOG_CONFIG[0])
 
     # When
     actual = get_log_base_config(log_config_paths)
 
     # Then
-    assert actual == CORE_LOG_CONFIG
+    assert actual == CORE_LOG_CONFIG[1]
 
 
 def test_get_multiple_source_log_base_config(log_path: Callable):
     """Test that we get all the config given multiple valid paths"""
     # Given
-    log_config_path = log_path("testlog.cfg")
-    app_log_config_path = log_path("applog.cfg")
+    log_config_path = log_path(CORE_LOG_CONFIG[0])
+    app_log_config_path = log_path(APP_SPECIFIC_CONFIG[0])
 
     # When
     actual = get_log_base_config([log_config_path, app_log_config_path])
 
     # Then
-    assert actual == {**CORE_LOG_CONFIG, **APP_SPECIFIC_CONFIG}
+    assert actual == {**CORE_LOG_CONFIG[1], **APP_SPECIFIC_CONFIG[1]}
 
 
 def test_get_stdout_spine_handler():
@@ -163,7 +169,7 @@ def test_get_spine_splunk_formatter():
 
 @pytest.mark.parametrize(
     "log_config_name,num_lines",
-    [(None, None), ("testlog.cfg", 3), ("applog.cfg", 3)],
+    [(None, None), (CORE_LOG_CONFIG[0], 3), (APP_SPECIFIC_CONFIG[0], 3)],
 )
 def test_get_logger(
     spine_logger: Callable, log_path: Callable, log_config_name: str, num_lines: int
