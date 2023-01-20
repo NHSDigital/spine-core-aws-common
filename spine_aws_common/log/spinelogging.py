@@ -41,7 +41,7 @@ PYTHON_INSPECTED_ARGS = ["exc_info", "extra", "stack_info", "stacklevel"]
 # Log_Level, Process and logReference are mandatory and processed by the adapter
 SPINE_SPLUNK_LOG_FORMAT = (
     "{asctime}.{msecs:03.0f} - "
-    "Log_Level={level_name} Process={process_name} logReference={log_reference} - "
+    "Log_Level={level_name} Process={process_name} logReference={log_reference} PythonLogger - "
     "{message}"
 )
 SPINE_SPLUNK_DATEFORMAT = "%d/%m/%Y %H:%M:%S"
