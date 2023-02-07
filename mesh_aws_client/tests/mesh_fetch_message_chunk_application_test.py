@@ -339,6 +339,10 @@ class TestMeshFetchMessageChunkApplication(MeshTestCase):
         expected_return_code = HTTPStatus.OK.value
         self.assertEqual(response["statusCode"], expected_return_code)
 
+        self.assertTrue(
+            self.log_helper.was_value_logged("MESHFETCH0012", "Log_Level", "INFO")
+        )
+
     @mock_ssm
     @mock_s3
     @mock.patch.object(MeshFetchMessageChunkApplication, "_create_new_internal_id")
