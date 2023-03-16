@@ -7,33 +7,18 @@ variable "config" {
 
   type = object({
     environment                = string
-    verify_ssl                 = bool
-    use_secrets_manager        = bool
-    vpc_id                     = string
-    subnet_ids                 = list(string)
-    vpc_enabled                = bool
-    aws_s3_endpoint_sg_id      = list(string)
-    aws_ssm_endpoint_sg_id     = list(string)
-    aws_sfn_endpoint_sg_id     = list(string)
-    aws_logs_endpoints_sg_id   = list(string)
-    aws_kms_endpoints_sg_id    = list(string)
-    aws_lambda_endpoints_sg_id = list(string)
+    verify_ssl                 = optional(bool, true)
+    use_secrets_manager        = optional(bool, false)
+    vpc_id                     = optional(string, "")
+    subnet_ids                 = optional(list(string), [])
+    vpc_enabled                = optional(bool, false)
+    aws_s3_endpoint_sg_id      = optional(list(string), [])
+    aws_ssm_endpoint_sg_id     = optional(list(string), [])
+    aws_sfn_endpoint_sg_id     = optional(list(string), [])
+    aws_logs_endpoints_sg_id   = optional(list(string), [])
+    aws_kms_endpoints_sg_id    = optional(list(string), [])
+    aws_lambda_endpoints_sg_id = optional(list(string), [])
   })
-
-  default = {
-    environment                = "integration"
-    verify_ssl                 = true
-    use_secrets_manager        = false
-    vpc_id                     = ""
-    vpc_enabled                = false
-    subnet_ids                 = []
-    aws_s3_endpoint_sg_id      = []
-    aws_ssm_endpoint_sg_id     = []
-    aws_sfn_endpoint_sg_id     = []
-    aws_logs_endpoints_sg_id   = []
-    aws_kms_endpoints_sg_id    = []
-    aws_lambda_endpoints_sg_id = []
-  }
 
   validation {
     condition     = var.config.environment == "integration" || var.config.environment == "production"
