@@ -3,7 +3,7 @@ locals {
 }
 
 resource "aws_security_group" "send_message_chunk" {
-  count       = var.config.vpc_id == "" ? 0 : 1
+  count       = var.config.vpc_enabled == "true" ? 1 : 0
   name        = local.send_message_chunk_name
   description = local.send_message_chunk_name
   vpc_id      = var.config.vpc_id
@@ -43,7 +43,7 @@ resource "aws_lambda_function" "send_message_chunk" {
 
   environment {
     variables = {
-      Environment = local.name
+      Environment         = local.name
       use_secrets_manager = var.config.use_secrets_manager
     }
   }
