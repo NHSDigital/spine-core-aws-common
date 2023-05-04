@@ -2,4 +2,4 @@ aws_lambda_powertools
 importlib_metadata
 mesh_client
 requests
-urllib3
+urllib3==1.26.15
