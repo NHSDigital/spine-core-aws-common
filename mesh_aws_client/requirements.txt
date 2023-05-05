@@ -1,5 +1,5 @@
-aws_lambda_powertools
-importlib_metadata
-mesh_client
-requests
+aws_lambda_powertools==2.14.1
+importlib_metadata==6.6.0
+mesh_client==1.6.0
+requests==2.28.2
 urllib3==1.26.15
