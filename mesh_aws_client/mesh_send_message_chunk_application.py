@@ -128,6 +128,7 @@ class MeshSendMessageChunkApplication(
 
         file_response = self.s3_client.head_object(Bucket=self.bucket, Key=self.key)
         self.file_size = file_response["ContentLength"]
+        metadata = file_response.get("Metadata", {})
         self.log_object.write_log(
             "MESHSEND0005",
             None,
@@ -154,6 +155,7 @@ class MeshSendMessageChunkApplication(
             src_mailbox=self.mailbox.mailbox,
             workflow_id=self.mailbox.workflow_id,
             will_compress=self.will_compress,
+            metadata=metadata,
         )
         if self.file_size > 0:
             mailbox_response = self.mailbox.send_chunk(

@@ -137,5 +137,6 @@ MeshMessage = namedtuple(
         "dest_mailbox",
         "workflow_id",
         "message_id",
+        "metadata",
     ],
 )
