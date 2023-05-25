@@ -240,6 +240,9 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
         session.headers["Mex-Chunk-Range"] = f"{chunk_num}:{number_of_chunks}"
         session.headers["Content-Type"] = "application/octet-stream"
         session.headers["Mex-Content-Encrypted"] = "N"
+        session.headers["mex-localid"] = MeshCommon.get_params(f"/{self.environment}/mesh/cm-sending-group-id")
+        session.headers["mex-subject"] = mesh_message_object.file_name
+        
         if mesh_message_object.will_compress:
             session.headers["Content-Encoding"] = "gzip"
             session.headers["Mex-Content-Compress"] = "Y"
