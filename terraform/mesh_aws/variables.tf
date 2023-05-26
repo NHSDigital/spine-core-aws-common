@@ -8,6 +8,7 @@ variable "config" {
   type = object({
     environment                = string
     verify_ssl                 = bool
+    use_secrets_manager        = bool
     vpc_id                     = string
     subnet_ids                 = list(string)
     vpc_enabled                = bool
@@ -22,6 +23,7 @@ variable "config" {
   default = {
     environment                = "integration"
     verify_ssl                 = true
+    use_secrets_manager        = false
     vpc_id                     = ""
     vpc_enabled                = false
     subnet_ids                 = []

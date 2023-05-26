@@ -1,13 +1,12 @@
 """
 Module for MESH API functionality for step functions
 """
-from http import HTTPStatus
 import os
-
-from spine_aws_common import LambdaApplication
+from http import HTTPStatus
 
 from mesh_aws_client.mesh_common import MeshCommon, SingletonCheckFailure
 from mesh_aws_client.mesh_mailbox import MeshMailbox
+from spine_aws_common import LambdaApplication
 
 
 class MeshPollMailboxApplication(LambdaApplication):
@@ -25,14 +24,24 @@ class MeshPollMailboxApplication(LambdaApplication):
         self.get_messages_step_function_name = self.system_config.get(
             "GET_MESSAGES_STEP_FUNCTION_NAME", f"{self.environment}-get-messages"
         )
+        self.handshake = "false"
 
     def initialise(self):
         # initialise
         self.mailbox_name = self.event["mailbox"]
+        self.handshake = self.event.get("handshake", "false")
 
     def start(self):
         # in case of crash
         self.response = {"statusCode": HTTPStatus.INTERNAL_SERVER_ERROR.value}
+
+        mailbox = MeshMailbox(self.log_object, self.mailbox_name, self.environment)
+        if self.handshake.lower() == "true":
+            mailbox.handshake()
+            # 204 No Content is raised so the step function
+            # ends without looking for messages
+            self.response = {"statusCode": HTTPStatus.NO_CONTENT.value, "body": {}}
+            return
 
         try:
             MeshCommon.singleton_check(
@@ -43,13 +52,11 @@ class MeshPollMailboxApplication(LambdaApplication):
             self.response = MeshCommon.return_failure(
                 self.log_object,
                 HTTPStatus.TOO_MANY_REQUESTS.value,
-                "MESHPOLL0003",
+                "MESHPOLL0002",
                 self.mailbox_name,
                 message=e.msg,
             )
             return
-
-        mailbox = MeshMailbox(self.log_object, self.mailbox_name, self.environment)
         list_response, message_list = mailbox.list_messages()
         list_response.raise_for_status()
         message_count = len(message_list)
@@ -70,6 +77,15 @@ class MeshPollMailboxApplication(LambdaApplication):
                     },
                 }
             )
+
+        self.log_object.write_log(
+            "MESHPOLL0001",
+            None,
+            {
+                "mailbox": self.mailbox_name,
+                "message_count": message_count,
+            },
+        )
 
         # to set response for the lambda
         self.response = {
