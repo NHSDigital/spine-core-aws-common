@@ -152,6 +152,10 @@ class MeshFetchMessageChunkApplication(
         self.http_headers_bytes_read = len(buffer)
         self._upload_to_s3(buffer, s3_key=self.s3_key)
         self.mailbox.acknowledge_message(self.message_id)
+        self._update_response_and_mailbox_cleanup(complete=True)
+        self.log_object.write_log(
+             "MESHFETCH0012", None, {"message_id": self.message_id}
+        )
 
     def _get_filename(self):
         file_name = self.http_response.headers.get("Mex-Filename", "")

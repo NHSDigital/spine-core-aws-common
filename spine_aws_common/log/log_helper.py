@@ -29,7 +29,7 @@ class LogHelper:
     def was_logged(self, log_reference):
         """Was a particular log reference logged"""
         if any(
-                f"logReference={log_reference} " in line for line in self._get_log_lines()
+            f"logReference={log_reference} " in line for line in self._get_log_lines()
         ):
             return True
         return False
