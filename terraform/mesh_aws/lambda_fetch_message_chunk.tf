@@ -44,6 +44,7 @@ resource "aws_lambda_function" "fetch_message_chunk" {
   environment {
     variables = {
       Environment = local.name
+      use_secrets_manager = var.config.use_secrets_manager
     }
   }
 
@@ -172,6 +173,8 @@ data "aws_iam_policy_document" "fetch_message_chunk" {
     actions = [
       "s3:PutObject",
       "s3:AbortMultipartUpload",
+      "s3:GetObject",
+      "s3:DeleteObject",
     ]
 
     resources = [
