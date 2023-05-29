@@ -27,6 +27,7 @@ class MeshMessage(NamedTuple):
     workflow_id: str = None
     message_id: str = None
     will_compress: bool = False
+    metadata: dict = None
 
 
 class HandshakeFailure(Exception):
@@ -244,6 +245,10 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
             session.headers["Content-Encoding"] = "gzip"
             session.headers["Mex-Content-Compress"] = "Y"
             session.headers["Mex-Content-Compressed"] = "Y"
+
+        for key, value in mesh_message_object.metadata.items(): 
+            if "mex" in key:
+                session.headers[key] = value
 
         mesh_url = self.params[MeshMailbox.MESH_URL]
         if chunk_num == 1:
