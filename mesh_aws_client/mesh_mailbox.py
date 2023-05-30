@@ -246,7 +246,7 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
             session.headers["Mex-Content-Compress"] = "Y"
             session.headers["Mex-Content-Compressed"] = "Y"
 
-        for key, value in mesh_message_object.metadata.items(): 
+        for key, value in mesh_message_object.metadata.items():
             if "mex" in key:
                 session.headers[key] = value
 

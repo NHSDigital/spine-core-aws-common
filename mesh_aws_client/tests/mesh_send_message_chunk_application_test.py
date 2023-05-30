@@ -75,6 +75,9 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
                 "Content-Length": "44",
                 "Connection": "keep-alive",
             },
+            request_headers={
+                "mex-subject": "Custom Subject",
+            },
         )
         s3_client = boto3.client("s3", config=MeshTestingCommon.aws_config)
         ssm_client = boto3.client("ssm", config=MeshTestingCommon.aws_config)
@@ -149,6 +152,9 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
                 "Content-Length": "33",
                 "Connection": "keep-alive",
             },
+            request_headers={
+                "mex-subject": "Custom Subject",
+            },
         )
         response_mocker.post(
             "/messageexchange/MESH-TEST2/outbox/20210711164906010267_97CCD9/2",
@@ -157,6 +163,9 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
                 "Content-Type": "application/json",
                 "Content-Length": "33",
                 "Connection": "keep-alive",
+            },
+            request_headers={
+                "mex-subject": "Custom Subject",
             },
         )
         response_mocker.post(
@@ -167,6 +176,9 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
                 "Content-Length": "33",
                 "Connection": "keep-alive",
             },
+            request_headers={
+                "mex-subject": "Custom Subject",
+            },
         )
         response_mocker.post(
             "/messageexchange/MESH-TEST2/outbox/20210711164906010267_97CCD9/4",
@@ -175,6 +187,9 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
                 "Content-Type": "application/json",
                 "Content-Length": "33",
                 "Connection": "keep-alive",
+            },
+            request_headers={
+                "mex-subject": "Custom Subject",
             },
         )
         s3_client = boto3.client("s3", config=MeshTestingCommon.aws_config)
