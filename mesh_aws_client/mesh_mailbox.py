@@ -8,7 +8,7 @@ import platform
 import tempfile
 import uuid
 from hashlib import sha256
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
 import requests
 import urllib3
@@ -27,7 +27,7 @@ class MeshMessage(NamedTuple):
     workflow_id: str = None
     message_id: str = None
     will_compress: bool = False
-    metadata: dict = None
+    metadata: Optional[dict] = None
 
 
 class HandshakeFailure(Exception):
@@ -247,7 +247,7 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
             session.headers["Mex-Content-Compressed"] = "Y"
 
         for key, value in mesh_message_object.metadata.items():
-            if "mex" in key:
+            if "mex" in key.lower():
                 session.headers[key] = value
 
         mesh_url = self.params[MeshMailbox.MESH_URL]
