@@ -144,6 +144,9 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
                 }
             ),
         )
+        custom_request_headers = {
+            "mex-subject": "Custom Subject",
+        }
         response_mocker.post(
             "/messageexchange/MESH-TEST2/outbox",
             text=json.dumps({"messageID": "20210711164906010267_97CCD9"}),
@@ -152,9 +155,7 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
                 "Content-Length": "33",
                 "Connection": "keep-alive",
             },
-            request_headers={
-                "mex-subject": "Custom Subject",
-            },
+            request_headers=custom_request_headers,
         )
         response_mocker.post(
             "/messageexchange/MESH-TEST2/outbox/20210711164906010267_97CCD9/2",
@@ -164,9 +165,7 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
                 "Content-Length": "33",
                 "Connection": "keep-alive",
             },
-            request_headers={
-                "mex-subject": "Custom Subject",
-            },
+            request_headers=custom_request_headers,
         )
         response_mocker.post(
             "/messageexchange/MESH-TEST2/outbox/20210711164906010267_97CCD9/3",
@@ -176,9 +175,7 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
                 "Content-Length": "33",
                 "Connection": "keep-alive",
             },
-            request_headers={
-                "mex-subject": "Custom Subject",
-            },
+            request_headers=custom_request_headers,
         )
         response_mocker.post(
             "/messageexchange/MESH-TEST2/outbox/20210711164906010267_97CCD9/4",
@@ -188,9 +185,7 @@ class TestMeshSendMessageChunkApplication(MeshTestCase):
                 "Content-Length": "33",
                 "Connection": "keep-alive",
             },
-            request_headers={
-                "mex-subject": "Custom Subject",
-            },
+            request_headers=custom_request_headers,
         )
         s3_client = boto3.client("s3", config=MeshTestingCommon.aws_config)
         ssm_client = boto3.client("ssm", config=MeshTestingCommon.aws_config)
