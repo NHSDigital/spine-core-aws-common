@@ -225,6 +225,19 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
             raise HandshakeFailure
         return response.status_code
 
+    def _headers_from_metadata(self, mesh_message_object: MeshMessage) -> dict:
+        headers = {}
+        if mesh_message_object.metadata is None:
+            return headers
+        if len(mesh_message_object.metadata.items()) == 0:
+            return headers
+
+        for key, value in mesh_message_object.metadata.items():
+            if "mex" in key.lower():
+                headers[key] = value
+
+        return headers
+
     def send_chunk(
         self,
         mesh_message_object: MeshMessage,
@@ -246,9 +259,8 @@ class MeshMailbox:  # pylint: disable=too-many-instance-attributes
             session.headers["Mex-Content-Compress"] = "Y"
             session.headers["Mex-Content-Compressed"] = "Y"
 
-        for key, value in mesh_message_object.metadata.items():
-            if "mex" in key.lower():
-                session.headers[key] = value
+        headers_from_metadata = self._headers_from_metadata(mesh_message_object)
+        session.headers.update(headers_from_metadata)
 
         mesh_url = self.params[MeshMailbox.MESH_URL]
         if chunk_num == 1:

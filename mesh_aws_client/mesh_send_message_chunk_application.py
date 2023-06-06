@@ -118,7 +118,7 @@ class MeshSendMessageChunkApplication(
     def _get_metadata_from_s3(self):
         """Get metadata from s3 object"""
         response = self.s3_client.head_object(Bucket=self.bucket, Key=self.key)
-        metadata = response.get("Metadata", None)
+        metadata = response.get("Metadata", {})
         return metadata
 
     def start(self):
