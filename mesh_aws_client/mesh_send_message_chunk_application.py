@@ -115,6 +115,12 @@ class MeshSendMessageChunkApplication(
             else:
                 yield file_content
 
+    def _get_metadata_from_s3(self):
+        """Get metadata from s3 object"""
+        response = self.s3_client.head_object(Bucket=self.bucket, Key=self.key)
+        metadata = response.get("Metadata", {})
+        return metadata
+
     def start(self):
         """Main body of lambda"""
 
@@ -149,6 +155,7 @@ class MeshSendMessageChunkApplication(
         message_object = MeshMessage(
             file_name=os.path.basename(self.key),
             data=self._get_file_from_s3(),
+            metadata=self._get_metadata_from_s3(),
             message_id=message_id,
             dest_mailbox=self.mailbox.dest_mailbox,
             src_mailbox=self.mailbox.mailbox,

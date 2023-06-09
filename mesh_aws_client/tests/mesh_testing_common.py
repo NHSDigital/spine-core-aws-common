@@ -91,6 +91,9 @@ class MeshTestingCommon:
             Bucket=f"{environment}-mesh",
             Key="MESH-TEST2/outbound/testfile.json",
             Body=file_content,
+            Metadata={
+                "Mex-subject": "Custom Subject",
+            },
         )
 
     @staticmethod
