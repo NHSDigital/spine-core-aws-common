@@ -26,7 +26,7 @@ resource "aws_security_group" "fetch_message_chunk" {
       var.config.aws_kms_endpoints_sg_id,
       var.config.aws_lambda_endpoints_sg_id
     )
-    prefix_list_ids = [data.aws_vpc_endpoint.s3.prefix_list_id]
+    prefix_list_ids = [data.aws_vpc_endpoint.s3[0].prefix_list_id]
   }
 }
 
