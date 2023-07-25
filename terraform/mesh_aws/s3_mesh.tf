@@ -1,4 +1,7 @@
 resource "aws_s3_bucket" "mesh" {
+  depends_on = [
+    aws_s3_bucket_ownership_controls.mesh,
+  ]
   bucket = local.name
   acl    = "private"
 
@@ -16,7 +19,7 @@ resource "aws_s3_bucket" "mesh" {
     }
   }
 
-    lifecycle_rule {
+  lifecycle_rule {
     id      = "ExpireMeshObjects"
     enabled = var.mesh_s3_object_expiry_enabled
 
@@ -42,6 +45,13 @@ resource "aws_s3_bucket_public_access_block" "mesh" {
   block_public_policy     = true
   ignore_public_acls      = true
   restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_ownership_controls" "mesh" {
+  bucket = aws_s3_bucket.mesh.id
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
 }
 
 resource "aws_s3_bucket_policy" "mesh_bucket_policy" {
