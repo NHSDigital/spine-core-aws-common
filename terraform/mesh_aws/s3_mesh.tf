@@ -1,7 +1,4 @@
 resource "aws_s3_bucket" "mesh" {
-  depends_on = [
-    aws_s3_bucket_ownership_controls.mesh,
-  ]
   bucket = local.name
   acl    = "private"
 
