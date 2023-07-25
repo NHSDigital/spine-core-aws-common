@@ -38,7 +38,7 @@ resource "aws_s3_bucket_acl" "s3logs" {
   ]
 
   bucket = aws_s3_bucket.s3logs.id
-  acl    = "private"
+  acl    = "log-delivery-write"
 }
 
 resource "aws_s3_bucket_ownership_controls" "s3logs" {
