@@ -1,7 +1,6 @@
 #tfsec:ignore:aws-cloudtrail-require-bucket-access-logging tfsec:ignore:aws-s3-enable-versioning
 resource "aws_s3_bucket" "s3logs" {
   bucket = "${local.name}-s3logs"
-  acl    = "log-delivery-write"
   policy = data.aws_iam_policy_document.s3logs.json
 
   server_side_encryption_configuration {
@@ -30,6 +29,16 @@ resource "aws_s3_bucket_public_access_block" "s3logs" {
   block_public_policy     = true
   ignore_public_acls      = true
   restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_acl" "s3logs" {
+  depends_on = [
+    aws_s3_bucket_public_access_block.s3logs,
+    aws_s3_bucket_ownership_controls.s3logs,
+  ]
+
+  bucket = aws_s3_bucket.s3logs.id
+  acl    = "private"
 }
 
 resource "aws_s3_bucket_ownership_controls" "s3logs" {
