@@ -91,6 +91,9 @@ class MeshTestingCommon:
             Bucket=f"{environment}-mesh",
             Key="MESH-TEST2/outbound/testfile.json",
             Body=file_content,
+            Metadata={
+                "Mex-subject": "Custom Subject",
+            },
         )
 
     @staticmethod
@@ -115,7 +118,7 @@ class MeshTestingCommon:
         # Setup secrets
         ssm_client.put_parameter(
             Name=f"/{environment}/mesh/MESH_URL",
-            Value="https://192.168.100.129",
+            Value="https://localhost",
         )
         ssm_client.put_parameter(
             Name=f"/{environment}/mesh/MESH_SHARED_KEY",
