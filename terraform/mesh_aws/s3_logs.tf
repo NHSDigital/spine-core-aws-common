@@ -13,6 +13,16 @@ resource "aws_s3_bucket" "s3logs" {
   }
 }
 
+resource "aws_s3_bucket_server_side_encryption_configuration" "s3logs_encryption_configuration" {
+  bucket = aws_s3_bucket.s3logs.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
 resource "aws_s3_bucket_public_access_block" "s3logs" {
   bucket = aws_s3_bucket.s3logs.id
 
