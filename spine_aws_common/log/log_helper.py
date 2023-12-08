@@ -28,12 +28,8 @@ class LogHelper:
         self.captured_output.close()
         self.captured_err_output.close()
 
-    def find_log_entries(
-        self, log_reference: str
-    ) -> Generator[Dict[str, str], None, None]:
-        yield from self.log_entries(
-            lambda line: f"logReference={log_reference} " in line
-        )
+    def find_log_entries(self, log_reference: str) -> Generator[Dict[str, str], None, None]:
+        yield from self.log_entries(lambda line: f"logReference={log_reference} " in line)
 
     def log_entries(self, predicate: Optional[Callable[[str], bool]] = None):
         for line in self.log_lines(predicate):
@@ -43,15 +39,11 @@ class LogHelper:
                 k: v.strip("\"'")
                 for k, v in (
                     match.split("=", maxsplit=1)
-                    for match in re.findall(
-                        r'(?:\s|^)(\w+=(?:\'[^\']+\'|"[^"]+"|[^ ]+))', line
-                    )
+                    for match in re.findall(r'(?:\s|^)(\w+=(?:\'[^\']+\'|"[^"]+"|[^ ]+))', line)
                 )
             }
 
-    def log_lines(
-        self, predicate: Optional[Callable[[str], bool]] = None
-    ) -> Generator[str, None, None]:
+    def log_lines(self, predicate: Optional[Callable[[str], bool]] = None) -> Generator[str, None, None]:
         content = self.captured_output.getvalue()
         for line in content.split("\n"):
             if not line:
@@ -68,9 +60,7 @@ class LogHelper:
 
     def was_value_logged(self, log_reference, key, value):
         """Was a particular key-value pair logged for a log reference"""
-        for log_line in self.log_lines(
-            lambda line: f"logReference={log_reference} " in line
-        ):
+        for log_line in self.log_lines(lambda line: f"logReference={log_reference} " in line):
             if f"{key}={value}" in log_line:
                 return True
 

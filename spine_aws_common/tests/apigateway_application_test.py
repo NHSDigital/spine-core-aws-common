@@ -16,9 +16,7 @@ class MyApp(APIGatewayApplication):
     @staticmethod
     def get_hello():
         """Get hello"""
-        return Response(
-            status_code=200, content_type="application/json", body='{"hello":"world"}'
-        )
+        return Response(status_code=200, content_type="application/json", body='{"hello":"world"}')
 
     @staticmethod
     def get_id(_id):

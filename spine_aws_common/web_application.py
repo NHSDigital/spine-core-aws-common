@@ -6,11 +6,7 @@ from typing import Callable, Dict, List, Optional
 import json
 import re
 
-from aws_lambda_powertools.event_handler.api_gateway import (
-    Response,
-    ResponseBuilder,
-    Route,
-)
+from aws_lambda_powertools.event_handler.api_gateway import Response, ResponseBuilder, Route
 from aws_lambda_powertools.utilities.data_classes.common import BaseProxyEvent
 
 from spine_aws_common.lambda_application import LambdaApplication
@@ -24,9 +20,7 @@ class WebApplication(LambdaApplication):
     EVENT_TYPE = BaseProxyEvent
 
     def __init__(self, additional_log_config=None, load_ssm_params=False):
-        super().__init__(
-            additional_log_config=additional_log_config, load_ssm_params=load_ssm_params
-        )
+        super().__init__(additional_log_config=additional_log_config, load_ssm_params=load_ssm_params)
         self._routes: List[Route] = []
         self.configure_routes()
 

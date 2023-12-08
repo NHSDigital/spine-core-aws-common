@@ -70,9 +70,7 @@ class LambdaApplication:
             if self.log_object is None:
                 print(e)
             else:
-                self.log_object.write_log(
-                    "LAMBDA9999", sys.exc_info(), {"error": str(e)}
-                )
+                self.log_object.write_log("LAMBDA9999", sys.exc_info(), {"error": str(e)})
             raise e
 
         return self.response
@@ -132,9 +130,7 @@ class LambdaApplication:
             env = os.environ.copy()
             process_name = env.get("AWS_LAMBDA_FUNCTION_NAME", "None")
             if load_ssm_params:
-                config = parameters.get_parameters(
-                    f"/{process_name}", force_fetch=True, decrypt=True
-                )
+                config = parameters.get_parameters(f"/{process_name}", force_fetch=True, decrypt=True)
                 config.update(env)
                 return config
             return env
@@ -146,9 +142,7 @@ class LambdaApplication:
             "aws_region": self.system_config.get("AWS_REGION"),
             "aws_execution_env": self.system_config.get("AWS_EXECUTION_ENV"),
             "function_name": self.system_config.get("AWS_LAMBDA_FUNCTION_NAME", "None"),
-            "function_memory_size": self.system_config.get(
-                "AWS_LAMBDA_FUNCTION_MEMORY_SIZE"
-            ),
+            "function_memory_size": self.system_config.get("AWS_LAMBDA_FUNCTION_MEMORY_SIZE"),
             "function_version": self.system_config.get("AWS_LAMBDA_FUNCTION_VERSION"),
         }
         self.log_object.write_log("LAMBDA0001", None, log_params)
@@ -168,9 +162,7 @@ class LambdaApplication:
 
     def _get_aws_request_id(self):
         """Get the request id"""
-        if isinstance(self.context, LambdaContext) and getattr(
-            self.context, "aws_request_id", None
-        ):
+        if isinstance(self.context, LambdaContext) and getattr(self.context, "aws_request_id", None):
             return self.context.aws_request_id
         if isinstance(self.context, dict):
             return self.context.get("aws_request_id", "unknown")

@@ -5,10 +5,7 @@ import re
 
 import six
 
-from spine_aws_common.log.loglineprocessor import (
-    LogLineProcessor,
-    check_for_param_dictionary,
-)
+from spine_aws_common.log.loglineprocessor import LogLineProcessor, check_for_param_dictionary
 
 NOT_PROVIDED = "NotProvided"
 

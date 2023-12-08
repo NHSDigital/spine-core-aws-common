@@ -12,9 +12,7 @@ class BatchApplication(LambdaApplication):
     """
 
     def __init__(self, additional_log_config=None, load_ssm_params=False):
-        super().__init__(
-            additional_log_config=additional_log_config, load_ssm_params=load_ssm_params
-        )
+        super().__init__(additional_log_config=additional_log_config, load_ssm_params=load_ssm_params)
         self.records = None
 
     def initialise(self):
