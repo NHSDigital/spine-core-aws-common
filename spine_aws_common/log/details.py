@@ -2,8 +2,8 @@
 Created 18th June 2019
 """
 from copy import deepcopy
-import logging
 import configparser
+import logging
 
 from spine_aws_common.log.constants import LoggingConstants
 

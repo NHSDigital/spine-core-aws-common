@@ -2,6 +2,7 @@ dist/
 *.pyc
 *.egg-info
 venv/
+.venv/
 __pycache__
 .tox
 .coverage

@@ -7,10 +7,7 @@ import boto3
 from mesh_aws_client.mesh_send_message_chunk_application import (
     MeshSendMessageChunkApplication,
 )
-from mesh_aws_client.tests.mesh_testing_common import (
-    MeshTestCase,
-    MeshTestingCommon,
-)
+from mesh_aws_client.tests.mesh_testing_common import MeshTestCase, MeshTestingCommon
 
 
 class TestMeshGetFileFromS3(MeshTestCase):

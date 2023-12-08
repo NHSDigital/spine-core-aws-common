@@ -6,7 +6,6 @@ import logging
 from spine_aws_common.log.constants import LoggingConstants
 from spine_aws_common.log.formatting import create_log_line
 
-
 FILE_DATE_FORMAT = "%Y%m%d%H"  # pylint:disable=duplicate-code
 
 

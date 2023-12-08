@@ -1,14 +1,16 @@
 """
 Module for common application functionality for Lambda functions
 """
+from abc import abstractmethod
+from datetime import datetime, timezone
 import os
 import sys
-from datetime import datetime, timezone
 import uuid
-from abc import abstractmethod
+
 from aws_lambda_powertools.utilities import parameters
 from aws_lambda_powertools.utilities.data_classes.common import DictWrapper
 from aws_lambda_powertools.utilities.typing.lambda_context import LambdaContext
+
 from spine_aws_common.logger import Logger, configure_logging_adapter
 from spine_aws_common.utilities import StopWatch
 

@@ -1,8 +1,8 @@
 """
 Module for MESH API functionality for step functions
 """
-import os
 from http import HTTPStatus
+import os
 
 from mesh_aws_client.mesh_common import MeshCommon, SingletonCheckFailure
 from mesh_aws_client.mesh_mailbox import MeshMailbox

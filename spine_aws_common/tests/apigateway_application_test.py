@@ -2,9 +2,9 @@
 API Gateway Testing
 """
 from os.path import dirname
+from unittest import TestCase, mock
 import json
 
-from unittest import mock, TestCase
 from aws_lambda_powertools.event_handler.api_gateway import Response
 
 from spine_aws_common import APIGatewayApplication

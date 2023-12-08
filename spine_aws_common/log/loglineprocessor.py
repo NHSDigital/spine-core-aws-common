@@ -1,7 +1,7 @@
 """
 Created 18th June 2019
 """
-from urllib.parse import urlsplit, parse_qs
+from urllib.parse import parse_qs, urlsplit
 
 
 class LogLineProcessor:

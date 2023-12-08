@@ -1,20 +1,17 @@
 """ Testing MeshSendMessageChunk Application """
-import json
 from http import HTTPStatus
 from unittest import mock
+import json
 
+from moto import mock_s3, mock_ssm
 import boto3
 import requests_mock
-from moto import mock_s3, mock_ssm
 
 from mesh_aws_client.mesh_send_message_chunk_application import (
-    MeshSendMessageChunkApplication,
     MaxByteExceededException,
+    MeshSendMessageChunkApplication,
 )
-from mesh_aws_client.tests.mesh_testing_common import (
-    MeshTestCase,
-    MeshTestingCommon,
-)
+from mesh_aws_client.tests.mesh_testing_common import MeshTestCase, MeshTestingCommon
 
 
 class TestMeshSendMessageChunkApplication(MeshTestCase):

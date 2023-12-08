@@ -1,16 +1,16 @@
 """
 Module for MESH API functionality for step functions
 """
-import json
-import gzip
 from http import HTTPStatus
+import gzip
+import json
 import os
 
 import boto3
 
-from spine_aws_common import LambdaApplication
-from mesh_aws_client.mesh_mailbox import MeshMailbox, MeshMessage
 from mesh_aws_client.mesh_common import MeshCommon
+from mesh_aws_client.mesh_mailbox import MeshMailbox, MeshMessage
+from spine_aws_common import LambdaApplication
 
 
 class MaxByteExceededException(Exception):

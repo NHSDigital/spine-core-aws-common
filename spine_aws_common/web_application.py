@@ -2,14 +2,14 @@
 Base Web Lambda application
 """
 from abc import abstractmethod
-from typing import List, Callable, Optional, Dict
-import re
+from typing import Callable, Dict, List, Optional
 import json
+import re
 
 from aws_lambda_powertools.event_handler.api_gateway import (
-    Route,
-    ResponseBuilder,
     Response,
+    ResponseBuilder,
+    Route,
 )
 from aws_lambda_powertools.utilities.data_classes.common import BaseProxyEvent
 

@@ -2,11 +2,12 @@
 """
 Lambda Testing
 """
-from unittest import mock, TestCase
+from unittest import TestCase, mock
+
 from aws_lambda_powertools.utilities.typing.lambda_context import LambdaContext
 
-from spine_aws_common.log.log_helper import LogHelper
 from spine_aws_common import LambdaApplication
+from spine_aws_common.log.log_helper import LogHelper
 
 
 class TestLambdaApplication(TestCase):

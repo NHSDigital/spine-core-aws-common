@@ -2,17 +2,14 @@
 from http import HTTPStatus
 from unittest import mock
 
-import boto3
 from moto import mock_s3, mock_ssm, mock_stepfunctions
+import boto3
 
 from mesh_aws_client.mesh_check_send_parameters_application import (
     MeshCheckSendParametersApplication,
 )
 from mesh_aws_client.mesh_common import SingletonCheckFailure
-from mesh_aws_client.tests.mesh_testing_common import (
-    MeshTestCase,
-    MeshTestingCommon,
-)
+from mesh_aws_client.tests.mesh_testing_common import MeshTestCase, MeshTestingCommon
 
 
 class TestMeshCheckSendParametersApplication(MeshTestCase):
@@ -285,7 +282,7 @@ def sample_trigger_event():
                 "bucketName": "meshtest-mesh",
                 "X-Amz-Algorithm": "AWS4-HMAC-SHA256",
                 "x-amz-acl": "private",
-                "X-Amz-SignedHeaders": "content-md5;content-type;host;x-amz-acl;x-amz-storage-class", # noqa pylint: disable=line-too-long
+                "X-Amz-SignedHeaders": "content-md5;content-type;host;x-amz-acl;x-amz-storage-class",  # noqa pylint: disable=line-too-long
                 "Host": "meshtest-mesh.s3.eu-west-2.amazonaws.com",
                 "X-Amz-Expires": "300",
                 "key": "MESH-TEST2/outbound/testfile.json",
@@ -293,7 +290,7 @@ def sample_trigger_event():
             },
             "responseElements": {
                 "x-amz-server-side-encryption": "aws:kms",
-                "x-amz-server-side-encryption-aws-kms-key-id": "arn:aws:kms:eu-west-2:092420156801:key/4f295c4c-17fd-4c9d-84e9-266b01de0a5a", # noqa pylint: disable=line-too-long
+                "x-amz-server-side-encryption-aws-kms-key-id": "arn:aws:kms:eu-west-2:092420156801:key/4f295c4c-17fd-4c9d-84e9-266b01de0a5a",  # noqa pylint: disable=line-too-long
             },
             "requestID": "1234567890123456",
             "eventID": "75e91cfc-f2db-4e09-8f80-a206ab4cd15e",
@@ -301,7 +298,7 @@ def sample_trigger_event():
             "resources": [
                 {
                     "type": "AWS::S3::Object",
-                    "ARN": "arn:aws:s3:::meshtest-mesh/MESH-TEST2/outbound/testfile.json", # noqa pylint: disable=line-too-long
+                    "ARN": "arn:aws:s3:::meshtest-mesh/MESH-TEST2/outbound/testfile.json",  # noqa pylint: disable=line-too-long
                 },
                 {
                     "accountId": "123456789012",

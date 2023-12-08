@@ -1,4 +1,6 @@
 """Mailbox class that handles all the complexity of talking to MESH API"""
+from hashlib import sha256
+from typing import NamedTuple, Optional
 import atexit
 import datetime
 import hmac
@@ -7,8 +9,6 @@ import os
 import platform
 import tempfile
 import uuid
-from hashlib import sha256
-from typing import NamedTuple, Optional
 
 import requests
 import urllib3

@@ -2,13 +2,13 @@
 Created 18th June 2019
 """
 import re
+
 import six
 
 from spine_aws_common.log.loglineprocessor import (
-    check_for_param_dictionary,
     LogLineProcessor,
+    check_for_param_dictionary,
 )
-
 
 NOT_PROVIDED = "NotProvided"
 

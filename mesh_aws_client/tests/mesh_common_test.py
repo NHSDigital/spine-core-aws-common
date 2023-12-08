@@ -2,7 +2,7 @@
 from unittest import TestCase, mock
 import os
 
-from moto import mock_ssm, mock_secretsmanager
+from moto import mock_secretsmanager, mock_ssm
 import boto3
 
 from mesh_aws_client.mesh_common import MeshCommon

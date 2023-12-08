@@ -1,12 +1,12 @@
 """
 Module for MESH API functionality for step functions
 """
+from http import HTTPStatus
 import json
 import os
-from http import HTTPStatus
 
-import boto3
 from botocore.exceptions import ClientError
+import boto3
 
 from mesh_aws_client.mesh_common import MeshCommon
 from mesh_aws_client.mesh_mailbox import MeshMailbox
@@ -146,7 +146,7 @@ class MeshFetchMessageChunkApplication(
                 "message_id": self.message_id,
                 "s3_bucket": self.s3_bucket,
                 "s3_key": self.s3_key,
-            }
+            },
         )
         buffer = json.dumps(dict(self.http_response.headers)).encode("utf-8")
         self.http_headers_bytes_read = len(buffer)
@@ -154,7 +154,7 @@ class MeshFetchMessageChunkApplication(
         self.mailbox.acknowledge_message(self.message_id)
         self._update_response_and_mailbox_cleanup(complete=True)
         self.log_object.write_log(
-             "MESHFETCH0012", None, {"message_id": self.message_id}
+            "MESHFETCH0012", None, {"message_id": self.message_id}
         )
 
     def _get_filename(self):

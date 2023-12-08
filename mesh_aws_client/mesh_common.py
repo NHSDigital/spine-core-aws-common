@@ -1,7 +1,8 @@
 """Common methods and classes used for mesh client"""
 from collections import namedtuple
-import os
 import json
+import os
+
 import boto3
 
 REGION_NAME = os.environ.get("AWS_REGION", "eu-west-2")

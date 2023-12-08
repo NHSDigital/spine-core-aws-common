@@ -5,25 +5,23 @@ Cloud logging module
 from __future__ import absolute_import, print_function
 
 import datetime
-import traceback
 import os
+import traceback
 
-from spine_aws_common.log.spinelogging import get_log_base_config
-from spine_aws_common.log.details import get_log_details, return_level
 from spine_aws_common.log.constants import LoggingConstants
+from spine_aws_common.log.details import get_log_details, return_level
 from spine_aws_common.log.formatting import (
     add_default_keys,
-    evaluate_log_keys,
     create_log_line,
+    evaluate_log_keys,
     substitute_preamble_for_monitor,
 )
-from spine_aws_common.log.thirdpartylogging import SEVERITY_INPUT_MAP, LoggingAdapter
 from spine_aws_common.log.masking import mask_url
-
+from spine_aws_common.log.spinelogging import get_log_base_config
+from spine_aws_common.log.thirdpartylogging import SEVERITY_INPUT_MAP, LoggingAdapter
 
 # pylint: disable=wrong-import-order
-import logging as pythonlogging
-
+import logging as pythonlogging  # isort:skip
 # pylint: enable=wrong-import-order
 
 

@@ -1,7 +1,6 @@
 """
 New Logging Attempts
 """
-from spine_aws_common.log.spinelogging import SpineLogger
 from spine_aws_common.log.constants import LoggingConstants
 from spine_aws_common.log.details import get_log_details
 from spine_aws_common.log.formatting import (
@@ -11,6 +10,7 @@ from spine_aws_common.log.formatting import (
     substitute_preamble_for_monitor,
 )
 from spine_aws_common.log.masking import mask_url
+from spine_aws_common.log.spinelogging import SpineLogger
 from spine_aws_common.log.writer import write_to_file
 
 

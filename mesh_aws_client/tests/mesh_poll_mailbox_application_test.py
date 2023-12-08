@@ -1,20 +1,15 @@
 """ Testing MeshPollMailbox application """
 
-import json
 from http import HTTPStatus
 from unittest import mock
+import json
 
+from moto import mock_s3, mock_secretsmanager, mock_ssm, mock_stepfunctions
 import boto3
 import requests_mock
-from moto import mock_s3, mock_ssm, mock_stepfunctions, mock_secretsmanager
 
-from mesh_aws_client.mesh_poll_mailbox_application import (
-    MeshPollMailboxApplication,
-)
-from mesh_aws_client.tests.mesh_testing_common import (
-    MeshTestCase,
-    MeshTestingCommon,
-)
+from mesh_aws_client.mesh_poll_mailbox_application import MeshPollMailboxApplication
+from mesh_aws_client.tests.mesh_testing_common import MeshTestCase, MeshTestingCommon
 
 
 class TestMeshPollMailboxApplication(MeshTestCase):
