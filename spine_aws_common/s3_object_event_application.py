@@ -1,9 +1,8 @@
 """
 Base S3 Object Event Lambda application
 """
-from aws_lambda_powertools.utilities.data_classes.s3_object_event import (
-    S3ObjectLambdaEvent,
-)
+from aws_lambda_powertools.utilities.data_classes.s3_object_event import S3ObjectLambdaEvent
+
 from spine_aws_common.lambda_application import LambdaApplication
 
 

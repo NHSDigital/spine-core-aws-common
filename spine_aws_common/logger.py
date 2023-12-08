@@ -5,24 +5,23 @@ Cloud logging module
 from __future__ import absolute_import, print_function
 
 import datetime
-import traceback
 import os
+import traceback
 
-from spine_aws_common.log.spinelogging import get_log_base_config
-from spine_aws_common.log.details import get_log_details, return_level
 from spine_aws_common.log.constants import LoggingConstants
+from spine_aws_common.log.details import get_log_details, return_level
 from spine_aws_common.log.formatting import (
     add_default_keys,
-    evaluate_log_keys,
     create_log_line,
+    evaluate_log_keys,
     substitute_preamble_for_monitor,
 )
-from spine_aws_common.log.thirdpartylogging import SEVERITY_INPUT_MAP, LoggingAdapter
 from spine_aws_common.log.masking import mask_url
-
+from spine_aws_common.log.spinelogging import get_log_base_config
+from spine_aws_common.log.thirdpartylogging import SEVERITY_INPUT_MAP, LoggingAdapter
 
 # pylint: disable=wrong-import-order
-import logging as pythonlogging
+import logging as pythonlogging  # isort:skip
 
 # pylint: enable=wrong-import-order
 
@@ -47,9 +46,7 @@ class Logger:
     ):
         self._log_base_dict = get_log_base_config(log_base=log_base)
         if additional_log_config:
-            self._log_base_dict.update(
-                get_log_base_config(log_base=additional_log_config)
-            )
+            self._log_base_dict.update(get_log_base_config(log_base=additional_log_config))
 
         self.process_name = process_name
         self.internal_id = internal_id
@@ -121,9 +118,7 @@ class Logger:
         evaluate_log_keys(log_details, log_row_dict)
 
         time_now = datetime.datetime.now()
-        log_preamble = self._create_log_preamble(
-            time_now, log_details.log_level, process_name, log_reference
-        )
+        log_preamble = self._create_log_preamble(time_now, log_details.log_level, process_name, log_reference)
         log_row_dict_masked = mask_url(log_row_dict)
 
         if log_details.audit_log_required:
@@ -226,15 +221,9 @@ class Logger:
             log_line = log_line + " - " + str(error_list[0:])
         print(log_line)
 
-        if (
-            log_type == LoggingConstants.LFR_CRASHDUMP
-            and error_list
-            and len(error_list) >= 3
-        ):
+        if log_type == LoggingConstants.LFR_CRASHDUMP and error_list and len(error_list) >= 3:
             exception, value, trace = error_list
-            formatted_exception = " ".join(
-                traceback.format_exception(exception, value, trace)
-            )
+            formatted_exception = " ".join(traceback.format_exception(exception, value, trace))
             exception_line = create_log_line(log_preamble, formatted_exception, {})
             print(exception_line)
 

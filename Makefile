@@ -7,3 +7,9 @@ build: setup-venv
 
 test: setup-venv
 	. venv/bin/activate && tox --recreate
+
+black:
+	. venv/bin/activate && black .
+
+isort:
+	. venv/bin/activate && isort .

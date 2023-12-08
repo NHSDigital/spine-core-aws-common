@@ -2,11 +2,12 @@
 """
 Lambda Testing
 """
-from unittest import mock, TestCase
+from unittest import TestCase, mock
+
 from aws_lambda_powertools.utilities.typing.lambda_context import LambdaContext
 
-from spine_aws_common.log.log_helper import LogHelper
 from spine_aws_common import LambdaApplication
+from spine_aws_common.log.log_helper import LogHelper
 
 
 class TestLambdaApplication(TestCase):
@@ -49,17 +50,11 @@ class TestLambdaApplication(TestCase):
         response_mock = {"message": "Lambda application stopped"}
         self.assertEqual(response_mock, response)
         self.log_helper.was_logged("LAMBDA0001")
-        self.assertTrue(
-            self.log_helper.was_value_logged("LAMBDA0001", "Log_Level", "INFO")
-        )
+        self.assertTrue(self.log_helper.was_value_logged("LAMBDA0001", "Log_Level", "INFO"))
 
-        self.assertTrue(
-            self.log_helper.was_value_logged("LAMBDA0002", "Log_Level", "INFO")
-        )
+        self.assertTrue(self.log_helper.was_value_logged("LAMBDA0002", "Log_Level", "INFO"))
 
-        self.assertTrue(
-            self.log_helper.was_value_logged("LAMBDA0003", "Log_Level", "INFO")
-        )
+        self.assertTrue(self.log_helper.was_value_logged("LAMBDA0003", "Log_Level", "INFO"))
 
     def test_lambda_additional_logging(self):
         """Testing the initialisation of the lambda with extra logging config"""
@@ -70,27 +65,21 @@ class TestLambdaApplication(TestCase):
             None,
         )
 
-        self.assertTrue(
-            self.log_helper.was_value_logged("ADDTEST001", "Log_Level", "INFO")
-        )
+        self.assertTrue(self.log_helper.was_value_logged("ADDTEST001", "Log_Level", "INFO"))
 
     def test_logging_using_context_dict(self):
         """Testing that the logging can get the request id"""
         self.app.context = {"aws_request_id": "test"}
         self.app._log_start()
 
-        self.assertTrue(
-            self.log_helper.was_value_logged("LAMBDA0002", "aws_request_id", "test")
-        )
+        self.assertTrue(self.log_helper.was_value_logged("LAMBDA0002", "aws_request_id", "test"))
 
     def test_logging_using_context_dict_missing_key(self):
         """Testing that the logging can get the request id"""
         self.app.context = {}
         self.app._log_start()
 
-        self.assertTrue(
-            self.log_helper.was_value_logged("LAMBDA0002", "aws_request_id", "unknown")
-        )
+        self.assertTrue(self.log_helper.was_value_logged("LAMBDA0002", "aws_request_id", "unknown"))
 
     def test_logging_using_context_object(self):
         """Testing that the logging can get the request id"""
@@ -98,24 +87,18 @@ class TestLambdaApplication(TestCase):
         self.app.context._aws_request_id = "test"
         self.app._log_start()
 
-        self.assertTrue(
-            self.log_helper.was_value_logged("LAMBDA0002", "aws_request_id", "test")
-        )
+        self.assertTrue(self.log_helper.was_value_logged("LAMBDA0002", "aws_request_id", "test"))
 
     def test_logging_using_context_object_no_id(self):
         """Testing that the logging can get the request id"""
         self.app.context = LambdaContext()
         self.app._log_start()
 
-        self.assertTrue(
-            self.log_helper.was_value_logged("LAMBDA0002", "aws_request_id", "unknown")
-        )
+        self.assertTrue(self.log_helper.was_value_logged("LAMBDA0002", "aws_request_id", "unknown"))
 
     def test_logging_using_context_unknown(self):
         """Testing that the logging can get the request id"""
         self.app.context = None
         self.app._log_start()
 
-        self.assertTrue(
-            self.log_helper.was_value_logged("LAMBDA0002", "aws_request_id", "unknown")
-        )
+        self.assertTrue(self.log_helper.was_value_logged("LAMBDA0002", "aws_request_id", "unknown"))

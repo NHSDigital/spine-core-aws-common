@@ -2,6 +2,7 @@
 Base API Gateway Lambda application
 """
 from aws_lambda_powertools.utilities.data_classes import APIGatewayProxyEvent
+
 from spine_aws_common.web_application import WebApplication
 
 

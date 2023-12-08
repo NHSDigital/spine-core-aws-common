@@ -2,6 +2,7 @@
 Base SQS Lambda application
 """
 from aws_lambda_powertools.utilities.data_classes import SQSEvent
+
 from spine_aws_common.batch_application import BatchApplication
 
 

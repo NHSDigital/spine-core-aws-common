@@ -1,7 +1,6 @@
 """
 New Logging Attempts
 """
-from spine_aws_common.log.spinelogging import SpineLogger
 from spine_aws_common.log.constants import LoggingConstants
 from spine_aws_common.log.details import get_log_details
 from spine_aws_common.log.formatting import (
@@ -11,6 +10,7 @@ from spine_aws_common.log.formatting import (
     substitute_preamble_for_monitor,
 )
 from spine_aws_common.log.masking import mask_url
+from spine_aws_common.log.spinelogging import SpineLogger
 from spine_aws_common.log.writer import write_to_file
 
 
@@ -48,9 +48,7 @@ def write_log(
     if process_name is None:
         process_name = SpineLogger.get_process_name()
 
-    log_details = get_log_details(
-        log_reference, SpineLogger.get_log_base_dict(), SpineLogger.get_log_base_cache()
-    )
+    log_details = get_log_details(log_reference, SpineLogger.get_log_base_dict(), SpineLogger.get_log_base_cache())
     if not log_details or not log_details.check_log_severity_for_log(
         severity_threshold_override, SpineLogger.get_severity_threshold()
     ):
@@ -61,9 +59,7 @@ def write_log(
 
     evaluate_log_keys(log_details, log_row_dict)
 
-    log_preamble = create_log_preamble(
-        log_details.log_level, process_name, log_reference
-    )
+    log_preamble = create_log_preamble(log_details.log_level, process_name, log_reference)
     log_row_dict_masked = mask_url(log_row_dict)
 
     if log_details.audit_log_required:
@@ -100,9 +96,7 @@ def write_log(
             SpineLogger.get_log_base_dict(),
             SpineLogger.get_log_base_cache(),
         )
-        stub_log_preamble = create_log_preamble(
-            stub_log_details.log_level, process_name, stub_log_reference
-        )
+        stub_log_preamble = create_log_preamble(stub_log_details.log_level, process_name, stub_log_reference)
 
         # Write stub crashdump to spinevfmoperations, so that non-SC cleared
         # staff can see a crash occurred.

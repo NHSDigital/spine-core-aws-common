@@ -1,5 +1,7 @@
 """Test log helper to determine if correct logs and details were logged"""
+from typing import Callable, Dict, Generator, Optional
 import io
+import re
 import sys
 
 
@@ -26,29 +28,40 @@ class LogHelper:
         self.captured_output.close()
         self.captured_err_output.close()
 
+    def find_log_entries(self, log_reference: str) -> Generator[Dict[str, str], None, None]:
+        yield from self.log_entries(lambda line: f"logReference={log_reference} " in line)
+
+    def log_entries(self, predicate: Optional[Callable[[str], bool]] = None):
+        for line in self.log_lines(predicate):
+            if not line:
+                continue
+            yield {
+                k: v.strip("\"'")
+                for k, v in (
+                    match.split("=", maxsplit=1)
+                    for match in re.findall(r'(?:\s|^)(\w+=(?:\'[^\']+\'|"[^"]+"|[^ ]+))', line)
+                )
+            }
+
+    def log_lines(self, predicate: Optional[Callable[[str], bool]] = None) -> Generator[str, None, None]:
+        content = self.captured_output.getvalue()
+        for line in content.split("\n"):
+            if not line:
+                continue
+
+            if not predicate or predicate(line):
+                yield line
+
     def was_logged(self, log_reference):
         """Was a particular log reference logged"""
-        if any(
-            f"logReference={log_reference} " in line for line in self._get_log_lines()
-        ):
+        if any(self.log_lines(lambda line: f"logReference={log_reference} " in line)):
             return True
         return False
 
     def was_value_logged(self, log_reference, key, value):
         """Was a particular key-value pair logged for a log reference"""
-        for log_line in self._get_log_lines():
-            if f"logReference={log_reference} " not in log_line:
-                continue
-
+        for log_line in self.log_lines(lambda line: f"logReference={log_reference} " in line):
             if f"{key}={value}" in log_line:
                 return True
 
         return False
-
-    def _get_log_lines(self):
-        """Get the logs lines"""
-        return [
-            log_line
-            for log_line in self.captured_output.getvalue().split("\n")
-            if log_line
-        ]

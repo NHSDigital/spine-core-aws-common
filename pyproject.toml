@@ -8,5 +8,35 @@ build-backend = "setuptools.build_meta"
 [tool.isort]
 profile = "black"
 multi_line_output = 3 # Vertical Hanging Indent
-line_length = 88
+line_length = 120
 from_first = true
+
+
+[tool.flake8]
+exclude = [
+    ".venv",
+    "venv",
+    "__pycache__",
+    ".git",
+    ".tox"
+]
+#ignore = ['E231', 'E241']
+#per-file-ignores = [
+#    '__init__.py:F401',
+#]
+max-line-length = 120
+count = true
+
+
+[tool.black]
+line-length = 120
+target-version = ['py38']
+include = '\.pyi?$'
+#extend-exclude = '''
+#/(
+#  # The following are specific to Black, you probably don't want those.
+#  | blib2to3
+#  | tests/data
+#  | profiling
+#)/
+#'''

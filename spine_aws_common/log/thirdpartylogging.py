@@ -6,7 +6,6 @@ import logging
 from spine_aws_common.log.logutil import write_log
 from spine_aws_common.log.masking import mask_pid
 
-
 SEVERITY_INPUT_MAP = {
     "CRITICAL": logging.CRITICAL,
     "ERROR": logging.ERROR,

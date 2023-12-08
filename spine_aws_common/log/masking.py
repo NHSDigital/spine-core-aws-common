@@ -3,7 +3,6 @@ Created 18th June 2019
 """
 import re
 
-
 # SPII-15583 Match both direct Werkzeug output and Flask application log
 # messages
 TICKET_PATTERN = re.compile("(.*)/ticket([^ ]+)(.*)")
